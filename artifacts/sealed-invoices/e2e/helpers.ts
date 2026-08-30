@@ -33,6 +33,70 @@ export async function mintSignInToken(userId: string): Promise<string> {
   return body.token;
 }
 
+type ClerkTestUser = {
+  id: string;
+  external_id: string | null;
+  email_addresses: Array<{ email_address: string }>;
+};
+
+export async function ensureClerkTestUser(fixture: {
+  externalId: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+}): Promise<string> {
+  const secret = process.env.CLERK_SECRET_KEY;
+  if (!secret) {
+    throw new Error(
+      "CLERK_SECRET_KEY is not in the environment - run this inside the Replit workspace shell.",
+    );
+  }
+
+  const request = async <T>(
+    path: string,
+    init?: RequestInit,
+  ): Promise<T> => {
+    const response = await fetch(`https://api.clerk.com/v1${path}`, {
+      ...init,
+      headers: {
+        Authorization: `Bearer ${secret}`,
+        "Content-Type": "application/json",
+        ...init?.headers,
+      },
+    });
+    if (!response.ok) {
+      throw new Error(
+        `Clerk fixture request ${init?.method ?? "GET"} ${path} failed: ` +
+          `${response.status} ${await response.text()}`,
+      );
+    }
+    return (await response.json()) as T;
+  };
+
+  const users = await request<ClerkTestUser[]>("/users?limit=100");
+  let user = users.find(
+    (candidate) =>
+      candidate.external_id === fixture.externalId ||
+      candidate.email_addresses.some(
+        ({ email_address }) => email_address === fixture.email,
+      ),
+  );
+  if (!user) {
+    user = await request<ClerkTestUser>("/users", {
+      method: "POST",
+      body: JSON.stringify({
+        email_address: [fixture.email],
+        first_name: fixture.firstName,
+        last_name: fixture.lastName,
+        external_id: fixture.externalId,
+        skip_password_checks: true,
+        skip_password_requirement: true,
+      }),
+    });
+  }
+  return user.id;
+}
+
 export function requiredPersonaId(environmentName: string): string {
   const userId = process.env[environmentName];
   if (!userId) {
@@ -45,7 +109,7 @@ export function requiredPersonaId(environmentName: string): string {
 
 /** Sign the browser session in via the ticket strategy (see .agents/memory/clerk-e2e-signin.md). */
 export async function signIn(page: Page, token: string): Promise<void> {
-  await page.goto("/");
+  await page.goto("/", { waitUntil: "domcontentloaded" });
   await page.waitForFunction(() => (window as any).Clerk?.loaded, undefined, {
     timeout: 30_000,
   });
@@ -188,6 +252,12 @@ async function dbQuery(
 
 async function dbExecute(sql: string, params: unknown[]): Promise<number> {
   return (await dbQuery(sql, params)).rowCount;
+}
+
+/** Reset a dedicated Clerk fixture to the pre-first-sync app state. */
+export async function resetUnsyncedTestPersona(userId: string): Promise<void> {
+  await dbExecute("DELETE FROM chain_wallets WHERE id = $1", [userId]);
+  await dbExecute("DELETE FROM users WHERE id = $1", [userId]);
 }
 
 /**

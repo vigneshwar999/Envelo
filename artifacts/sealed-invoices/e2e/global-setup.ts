@@ -248,32 +248,34 @@ export default async function globalSetup(config: FullConfig): Promise<void> {
       }
     }
 
-    const fundingProblems: string[] = [];
-    for (const persona of personas) {
-      if (persona.minimumBalanceUsdc === 0) continue;
-      const userId = process.env[persona.envKeys[0]]!;
-      const wallet = await client.query(
-        "SELECT address FROM chain_wallets WHERE id = $1",
-        [userId],
-      );
-      const address: string | undefined = wallet.rows[0]?.address;
-      if (!address) {
-        throw new Error(`The ${persona.firstName} fixture has no managed wallet.`);
+    if (!process.env.SKIP_ARC_TESTNET_FUNDING_CHECK) {
+      const fundingProblems: string[] = [];
+      for (const persona of personas) {
+        if (persona.minimumBalanceUsdc === 0) continue;
+        const userId = process.env[persona.envKeys[0]]!;
+        const wallet = await client.query(
+          "SELECT address FROM chain_wallets WHERE id = $1",
+          [userId],
+        );
+        const address: string | undefined = wallet.rows[0]?.address;
+        if (!address) {
+          throw new Error(`The ${persona.firstName} fixture has no managed wallet.`);
+        }
+        const balance = await arcBalance(address);
+        if (balance < persona.minimumBalanceUsdc) {
+          fundingProblems.push(
+            `${persona.firstName} needs at least ${persona.minimumBalanceUsdc} test USDC ` +
+              `at ${address}, but has ${balance.toFixed(6)}.`,
+          );
+        }
       }
-      const balance = await arcBalance(address);
-      if (balance < persona.minimumBalanceUsdc) {
-        fundingProblems.push(
-          `${persona.firstName} needs at least ${persona.minimumBalanceUsdc} test USDC ` +
-            `at ${address}, but has ${balance.toFixed(6)}.`,
+      if (fundingProblems.length > 0) {
+        throw new Error(
+          "Dedicated browser fixtures need Arc testnet funding:\n" +
+            fundingProblems.join("\n") +
+            "\nUse https://faucet.circle.com on Arc Testnet, then rerun the same command.",
         );
       }
-    }
-    if (fundingProblems.length > 0) {
-      throw new Error(
-        "Dedicated browser fixtures need Arc testnet funding:\n" +
-          fundingProblems.join("\n") +
-          "\nUse https://faucet.circle.com on Arc Testnet, then rerun the same command.",
-      );
     }
   } finally {
     await client.end();

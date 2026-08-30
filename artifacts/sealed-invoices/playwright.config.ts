@@ -30,8 +30,11 @@ export default defineConfig({
   retries: 1,
   reporter: [["list"]],
   use: {
-    // The workspace proxy serves the app at its preview path ("/").
-    baseURL: "http://localhost:80",
+    // Prefer the live Replit preview domain when available; fall back to the
+    // localhost proxy for older runners.
+    baseURL: process.env.REPLIT_DEV_DOMAIN
+      ? `https://${process.env.REPLIT_DEV_DOMAIN}`
+      : "http://localhost:80",
     launchOptions: {
       executablePath: systemChromium(),
     },

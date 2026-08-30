@@ -70,6 +70,12 @@ export interface UserSyncInput {
   publicKeyJwk: string;
 }
 
+export interface UserSyncResult {
+  user: User;
+  /** True only when this sync inserted the Envelo profile; false for returning accounts and retries */
+  created: boolean;
+}
+
 export interface PayoutAddressInput {
   /**
      * EVM address (0x...) to receive payouts, or null to switch back to the app-managed wallet

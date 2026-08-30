@@ -84,23 +84,25 @@ afterAll(async () => {
 
 describe("applyUserSync basics", () => {
   it("creates the row on first sync and registers the browser key", async () => {
-    const row = await applyUserSync({
+    const result = await applyUserSync({
       userId: "test_usync_fresh",
       displayName: "Fresh",
       email: "fresh@example.com",
       publicKeyJwk: KEY_3,
     });
-    expect(row.publicKeyJwk).toBe(KEY_3);
+    expect(result.created).toBe(true);
+    expect(result.user.publicKeyJwk).toBe(KEY_3);
     await db.delete(usersTable).where(eq(usersTable.id, "test_usync_fresh"));
   });
 
   it("never overwrites a different registered key (second-browser rule)", async () => {
-    const row = await applyUserSync({
+    const result = await applyUserSync({
       userId: US,
       displayName: "USync User",
       publicKeyJwk: KEY_3, // some other browser's freshly generated key
     });
-    expect(row.publicKeyJwk).toBe(KEY_1); // registered key wins
+    expect(result.created).toBe(false);
+    expect(result.user.publicKeyJwk).toBe(KEY_1); // registered key wins
     expect(await registeredKey()).toBe(KEY_1);
   });
 });
@@ -119,12 +121,13 @@ describe("sync racing rotation can never revert the key", () => {
     });
     expect(rotation.ok).toBe(true);
     // A browser that still holds KEY_1 signs in and syncs.
-    const row = await applyUserSync({
+    const result = await applyUserSync({
       userId: US,
       displayName: "USync User",
       publicKeyJwk: KEY_1,
     });
-    expect(row.publicKeyJwk).toBe(KEY_2); // rotation survives
+    expect(result.created).toBe(false);
+    expect(result.user.publicKeyJwk).toBe(KEY_2); // rotation survives
     expect(await registeredKey()).toBe(KEY_2);
     expect(await storedWrap()).toBe("WRAP_NEW"); // key and copy still agree
   });
@@ -159,7 +162,8 @@ describe("sync racing rotation can never revert the key", () => {
       // Whatever row sync returned, it never claims a key that contradicts
       // the stored copies' final state in a way that survives: its returned
       // key is either the pre-rotation KEY_1 (it ran first) or KEY_2.
-      expect([KEY_1, KEY_2]).toContain(synced.publicKeyJwk);
+      expect(synced.created).toBe(false);
+      expect([KEY_1, KEY_2]).toContain(synced.user.publicKeyJwk);
     }
   });
 });

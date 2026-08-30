@@ -15,7 +15,10 @@ import {
   Eye,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { trackEvent } from "@/lib/analytics";
+import {
+  rememberExploreSignupIntent,
+  trackEvent,
+} from "@/lib/analytics";
 
 function FadeIn({
   children,
@@ -99,12 +102,13 @@ export default function Explore() {
                 <Link
                   href="/sign-up"
                   className="flex items-center gap-2"
-                  onClick={() =>
+                  onClick={() => {
+                    rememberExploreSignupIntent("hero");
                     trackEvent("explore_cta_clicked", {
                       location: "hero",
                       action: "sign_up",
-                    })
-                  }
+                    });
+                  }}
                 >
                   Create your account <ArrowRight className="h-4 w-4" />
                 </Link>
@@ -491,12 +495,13 @@ export default function Explore() {
               >
                 <Link
                   href="/sign-up"
-                  onClick={() =>
+                  onClick={() => {
+                    rememberExploreSignupIntent("final");
                     trackEvent("explore_cta_clicked", {
                       location: "final",
                       action: "sign_up",
-                    })
-                  }
+                    });
+                  }}
                 >
                   Create your account
                 </Link>

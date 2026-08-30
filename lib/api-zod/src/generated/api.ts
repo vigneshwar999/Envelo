@@ -42,6 +42,7 @@ export const SyncMeBody = zod.object({
 })
 
 export const SyncMeResponse = zod.object({
+  "user": zod.object({
   "id": zod.string(),
   "displayName": zod.string(),
   "email": zod.string().nullish(),
@@ -50,6 +51,8 @@ export const SyncMeResponse = zod.object({
   "hasEncryptionKey": zod.boolean().describe('True once the user\'s browser has uploaded a public encryption key'),
   "publicKeyJwk": zod.string().nullish(),
   "rotationFence": zod.number().describe('Guard counter for key rotations. A rotation request must echo the value it read here; the crash-recovery check bumps it to fence out a possibly still in-flight rotation before concluding anything.')
+}),
+  "created": zod.boolean().describe('True only when this sync inserted the Envelo profile; false for returning accounts and retries')
 })
 
 
@@ -623,7 +626,7 @@ export const GetChainStatusResponse = zod.object({
 
 
 /**
- * @summary What the Seal & Send approval sheet shows - the anchor transaction's contract, network, live fee estimate, and whether the sender's wallet can afford it
+ * @summary What Seal & Send shows - the live anchor or first registry-activation transaction, network, fee estimate, and sender affordability
  */
 export const GetAnchorPreviewResponse = zod.object({
   "network": zod.string(),

@@ -125,7 +125,7 @@ router.post("/users/me/sync", async (req, res) => {
   // Read-decide-write happens inside one locked transaction (see
   // lib/userSync.ts) so a sign-in sync racing a key rotation can never
   // revert the registered key from a stale read.
-  const row = await applyUserSync({
+  const syncResult = await applyUserSync({
     userId,
     displayName: body.displayName.trim() || "Unnamed user",
     email: body.email,
@@ -133,7 +133,12 @@ router.post("/users/me/sync", async (req, res) => {
   });
 
   const walletAddress = await ensureWalletFor(userId);
-  res.json(SyncMeResponse.parse(toUser(row, walletAddress)));
+  res.json(
+    SyncMeResponse.parse({
+      user: toUser(syncResult.user, walletAddress),
+      created: syncResult.created,
+    }),
+  );
 });
 
 // The explicit "I lost my key and have no backup" action - the ONE place a

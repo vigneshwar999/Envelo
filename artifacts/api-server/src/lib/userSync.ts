@@ -29,7 +29,12 @@ export interface UserSyncInput {
   publicKeyJwk: string;
 }
 
-export async function applyUserSync(input: UserSyncInput): Promise<UserRow> {
+export interface UserSyncResult {
+  user: UserRow;
+  created: boolean;
+}
+
+export async function applyUserSync(input: UserSyncInput): Promise<UserSyncResult> {
   return db.transaction(async (tx) => {
     const [existing] = await tx
       .select()
@@ -56,7 +61,7 @@ export async function applyUserSync(input: UserSyncInput): Promise<UserRow> {
         })
         .where(eq(usersTable.id, input.userId))
         .returning();
-      return updated!;
+      return { user: updated!, created: false };
     }
     const [inserted] = await tx
       .insert(usersTable)
@@ -67,6 +72,6 @@ export async function applyUserSync(input: UserSyncInput): Promise<UserRow> {
         publicKeyJwk: input.publicKeyJwk,
       })
       .returning();
-    return inserted!;
+    return { user: inserted!, created: true };
   });
 }

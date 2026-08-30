@@ -44,6 +44,7 @@ export * from './rotationFenceStatus';
 export * from './unauthorizedResponse';
 export * from './user';
 export * from './userSyncInput';
+export * from './userSyncResult';
 export * from './verificationInput';
 export * from './verificationResult';
 export * from './walletBalance';

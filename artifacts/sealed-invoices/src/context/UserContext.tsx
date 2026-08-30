@@ -20,6 +20,10 @@ import {
 } from '@/lib/crypto';
 import { clearBackupNudge } from '@/lib/backupNudge';
 import {
+  consumeExploreSignupIntent,
+  trackEvent,
+} from '@/lib/analytics';
+import {
   bumpRotationFence,
   useGetMe,
   useSyncMe,
@@ -96,7 +100,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
           clerkUser.username ||
           clerkUser.primaryEmailAddress?.emailAddress?.split('@')[0] ||
           'Unnamed user';
-        await syncMe({
+        const syncResult = await syncMe({
           data: {
             displayName,
             email: clerkUser.primaryEmailAddress?.emailAddress ?? null,
@@ -104,6 +108,12 @@ export function UserProvider({ children }: { children: ReactNode }) {
           },
         });
         if (liveUserIdRef.current !== uid) return; // stale by the time it settled
+        const signupLocation = consumeExploreSignupIntent();
+        if (syncResult.created && signupLocation) {
+          trackEvent('explore_signup_completed', {
+            location: signupLocation,
+          });
+        }
         await queryClient.invalidateQueries({ queryKey: getGetMeQueryKey() });
         await queryClient.invalidateQueries({ queryKey: getListUsersQueryKey() });
       } catch (err) {

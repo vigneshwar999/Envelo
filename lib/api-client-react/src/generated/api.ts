@@ -48,6 +48,7 @@ import type {
   UnauthorizedResponse,
   User,
   UserSyncInput,
+  UserSyncResult,
   VerificationInput,
   VerificationResult,
   WalletBalance,
@@ -248,9 +249,9 @@ export const getSyncMeUrl = () => {
 /**
  * @summary Create or update the signed-in user's profile, encryption key, and testnet wallet
  */
-export const syncMe = async (userSyncInput: UserSyncInput, options?: Parameters<typeof customFetch>[1]): Promise<User> => {
+export const syncMe = async (userSyncInput: UserSyncInput, options?: Parameters<typeof customFetch>[1]): Promise<UserSyncResult> => {
 
-  return customFetch<User>(getSyncMeUrl(),
+  return customFetch<UserSyncResult>(getSyncMeUrl(),
   {
     ...options,
     method: 'POST',
@@ -2240,7 +2241,7 @@ export const getGetAnchorPreviewUrl = () => {
 }
 
 /**
- * @summary What the Seal & Send approval sheet shows - the anchor transaction's contract, network, live fee estimate, and whether the sender's wallet can afford it
+ * @summary What Seal & Send shows - the live anchor or first registry-activation transaction, network, fee estimate, and sender affordability
  */
 export const getAnchorPreview = async ( options?: Parameters<typeof customFetch>[1]): Promise<AnchorPreview> => {
 
@@ -2287,7 +2288,7 @@ export type GetAnchorPreviewQueryError = ErrorType<UnauthorizedResponse>
 
 
 /**
- * @summary What the Seal & Send approval sheet shows - the anchor transaction's contract, network, live fee estimate, and whether the sender's wallet can afford it
+ * @summary What Seal & Send shows - the live anchor or first registry-activation transaction, network, fee estimate, and sender affordability
  */
 
 export function useGetAnchorPreview<TData = Awaited<ReturnType<typeof getAnchorPreview>>, TError = ErrorType<UnauthorizedResponse>>(
