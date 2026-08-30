@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { parseUnits } from "viem";
 import {
+  anchorFingerprintMatches,
   decideAffordability,
   FEE_ESTIMATE_FALLBACK_WEI,
   formatFeeUsdc,
@@ -66,5 +67,13 @@ describe("payer-funded transaction affordability", () => {
     const decision = decideAffordability(parseUnits("1.09", 18), required);
     expect(decision.canAfford).toBe(false);
     expect(formatFeeUsdc(decision.shortfallWei)).toBe("0.01");
+  });
+});
+
+describe("anchor fingerprint integrity", () => {
+  it("accepts only the exact fingerprint, ignoring hex casing", () => {
+    expect(anchorFingerprintMatches("aabb", "AABB")).toBe(true);
+    expect(anchorFingerprintMatches("aabb", "aabc")).toBe(false);
+    expect(anchorFingerprintMatches(null, "aabb")).toBe(false);
   });
 });

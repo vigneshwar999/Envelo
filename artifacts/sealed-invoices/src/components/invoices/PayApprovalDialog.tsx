@@ -239,7 +239,7 @@ export function PayApprovalDialog({
                 {p.alreadyPaid
                   ? 'This invoice is already paid.'
                   : !p.contractAddress
-                    ? 'The Arc registry is not ready yet, so payment cannot be approved.'
+                    ? 'This invoice is still being anchored on Arc. Payment unlocks after its transaction confirms.'
                     : !p.payeeAddress
                       ? 'The payee wallet could not be resolved, so payment cannot be approved.'
                       : 'The live fee or wallet balance is unavailable. Reopen this sheet once the Arc network responds.'}

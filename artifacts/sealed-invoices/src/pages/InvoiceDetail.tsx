@@ -31,7 +31,16 @@ export function InvoiceDetail() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  const { data: invoice, isLoading: isLoadingInvoice } = useGetInvoice(id, { query: { enabled: !!id, queryKey: getGetInvoiceQueryKey(id) } });
+  const { data: invoice, isLoading: isLoadingInvoice } = useGetInvoice(id, {
+    query: {
+      enabled: !!id,
+      queryKey: getGetInvoiceQueryKey(id),
+      refetchInterval: (query) =>
+        (query.state.data as { anchorStatus?: string } | undefined)?.anchorStatus === 'anchored'
+          ? false
+          : 3000,
+    },
+  });
   const { data: events } = useListInvoiceEvents(id, { query: { enabled: !!id, queryKey: getListInvoiceEventsQueryKey(id) } });
   // myCopyLocked means the server already knows this user's wrapped copy is
   // gone (key reset) - skip the envelope fetch instead of collecting its 409.
@@ -619,7 +628,21 @@ export function InvoiceDetail() {
           )}
 
           {/* Payment Panel */}
-          {isClient && invoice.status === 'awaiting_payment' && (
+          {isClient && invoice.status === 'awaiting_payment' && invoice.anchorStatus !== 'anchored' && (
+            <Card className="border-amber-200 bg-amber-50/50 dark:border-amber-900 dark:bg-amber-950/10" data-testid="panel-payment-waiting-for-anchor">
+              <CardHeader>
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <ShieldAlert className="h-5 w-5 text-amber-600" /> Waiting for Arc anchor
+                </CardTitle>
+                <CardDescription>
+                  The sender&apos;s approved transaction is still anchoring this invoice on Arc.
+                  Payment unlocks automatically after the real transaction confirms.
+                </CardDescription>
+              </CardHeader>
+            </Card>
+          )}
+
+          {isClient && invoice.status === 'awaiting_payment' && invoice.anchorStatus === 'anchored' && (
             <>
               <Card className="border-blue-200 shadow-md bg-blue-50/50 dark:bg-blue-950/10 dark:border-blue-900">
                 <CardHeader>

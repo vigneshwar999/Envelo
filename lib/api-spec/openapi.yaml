@@ -906,7 +906,7 @@ paths:
     get:
       operationId: getAnchorPreview
       tags: [chain]
-      summary: What the Seal & Send approval sheet shows - the anchor transaction's contract, network, live fee estimate, and whether the sender's wallet can afford it
+      summary: What Seal & Send shows - the live anchor or first registry-activation transaction, network, fee estimate, and sender affordability
       responses:
         "200":
           description: Anchor transaction preview

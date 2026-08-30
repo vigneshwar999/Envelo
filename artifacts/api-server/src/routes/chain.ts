@@ -23,8 +23,8 @@ const router: IRouter = Router();
 router.get("/chain/status", async (req, res) => {
   const userId = userIdOf(req);
 
-  // Best-effort background pass: deploys (or upgrades) the contract and
-  // retries pending anchors as soon as the operator wallet has faucet funds.
+  // Best-effort background pass: a funded sender with a previously approved,
+  // pending anchor can activate the registry and anchor in one transaction.
   attemptChainSetup().catch(() => {});
 
   const connected = await isRpcConnected();
@@ -48,9 +48,7 @@ router.get("/chain/status", async (req, res) => {
   if (!connected) {
     statusMessage = `${NETWORK_NAME} cannot be reached right now. Invoices still seal and save locally; anchoring and payments resume automatically once the network is back.`;
   } else if (!contractDeployed) {
-    statusMessage = operator
-      ? `One manual step is needed: open ${FAUCET_URL}, choose Arc Testnet as the network, and send test USDC to the operator address ${operator.address}. On the next status check the app deploys its registry contract automatically - nothing else to configure.`
-      : "Setting up wallets - refresh in a moment.";
+    statusMessage = `Ready to activate on ${NETWORK_NAME}. The first funded invoice sender who confirms Seal & Send deploys the shared registry and anchors their fingerprint in one transaction. Sealed Invoices does not sponsor gas.`;
   } else {
     statusMessage = `Connected to ${NETWORK_NAME} (chain ${ARC_CHAIN_ID}). Every transaction is real and paid by the wallet that acts: senders cover their own anchor fee, payers cover the invoice amount plus gas. Top up your wallet with free test USDC at ${FAUCET_URL}.`;
   }

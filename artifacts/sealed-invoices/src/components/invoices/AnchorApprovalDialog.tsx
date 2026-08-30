@@ -47,8 +47,7 @@ export function AnchorApprovalDialog({
     preview.isLoading ||
     preview.isError ||
     !p ||
-    p.canAfford !== true ||
-    !p.contractAddress;
+    p.canAfford !== true;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -92,7 +91,7 @@ export function AnchorApprovalDialog({
               </a>
             ) : (
               <span className="text-right text-xs" data-testid="text-anchor-contract">
-                Deploying - anchors automatically once live
+                New registry + first anchor
               </span>
             )}
           </div>
@@ -165,9 +164,12 @@ export function AnchorApprovalDialog({
           )}
 
           {!preview.isLoading && p && !p.contractAddress && (
-            <div className="flex gap-2.5 rounded-md border border-amber-300 bg-amber-50 p-3 text-xs leading-relaxed text-amber-900 dark:border-amber-900/50 dark:bg-amber-900/20 dark:text-amber-200">
-              <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
-              <span>The real Arc registry is not deployed yet, so this transaction cannot be approved.</span>
+            <div className="flex gap-2.5 rounded-md border border-blue-200 bg-blue-50 p-3 text-xs leading-relaxed text-blue-900 dark:border-blue-900/50 dark:bg-blue-900/20 dark:text-blue-200">
+              <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0" />
+              <span>
+                This is the first anchor. Your approved transaction will deploy the shared Arc
+                registry and record this invoice fingerprint in one transaction.
+              </span>
             </div>
           )}
 
@@ -178,7 +180,7 @@ export function AnchorApprovalDialog({
             </div>
           )}
 
-          {!preview.isLoading && p && p.contractAddress && !insufficient && p.canAfford !== true && (
+          {!preview.isLoading && p && !insufficient && p.canAfford !== true && (
             <div className="flex gap-2.5 rounded-md border border-amber-300 bg-amber-50 p-3 text-xs leading-relaxed text-amber-900 dark:border-amber-900/50 dark:bg-amber-900/20 dark:text-amber-200">
               <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
               <span>Your built-in wallet balance cannot be read right now, so this transaction cannot be approved safely.</span>
@@ -189,7 +191,8 @@ export function AnchorApprovalDialog({
             You pay this Arc network fee from your built-in wallet; Sealed Invoices does not
             sponsor gas. Only the invoice fingerprint goes on-chain - the contents stay encrypted
             in your browser. If Arc cannot return a live estimate, the displayed fee defaults to
-            0.1 test USDC.
+            0.1 test USDC. For the first invoice, this single transaction also activates the
+            registry.
           </p>
         </div>
 

@@ -27,6 +27,7 @@ import {
 import {
   anchorInvoiceOnChain,
   attemptChainSetup,
+  anchorFingerprintMatches,
   decideAffordability,
   ensureWalletFor,
   estimateAnchorFeeWei,
@@ -300,9 +301,9 @@ router.post("/invoices/:invoiceId/pay", async (req, res) => {
     }
     const contractAddress = await getContractAddress();
     if (!contractAddress) {
-      const operator = await getWallet("operator");
       res.status(409).json({
-        error: `Payments are real transactions on ${NETWORK_NAME}, and the app's registry contract is not deployed yet. One manual step: open ${FAUCET_URL}, pick Arc Testnet, and send test USDC to the operator address ${operator?.address ?? "(being created)"} so the app can deploy its contract. After that, every wallet pays its own way - check the connection panel on the dashboard.`,
+        error:
+          "This invoice is still waiting for its sender-funded Arc anchor. Payment unlocks automatically after that real transaction confirms.",
       });
       return;
     }
@@ -320,8 +321,19 @@ router.post("/invoices/:invoiceId/pay", async (req, res) => {
     // If an earlier attempt's receipt timed out, the chain may already hold
     // the payment - check before asking the wallet for more money.
     const anchorState = await readAnchor(invoice.id);
+    if (
+      !anchorState.reachable ||
+      !anchorState.anchored ||
+      !anchorFingerprintMatches(anchorState.fingerprint, invoice.fingerprint)
+    ) {
+      res.status(409).json({
+        error:
+          "Payment is blocked because the real Arc anchor is missing or does not match this invoice fingerprint. Nothing was charged.",
+      });
+      return;
+    }
     const alreadyPaidOnChain =
-      anchorState.reachable && anchorState.anchored && anchorState.paid;
+      anchorState.paid;
 
     if (!alreadyPaidOnChain) {
       // No subsidies: the payment leaves the payer's OWN wallet, so the
@@ -367,18 +379,12 @@ router.post("/invoices/:invoiceId/pay", async (req, res) => {
     // Where the money goes (linked payout wallet vs custodial) is resolved
     // inside payInvoiceOnChain at submit time, so a last-second unlink or
     // swap can never send funds to a stale address.
-    const payResult = alreadyPaidOnChain
-      ? {
-          txHash: invoice.payTxHash,
-          alreadyPaidOnChain: true,
-          paidToLinkedWallet: false,
-        }
-      : await payInvoiceOnChain({
-          invoiceId: invoice.id,
-          payerWalletId: userId,
-          payeeWalletId: invoice.freelancerId,
-          amountUsdc: fmt2(invoice.amountUsdc),
-        });
+    const payResult = await payInvoiceOnChain({
+      invoiceId: invoice.id,
+      payerWalletId: userId,
+      payeeWalletId: invoice.freelancerId,
+      amountUsdc: fmt2(invoice.amountUsdc),
+    });
     const txHash = payResult.txHash ?? invoice.payTxHash ?? null;
     const [updated] = await db
       .update(invoicesTable)
@@ -435,9 +441,19 @@ router.get("/invoices/:invoiceId/pay-preview", async (req, res) => {
     return;
   }
   const connected = await isRpcConnected();
-  const contractAddress =
-    (invoice.contractAddress as `0x${string}` | null) ??
-    (await getContractAddress());
+  const anchorState =
+    connected && invoice.anchorStatus === "anchored"
+      ? await readAnchor(invoice.id)
+      : null;
+  const anchorVerified =
+    anchorState !== null &&
+    anchorState.reachable &&
+    anchorState.anchored &&
+    anchorFingerprintMatches(anchorState.fingerprint, invoice.fingerprint);
+  const contractAddress = anchorVerified
+    ? (invoice.contractAddress as `0x${string}` | null) ??
+      (await getContractAddress())
+    : null;
   const payerAddress = await ensureWalletFor(userId);
   const payerBalance = connected ? await getBalance(payerAddress) : null;
   const payee = await resolvePayeeAddress(invoice.freelancerId);

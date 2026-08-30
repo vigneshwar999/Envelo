@@ -22,14 +22,24 @@ contract SealedInvoiceRegistry {
     event InvoiceAnchored(bytes32 indexed invoiceKey, bytes32 fingerprint, uint64 anchoredAt);
     event InvoicePaid(bytes32 indexed invoiceKey, address indexed payer, address indexed payee, uint256 amount);
 
-    constructor() {
+    /// @notice The first invoice sender deploys the shared registry and anchors
+    ///         their invoice in this same transaction. Passing a zero key is
+    ///         reserved for a future infrastructure-only upgrade.
+    constructor(bytes32 firstInvoiceKey, bytes32 firstFingerprint) {
         operator = msg.sender;
+        if (firstInvoiceKey != bytes32(0)) {
+            _anchorInvoice(firstInvoiceKey, firstFingerprint);
+        }
     }
 
     /// @notice Record an invoice fingerprint. Anyone may anchor and pays their
     ///         own gas - in this app the invoice sender's wallet submits it.
     ///         First write wins; the key is unguessable before the sender acts.
     function anchorInvoice(bytes32 invoiceKey, bytes32 fingerprint) external {
+        _anchorInvoice(invoiceKey, fingerprint);
+    }
+
+    function _anchorInvoice(bytes32 invoiceKey, bytes32 fingerprint) private {
         require(anchors[invoiceKey].anchoredAt == 0, "already anchored");
         anchors[invoiceKey] = Anchor({
             fingerprint: fingerprint,
