@@ -1,15 +1,21 @@
+import { lazy, Suspense } from "react";
 import { Link, useLocation } from "wouter";
 import { useUser } from "@clerk/react";
 import { ShieldCheck, Menu } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { WalletMenu } from "@/components/wallet/WalletMenu";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+
+const WalletMenu = lazy(() =>
+  import("@/components/wallet/WalletMenu").then(({ WalletMenu: Menu }) => ({
+    default: Menu,
+  })),
+);
 
 export function Shell({ children }: { children: React.ReactNode }) {
   const { isLoaded, isSignedIn } = useUser();
@@ -196,7 +202,17 @@ export function Shell({ children }: { children: React.ReactNode }) {
               </DropdownMenu>
             </div>
             {!isLoaded ? null : isSignedIn ? (
-              <WalletMenu />
+              <Suspense
+                fallback={
+                  <div
+                    className="h-9 w-9 animate-pulse rounded-md bg-muted"
+                    role="status"
+                    aria-label="Loading wallet menu"
+                  />
+                }
+              >
+                <WalletMenu />
+              </Suspense>
             ) : (
               <div className="hidden items-center gap-3 sm:flex">
                 <Button asChild variant="ghost" size="sm">

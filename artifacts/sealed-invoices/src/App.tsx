@@ -1,24 +1,29 @@
-import { useEffect, useRef } from 'react';
-import { ClerkProvider, SignIn, SignUp, useClerk, useUser } from '@clerk/react';
+import { lazy, Suspense, useEffect, useRef } from 'react';
+import { ClerkProvider, useClerk, useUser } from '@clerk/react';
 import { publishableKeyFromHost } from '@clerk/react/internal';
 import { shadcn } from '@clerk/themes';
 import { QueryClient, QueryClientProvider, useQueryClient } from '@tanstack/react-query';
 import { Redirect, Route, Switch, useLocation, Router as WouterRouter } from 'wouter';
-import WalletSettings from '@/pages/WalletSettings';
 import { ErrorBoundary } from '@/components/error-boundary';
 import { Toaster } from '@/components/ui/toaster';
 import { TooltipProvider } from '@/components/ui/tooltip';
-import { UserProvider } from '@/context/UserContext';
 import { Shell } from '@/components/layout/Shell';
 import { Skeleton } from '@/components/ui/skeleton';
 
-import Explore from '@/pages/Explore';
-import Dashboard from '@/pages/Dashboard';
-import NewInvoice from '@/pages/NewInvoice';
-import InvoiceDetail from '@/pages/InvoiceDetail';
-import HowItWorks from '@/pages/HowItWorks';
-import PrivateUsdc from '@/pages/PrivateUsdc';
-import NotFound from '@/pages/not-found';
+const AuthPage = lazy(() => import('@/pages/AuthPage'));
+const Explore = lazy(() => import('@/pages/Explore'));
+const Dashboard = lazy(() => import('@/pages/Dashboard'));
+const NewInvoice = lazy(() => import('@/pages/NewInvoice'));
+const InvoiceDetail = lazy(() => import('@/pages/InvoiceDetail'));
+const WalletSettings = lazy(() => import('@/pages/WalletSettings'));
+const PrivateUsdc = lazy(() => import('@/pages/PrivateUsdc'));
+const HowItWorks = lazy(() => import('@/pages/HowItWorks'));
+const NotFound = lazy(() => import('@/pages/not-found'));
+const UserProvider = lazy(() =>
+  import('@/context/UserContext').then(({ UserProvider: Provider }) => ({
+    default: Provider,
+  })),
+);
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -108,19 +113,17 @@ const clerkAppearance = {
   },
 };
 
-function SignInPage() {
+function AuthLoading() {
   return (
     <div className="flex min-h-[100dvh] items-center justify-center bg-background px-4">
-      {/* path must be the full browser path — Clerk reads window.location.pathname directly */}
-      <SignIn routing="path" path={`${basePath}/sign-in`} signUpUrl={`${basePath}/sign-up`} />
-    </div>
-  );
-}
-
-function SignUpPage() {
-  return (
-    <div className="flex min-h-[100dvh] items-center justify-center bg-background px-4">
-      <SignUp routing="path" path={`${basePath}/sign-up`} signInUrl={`${basePath}/sign-in`} />
+      <div className="w-full max-w-[440px] space-y-5">
+        <Skeleton className="mx-auto h-10 w-10 rounded-lg" />
+        <Skeleton className="mx-auto h-8 w-48" />
+        <Skeleton className="mx-auto h-5 w-64 max-w-full" />
+        <Skeleton className="h-12 w-full" />
+        <Skeleton className="h-12 w-full" />
+        <Skeleton className="h-12 w-full" />
+      </div>
     </div>
   );
 }
@@ -150,9 +153,19 @@ function ClerkQueryClientCacheInvalidator() {
 
 function PageLoading() {
   return (
-    <div className="space-y-6 py-8">
+    <div className="space-y-6 py-8" role="status" aria-label="Loading page">
       <Skeleton className="h-10 w-64" />
       <Skeleton className="h-64 w-full" />
+    </div>
+  );
+}
+
+function AppLoading() {
+  return (
+    <div className="min-h-screen bg-background font-sans">
+      <main className="container mx-auto max-w-5xl px-4 py-8">
+        <PageLoading />
+      </main>
     </div>
   );
 }
@@ -172,6 +185,55 @@ function Protected({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
+function ShellRoutes() {
+  const { isLoaded, isSignedIn } = useUser();
+  const routes = (
+    <Shell>
+      <Suspense fallback={<PageLoading />}>
+        <Switch>
+          <Route path="/" component={HomeRoute} />
+          <Route path="/explore" component={Explore} />
+          <Route path="/dashboard">
+            <Protected>
+              <Dashboard />
+            </Protected>
+          </Route>
+          <Route path="/invoices/new">
+            <Protected>
+              <NewInvoice />
+            </Protected>
+          </Route>
+          <Route path="/invoices/:id">
+            <Protected>
+              <InvoiceDetail />
+            </Protected>
+          </Route>
+          <Route path="/wallet">
+            <Protected>
+              <WalletSettings />
+            </Protected>
+          </Route>
+          <Route path="/private-usdc">
+            <Protected>
+              <PrivateUsdc />
+            </Protected>
+          </Route>
+          <Route path="/how-it-works" component={HowItWorks} />
+          <Route component={NotFound} />
+        </Switch>
+      </Suspense>
+    </Shell>
+  );
+
+  if (!isLoaded || !isSignedIn) return routes;
+
+  return (
+    <Suspense fallback={<AppLoading />}>
+      <UserProvider>{routes}</UserProvider>
+    </Suspense>
+  );
+}
+
 function AppRoutes() {
   const [location] = useLocation();
   return (
@@ -180,43 +242,17 @@ function AppRoutes() {
         {/* REQUIRED — copy "/sign-in/*?" and "/sign-up/*?" verbatim. The /*? optional
             wildcard is the only wouter syntax that matches both the bare URL and Clerk's
             OAuth sub-paths. Not /sign-in, not /sign-in/*, not /sign-in/:rest*. */}
-        <Route path="/sign-in/*?" component={SignInPage} />
-        <Route path="/sign-up/*?" component={SignUpPage} />
-        <Route>
-          <Shell>
-            <Switch>
-              <Route path="/" component={HomeRoute} />
-              <Route path="/explore" component={Explore} />
-              <Route path="/dashboard">
-                <Protected>
-                  <Dashboard />
-                </Protected>
-              </Route>
-              <Route path="/invoices/new">
-                <Protected>
-                  <NewInvoice />
-                </Protected>
-              </Route>
-              <Route path="/invoices/:id">
-                <Protected>
-                  <InvoiceDetail />
-                </Protected>
-              </Route>
-              <Route path="/wallet">
-                <Protected>
-                  <WalletSettings />
-                </Protected>
-              </Route>
-              <Route path="/private-usdc">
-                <Protected>
-                  <PrivateUsdc />
-                </Protected>
-              </Route>
-              <Route path="/how-it-works" component={HowItWorks} />
-              <Route component={NotFound} />
-            </Switch>
-          </Shell>
+        <Route path="/sign-in/*?">
+          <Suspense fallback={<AuthLoading />}>
+            <AuthPage mode="sign-in" basePath={basePath} />
+          </Suspense>
         </Route>
+        <Route path="/sign-up/*?">
+          <Suspense fallback={<AuthLoading />}>
+            <AuthPage mode="sign-up" basePath={basePath} />
+          </Suspense>
+        </Route>
+        <Route component={ShellRoutes} />
       </Switch>
     </ErrorBoundary>
   );
@@ -251,12 +287,10 @@ function ClerkProviderWithRoutes() {
     >
       <QueryClientProvider client={queryClient}>
         <ClerkQueryClientCacheInvalidator />
-        <UserProvider>
-          <TooltipProvider>
-            <AppRoutes />
-            <Toaster />
-          </TooltipProvider>
-        </UserProvider>
+        <TooltipProvider>
+          <AppRoutes />
+          <Toaster />
+        </TooltipProvider>
       </QueryClientProvider>
     </ClerkProvider>
   );
