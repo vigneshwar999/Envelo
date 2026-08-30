@@ -1,6 +1,6 @@
 import { Link } from 'wouter';
 import { useMe } from '@/context/UserContext';
-import { useGetDashboardSummary, useListInvoices, useGetChainStatus, Invoice } from '@workspace/api-client-react';
+import { useGetDashboardSummary, useListInvoices, Invoice } from '@workspace/api-client-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -9,14 +9,13 @@ import { EnvelopeKeyCard } from '@/components/keys/EnvelopeKeyCard';
 import { BackupReminderBanner } from '@/components/keys/BackupReminderBanner';
 import { ReshareNeededBanner } from '@/components/keys/ReshareNeededBanner';
 import { EditDisplayNameDialog } from '@/components/profile/EditDisplayNameDialog';
-import { PlusCircle, FileText, CheckCircle2, Clock, ShieldCheck, Activity, Wallet, Fuel, AlertTriangle, KeyRound, Lock } from 'lucide-react';
+import { PlusCircle, FileText, CheckCircle2, Clock, ShieldCheck, Activity, Fuel, AlertTriangle, KeyRound, Lock } from 'lucide-react';
 import { format } from 'date-fns';
 
 export function Dashboard() {
   const { me, keyStatus } = useMe();
   const { data: summary, isLoading: isLoadingSummary } = useGetDashboardSummary();
   const { data: invoices, isLoading: isLoadingInvoices } = useListInvoices();
-  const { data: chainStatus, isLoading: isLoadingChain } = useGetChainStatus();
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
@@ -108,52 +107,6 @@ export function Dashboard() {
         <div className="space-y-6">
           {/* When this browser can't open the user's envelopes, the fix comes first. */}
           {keyStatus === 'needs-restore' && <EnvelopeKeyCard />}
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Network Status</CardTitle>
-              <CardDescription>Arc Testnet Connection</CardDescription>
-            </CardHeader>
-            <CardContent>
-              {isLoadingChain ? (
-                <Skeleton className="h-24 w-full" />
-              ) : chainStatus ? (
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium">Status</span>
-                    <Badge variant={chainStatus.readyForPayments ? "success" : "warning"}>
-                      {chainStatus.readyForPayments ? "Ready" : "Not Ready"}
-                    </Badge>
-                  </div>
-                  {chainStatus.myWalletAddress && (
-                    <div className="flex items-center justify-between gap-2 text-sm">
-                      <span className="flex items-center gap-1.5 text-muted-foreground shrink-0">
-                        <Wallet className="h-3.5 w-3.5" /> Your wallet
-                      </span>
-                      <span className="font-mono text-xs truncate" title={chainStatus.myWalletAddress}>
-                        {chainStatus.myWalletAddress.slice(0, 6)}…{chainStatus.myWalletAddress.slice(-4)}
-                        {chainStatus.myBalanceUsdc != null && (
-                          <span className="text-muted-foreground ml-2">{Number(chainStatus.myBalanceUsdc).toFixed(2)} USDC</span>
-                        )}
-                      </span>
-                    </div>
-                  )}
-                  <div className="text-sm text-muted-foreground p-3 bg-secondary/50 rounded-md border text-balance leading-relaxed">
-                    {chainStatus.statusMessage}
-                  </div>
-                  {!chainStatus.readyForPayments && (
-                    <Button asChild variant="outline" className="w-full text-xs" size="sm">
-                      <a href={chainStatus.faucetUrl} target="_blank" rel="noopener noreferrer">
-                        Visit Arc Faucet
-                      </a>
-                    </Button>
-                  )}
-                </div>
-              ) : (
-                <div className="text-sm text-destructive">Failed to load network status</div>
-              )}
-            </CardContent>
-          </Card>
 
           {keyStatus !== 'needs-restore' && <EnvelopeKeyCard />}
 

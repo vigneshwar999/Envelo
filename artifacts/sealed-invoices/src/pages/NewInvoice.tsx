@@ -391,11 +391,11 @@ export function NewInvoice() {
                 <span>{sealError}</span>
               </div>
             )}
-            <CardFooter className="flex justify-between border-t p-6 bg-secondary/10">
-              <p className="text-xs text-muted-foreground flex items-center max-w-[320px]">
-                <Lock className="h-3 w-3 mr-2 text-primary shrink-0" />
-                End-to-end encrypted - the server only receives ciphertext. Anchoring on Arc
-                is paid from your built-in wallet; you approve the fee before anything is sent.
+            <CardFooter className="flex items-center justify-between gap-4 border-t bg-secondary/10 px-5 py-4">
+              <p className="flex max-w-[300px] items-start text-xs leading-4 text-muted-foreground">
+                <Lock className="mr-2 mt-0.5 h-3 w-3 shrink-0 text-primary" />
+                End-to-end encrypted. Only ciphertext reaches the server. You approve the Arc
+                fee from your wallet.
               </p>
               <Button type="submit" disabled={isSealing || createInvoiceMutation.isPending || !me}>
                 {(isSealing || createInvoiceMutation.isPending) ? (
