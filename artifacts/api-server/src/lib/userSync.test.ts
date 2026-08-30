@@ -20,7 +20,8 @@ import { applyKeyRotation } from "./keyRotation";
 
 const US = "test_usync_user"; // the user whose key rotates while sync runs
 const UB = "test_usync_other"; // counterparty so an invoice + copies exist
-const USER_IDS = [US, UB];
+const UC = "test_usync_concurrent"; // brand-new user raced by two first loads
+const USER_IDS = [US, UB, UC];
 
 const KEY_1 = '{"kty":"RSA","n":"usync1","e":"AQAB"}';
 const KEY_2 = '{"kty":"RSA","n":"usync2","e":"AQAB"}';
@@ -93,6 +94,35 @@ describe("applyUserSync basics", () => {
     expect(result.created).toBe(true);
     expect(result.user.publicKeyJwk).toBe(KEY_3);
     await db.delete(usersTable).where(eq(usersTable.id, "test_usync_fresh"));
+  });
+
+  it("makes two concurrent first syncs succeed without a duplicate-key failure", async () => {
+    await db.delete(usersTable).where(eq(usersTable.id, UC));
+
+    const [first, second] = await Promise.all([
+      applyUserSync({
+        userId: UC,
+        displayName: "Concurrent First",
+        email: "first@example.com",
+        publicKeyJwk: KEY_1,
+      }),
+      applyUserSync({
+        userId: UC,
+        displayName: "Concurrent Second",
+        email: "second@example.com",
+        publicKeyJwk: KEY_3,
+      }),
+    ]);
+
+    expect([first.created, second.created].sort()).toEqual([false, true]);
+    const rows = await db.select().from(usersTable).where(eq(usersTable.id, UC));
+    expect(rows).toHaveLength(1);
+    const registeredKey = rows[0]!.publicKeyJwk;
+    expect([KEY_1, KEY_3]).toContain(registeredKey);
+    // The request that lost the insert race must observe the winner's
+    // registered key, never replace it with its own.
+    expect(first.user.publicKeyJwk).toBe(registeredKey);
+    expect(second.user.publicKeyJwk).toBe(registeredKey);
   });
 
   it("never overwrites a different registered key (second-browser rule)", async () => {

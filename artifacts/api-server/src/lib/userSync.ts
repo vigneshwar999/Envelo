@@ -11,13 +11,19 @@
 // matches nothing that is stored. Every copy is wrapped for a key the
 // database no longer advertises, with every honesty flag reporting healthy.
 //
-// So the read, the decision, and the write happen here inside ONE
+// So existing rows are read, decided on, and written here inside ONE
 // transaction with the user row locked (FOR UPDATE) - the same lock every
 // other writer of key state takes (rotation, reset, and the wrapped-copy
 // inserts in keyBoundInserts.ts). Sync therefore runs entirely before a
 // concurrent rotation (harmlessly re-writing the same key the rotation was
 // prepared against) or entirely after it (seeing the new key and refusing
 // the overwrite). It can never interleave into a revert.
+//
+// A missing row cannot be locked. Two first loads may both reach this code
+// before either has created the user, so creation uses INSERT ... ON CONFLICT
+// DO NOTHING. The winner returns its row; a loser waits for that insert and
+// then follows the normal locked existing-row path instead of surfacing a
+// duplicate-primary-key error.
 import { eq } from "drizzle-orm";
 import { db, usersTable, type UserRow } from "@workspace/db";
 
@@ -36,33 +42,6 @@ export interface UserSyncResult {
 
 export async function applyUserSync(input: UserSyncInput): Promise<UserSyncResult> {
   return db.transaction(async (tx) => {
-    const [existing] = await tx
-      .select()
-      .from(usersTable)
-      .where(eq(usersTable.id, input.userId))
-      .for("update");
-    if (existing) {
-      // Never overwrite an existing public key with a different one:
-      // envelopes already sealed for the old key would become unreadable,
-      // silently. A new browser must keep using the original key material
-      // (or restore it from a backup).
-      const keyChanged =
-        existing.publicKeyJwk !== null && existing.publicKeyJwk !== input.publicKeyJwk;
-      // Deliberately NOT updating displayName here: sync runs on every
-      // sign-in with whatever Clerk derives (often a raw username), and it
-      // would clobber a name the user chose in the app. The Clerk-derived
-      // name is only a starting value on first creation; PUT
-      // /users/me/display-name owns it after that.
-      const [updated] = await tx
-        .update(usersTable)
-        .set({
-          email: input.email ?? existing.email,
-          publicKeyJwk: keyChanged ? existing.publicKeyJwk : input.publicKeyJwk,
-        })
-        .where(eq(usersTable.id, input.userId))
-        .returning();
-      return { user: updated!, created: false };
-    }
     const [inserted] = await tx
       .insert(usersTable)
       .values({
@@ -71,7 +50,40 @@ export async function applyUserSync(input: UserSyncInput): Promise<UserSyncResul
         email: input.email ?? null,
         publicKeyJwk: input.publicKeyJwk,
       })
+      .onConflictDoNothing({ target: usersTable.id })
       .returning();
-    return { user: inserted!, created: true };
+    if (inserted) {
+      return { user: inserted, created: true };
+    }
+
+    const [existing] = await tx
+      .select()
+      .from(usersTable)
+      .where(eq(usersTable.id, input.userId))
+      .for("update");
+    if (!existing) {
+      throw new Error("User disappeared while synchronizing account");
+    }
+
+    // Never overwrite an existing public key with a different one:
+    // envelopes already sealed for the old key would become unreadable,
+    // silently. A new browser must keep using the original key material
+    // (or restore it from a backup).
+    const keyChanged =
+      existing.publicKeyJwk !== null && existing.publicKeyJwk !== input.publicKeyJwk;
+    // Deliberately NOT updating displayName here: sync runs on every
+    // sign-in with whatever Clerk derives (often a raw username), and it
+    // would clobber a name the user chose in the app. The Clerk-derived
+    // name is only a starting value on first creation; PUT
+    // /users/me/display-name owns it after that.
+    const [updated] = await tx
+      .update(usersTable)
+      .set({
+        email: input.email ?? existing.email,
+        publicKeyJwk: keyChanged ? existing.publicKeyJwk : input.publicKeyJwk,
+      })
+      .where(eq(usersTable.id, input.userId))
+      .returning();
+    return { user: updated!, created: false };
   });
 }
