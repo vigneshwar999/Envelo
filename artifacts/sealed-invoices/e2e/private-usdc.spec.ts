@@ -1,7 +1,12 @@
 import { expect, test } from "@playwright/test";
-import { apiGetJson, mintSignInToken, signIn } from "./helpers";
+import {
+  apiGetJson,
+  mintSignInToken,
+  requiredPersonaId,
+  signIn,
+} from "./helpers";
 
-const TEST_USER_ID = process.env.WALLET_MENU_TEST_USER_ID ?? "user_3IXZ7cQKd4sccYTDtW8gk7N9ZJA";
+const TEST_USER_ID = requiredPersonaId("WALLET_MENU_TEST_USER_ID");
 
 test("private usdc page renders correctly, shows real balance, and keeps controls disabled", async ({ page }) => {
   const token = await mintSignInToken(TEST_USER_ID);

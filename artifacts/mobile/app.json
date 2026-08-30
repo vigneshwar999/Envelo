@@ -1,11 +1,11 @@
 {
   "expo": {
-    "name": "Envelo",
-    "slug": "envelo",
+    "name": "Sealed Invoices",
+    "slug": "mobile",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "envelo",
+    "scheme": "mobile",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "splash": {
@@ -14,12 +14,9 @@
       "backgroundColor": "#FAFAFA"
     },
     "ios": {
-      "supportsTablet": false,
-      "bundleIdentifier": "com.envelo.app"
+      "supportsTablet": false
     },
-    "android": {
-      "package": "com.envelo.app"
-    },
+    "android": {},
     "web": {
       "favicon": "./assets/images/icon.png"
     },

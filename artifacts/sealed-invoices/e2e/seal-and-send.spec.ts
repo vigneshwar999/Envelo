@@ -7,6 +7,7 @@ import {
   custodialAddressOf,
   ensureReadyKey,
   mintSignInToken,
+  requiredPersonaId,
   signIn,
 } from "./helpers";
 
@@ -60,10 +61,8 @@ function canonicalJson(value: unknown): string {
 // leaves one more unpaid 0.01 USDC drill invoice on the pair - expected
 // debris, and no payments happen here.
 
-const SEALER_ID =
-  process.env.SEAL_SENDER_ID ?? "user_3IYnPU41gmlrSIzKbyQFXlI5s7B"; // Sela Sealer
-const RECIPIENT_ID =
-  process.env.LOSTKEY_RESETTER_ID ?? "user_3IYk3QntMQ7G1tTrKMDY39QlaNw"; // Riko Resetter
+const SEALER_ID = requiredPersonaId("SEAL_SENDER_ID"); // Sela Sealer
+const RECIPIENT_ID = requiredPersonaId("LOSTKEY_RESETTER_ID"); // Riko Resetter
 const RECIPIENT_NAME = "Riko Resetter";
 
 test("seal & send: form -> sealed envelope -> anchored fingerprint -> verified content -> recipient opens it", async ({

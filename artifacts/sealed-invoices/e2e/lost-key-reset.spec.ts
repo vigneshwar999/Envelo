@@ -4,6 +4,7 @@ import {
   ensureReadyKey,
   envelopeStatus,
   mintSignInToken,
+  requiredPersonaId,
   resetThroughDialogs,
   signIn,
   storageKeys,
@@ -35,10 +36,8 @@ import {
 // That is expected debris on dedicated personas, not breakage. No payments
 // happen here, so the spec never depends on faucet funds.
 
-const SENDER_ID =
-  process.env.LOSTKEY_SENDER_ID ?? "user_3IYk3MHOYPfNzVTHwvfUv59Ic4t"; // Signe Sender
-const RESETTER_ID =
-  process.env.LOSTKEY_RESETTER_ID ?? "user_3IYk3QntMQ7G1tTrKMDY39QlaNw"; // Riko Resetter
+const SENDER_ID = requiredPersonaId("LOSTKEY_SENDER_ID"); // Signe Sender
+const RESETTER_ID = requiredPersonaId("LOSTKEY_RESETTER_ID"); // Riko Resetter
 const RESETTER_NAME = "Riko Resetter";
 
 test("lost key -> reset -> re-share -> the same envelope opens again", async ({
@@ -61,11 +60,15 @@ test("lost key -> reset -> re-share -> the same envelope opens again", async ({
     // A unique marker proves later that the DECRYPTED CONTENT round-tripped,
     // not just some status flag.
     const marker = `Emergency drill ${Date.now()}`;
-    const { id: invoiceId } = await createInvoice(pageS, RESETTER_NAME, {
-      numberPrefix: "DRILL",
-      title: "Lost key drill",
-      description: marker,
-    });
+    const { id: invoiceId } = await createInvoice(
+      pageS,
+      { id: RESETTER_ID, name: RESETTER_NAME },
+      {
+        numberPrefix: "DRILL",
+        title: "Lost key drill",
+        description: marker,
+      },
+    );
 
     // Sanity: Riko can open the envelope BEFORE the loss.
     await pageR.goto(`/invoices/${invoiceId}`);

@@ -33,6 +33,16 @@ export async function mintSignInToken(userId: string): Promise<string> {
   return body.token;
 }
 
+export function requiredPersonaId(environmentName: string): string {
+  const userId = process.env[environmentName];
+  if (!userId) {
+    throw new Error(
+      `${environmentName} was not provisioned by the Playwright global setup.`,
+    );
+  }
+  return userId;
+}
+
 /** Sign the browser session in via the ticket strategy (see .agents/memory/clerk-e2e-signin.md). */
 export async function signIn(page: Page, token: string): Promise<void> {
   await page.goto("/");

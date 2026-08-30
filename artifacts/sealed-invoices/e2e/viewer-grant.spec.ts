@@ -6,6 +6,7 @@ import {
   envelopeStatus,
   expireGrantNow,
   mintSignInToken,
+  requiredPersonaId,
   setTestPersonaFlag,
   signIn,
 } from "./helpers";
@@ -49,13 +50,10 @@ import {
 // her dead grant copies from prior runs - expected debris on dedicated
 // personas. No payments happen, so there is no faucet dependency.
 
-const OWNER_ID =
-  process.env.SEAL_SENDER_ID ?? "user_3IYnPU41gmlrSIzKbyQFXlI5s7B"; // Sela Sealer
-const CLIENT_ID =
-  process.env.LOSTKEY_RESETTER_ID ?? "user_3IYk3QntMQ7G1tTrKMDY39QlaNw"; // Riko Resetter
+const OWNER_ID = requiredPersonaId("SEAL_SENDER_ID"); // Sela Sealer
+const CLIENT_ID = requiredPersonaId("LOSTKEY_RESETTER_ID"); // Riko Resetter
 const CLIENT_NAME = "Riko Resetter"; // the invoice client; never acts here
-const VIEWER_ID =
-  process.env.GRANT_VIEWER_ID ?? "user_3Iaixr7xrBDE6tcka0YECBq1Ds5"; // Vera Viewer
+const VIEWER_ID = requiredPersonaId("GRANT_VIEWER_ID"); // Vera Viewer
 const VIEWER_NAME = "Vera Viewer";
 
 /**

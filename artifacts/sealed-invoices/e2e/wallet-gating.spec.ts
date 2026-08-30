@@ -1,4 +1,10 @@
 import { expect, test, type Page } from "@playwright/test";
+import {
+  custodialAddressOf,
+  mintSignInToken,
+  requiredPersonaId,
+  signIn,
+} from "./helpers";
 
 // Regression check for the class of bug where UI gating disagrees with the
 // API: the "Move my balance" button once silently failed to appear because
@@ -19,11 +25,7 @@ import { expect, test, type Page } from "@playwright/test";
 // finally block additionally unlinks through the API even if an assertion
 // fails halfway.
 
-const TEST_USER_ID =
-  process.env.GATING_TEST_USER_ID ?? "user_3IXZ7cQKd4sccYTDtW8gk7N9ZJA";
-
-// Ava's app-managed wallet (chain_wallets), for the top-up instructions.
-const TEST_USER_MANAGED_WALLET = "0x17754cE2a0c7a28ba62CC33Ec31B002A4C6F3f9B";
+const TEST_USER_ID = requiredPersonaId("GATING_TEST_USER_ID");
 
 // Server rule: canTransfer requires a linked payout address AND
 // transferable >= 0.01 USDC, where transferable = balance - 0.05 gas
@@ -39,42 +41,6 @@ type WalletResponse = {
   canTransfer: boolean;
   transferableUsdc: string | null;
 };
-
-/** Mint a single-use Clerk sign-in token server-side (Backend API). */
-async function mintSignInToken(): Promise<string> {
-  const secret = process.env.CLERK_SECRET_KEY;
-  if (!secret) {
-    throw new Error(
-      "CLERK_SECRET_KEY is not in the environment - run this inside the Replit workspace shell.",
-    );
-  }
-  const res = await fetch("https://api.clerk.com/v1/sign_in_tokens", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${secret}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({ user_id: TEST_USER_ID, expires_in_seconds: 600 }),
-  });
-  if (!res.ok) {
-    throw new Error(`Minting a sign-in token failed: ${res.status} ${await res.text()}`);
-  }
-  const body = (await res.json()) as { token: string };
-  return body.token;
-}
-
-/** Sign the browser session in via the ticket strategy (see .agents/memory/clerk-e2e-signin.md). */
-async function signIn(page: Page, token: string): Promise<void> {
-  await page.goto("/");
-  await page.waitForFunction(() => (window as any).Clerk?.loaded, undefined, {
-    timeout: 30_000,
-  });
-  await page.evaluate(async (ticket) => {
-    const clerk = (window as any).Clerk;
-    const attempt = await clerk.client.signIn.create({ strategy: "ticket", ticket });
-    await clerk.setActive({ session: attempt.createdSessionId });
-  }, token);
-}
 
 /**
  * A fresh wallet read through the browser's own session - the exact truth
@@ -137,7 +103,7 @@ async function expectGatingAgreement(
 test("Move-balance button visibility agrees with the API after linking and unlinking", async ({
   page,
 }) => {
-  const token = await mintSignInToken();
+  const token = await mintSignInToken(TEST_USER_ID);
   await signIn(page, token);
 
   try {
@@ -158,6 +124,7 @@ test("Move-balance button visibility agrees with the API after linking and unlin
     // 1. Unlinked: the API must say false and the button must be absent.
     const before = await expectGatingAgreement(page, "before linking");
     expect(before.canTransfer, "unlinked must never be transferable").toBe(false);
+    const managedWallet = await custodialAddressOf(TEST_USER_ID);
 
     // PRECONDITION: the dedicated test account must have enough balance that
     // linking flips canTransfer to true - that is the only state in which
@@ -167,7 +134,7 @@ test("Move-balance button visibility agrees with the API after linking and unlin
       `PRECONDITION FAILED: the dedicated test account's transferable balance is ` +
         `${before.transferableUsdc ?? "0"} USDC but this check needs >= ${MIN_TRANSFERABLE_USDC} ` +
         `to exercise the button-appears branch. Top up its app-managed wallet ` +
-        `${TEST_USER_MANAGED_WALLET} (Arc testnet USDC) and re-run. Do NOT weaken this check.`,
+        `${managedWallet} (Arc testnet USDC) and re-run. Do NOT weaken this check.`,
     ).toBe(true);
 
     // 2. Link a payout wallet through the real UI.

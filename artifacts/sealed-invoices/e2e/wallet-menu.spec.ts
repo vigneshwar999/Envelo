@@ -1,5 +1,10 @@
 import { expect, test, type Page } from "@playwright/test";
-import { apiGetJson, mintSignInToken, signIn } from "./helpers";
+import {
+  apiGetJson,
+  mintSignInToken,
+  requiredPersonaId,
+  signIn,
+} from "./helpers";
 
 // The header wallet menu and its Deposit & withdraw dialog, driven against
 // the REAL app and API. The menu's balance must agree with a fresh read of
@@ -12,8 +17,7 @@ import { apiGetJson, mintSignInToken, signIn } from "./helpers";
 // on her balance staying put. This spec keeps that promise by never issuing
 // a withdrawal that could succeed.
 
-const TEST_USER_ID =
-  process.env.WALLET_MENU_TEST_USER_ID ?? "user_3IXZ7cQKd4sccYTDtW8gk7N9ZJA";
+const TEST_USER_ID = requiredPersonaId("WALLET_MENU_TEST_USER_ID");
 
 /** POST JSON through the browser's own signed-in session. */
 async function postJson(

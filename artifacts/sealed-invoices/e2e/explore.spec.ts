@@ -1,9 +1,11 @@
 import { expect, test } from "@playwright/test";
-import { mintSignInToken, signIn } from "./helpers";
+import {
+  mintSignInToken,
+  requiredPersonaId,
+  signIn,
+} from "./helpers";
 
-const TEST_USER_ID =
-  process.env.WALLET_MENU_TEST_USER_ID ??
-  "user_3IXZ7cQKd4sccYTDtW8gk7N9ZJA";
+const TEST_USER_ID = requiredPersonaId("WALLET_MENU_TEST_USER_ID");
 
 test("signed-out visitors can explore Envelo before authentication", async ({
   page,

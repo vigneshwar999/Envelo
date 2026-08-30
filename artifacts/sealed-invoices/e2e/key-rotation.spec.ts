@@ -5,6 +5,7 @@ import {
   ensureReadyKey,
   envelopeStatus,
   mintSignInToken,
+  requiredPersonaId,
   signIn,
   storageKeys,
 } from "./helpers";
@@ -33,10 +34,8 @@ import {
 // never fight over Riko's key state. Each run leaves one more unpaid 0.01
 // USDC drill invoice behind - expected debris on dedicated personas.
 
-const SENDER_ID =
-  process.env.LOSTKEY_SENDER_ID ?? "user_3IYk3MHOYPfNzVTHwvfUv59Ic4t"; // Signe Sender
-const ROTATOR_ID =
-  process.env.LOSTKEY_RESETTER_ID ?? "user_3IYk3QntMQ7G1tTrKMDY39QlaNw"; // Riko Resetter
+const SENDER_ID = requiredPersonaId("LOSTKEY_SENDER_ID"); // Signe Sender
+const ROTATOR_ID = requiredPersonaId("LOSTKEY_RESETTER_ID"); // Riko Resetter
 const ROTATOR_NAME = "Riko Resetter";
 
 test("key rotation carries every envelope over and no counterparty notices", async ({
@@ -57,11 +56,15 @@ test("key rotation carries every envelope over and no counterparty notices", asy
 
     // A unique marker proves decrypted CONTENT round-trips, not just flags.
     const marker = `Rotation drill ${Date.now()}`;
-    const { id: invoiceId } = await createInvoice(pageS, ROTATOR_NAME, {
-      numberPrefix: "ROT",
-      title: "Key rotation drill",
-      description: marker,
-    });
+    const { id: invoiceId } = await createInvoice(
+      pageS,
+      { id: ROTATOR_ID, name: ROTATOR_NAME },
+      {
+        numberPrefix: "ROT",
+        title: "Key rotation drill",
+        description: marker,
+      },
+    );
 
     // Sanity: the current key opens the envelope BEFORE the rotation.
     await pageR.goto(`/invoices/${invoiceId}`);
@@ -163,11 +166,15 @@ test("a rotation interrupted after the server commits recovers on the next load"
 
     // An envelope sealed BEFORE the drill - the thing that must survive.
     const marker = `Interrupted rotation drill ${Date.now()}`;
-    const { id: invoiceId } = await createInvoice(pageS, ROTATOR_NAME, {
-      numberPrefix: "ROTX",
-      title: "Interrupted rotation drill",
-      description: marker,
-    });
+    const { id: invoiceId } = await createInvoice(
+      pageS,
+      { id: ROTATOR_ID, name: ROTATOR_NAME },
+      {
+        numberPrefix: "ROTX",
+        title: "Interrupted rotation drill",
+        description: marker,
+      },
+    );
 
     // Dismiss the backup reminder so its return proves recovery re-armed it.
     await pageR.goto("/dashboard");
@@ -292,11 +299,15 @@ test("a rotation whose request never arrives is rolled back safely on the next l
     await ensureReadyKey(pageS);
 
     const marker = `Vanished rotation drill ${Date.now()}`;
-    const { id: invoiceId } = await createInvoice(pageS, ROTATOR_NAME, {
-      numberPrefix: "ROTV",
-      title: "Vanished rotation drill",
-      description: marker,
-    });
+    const { id: invoiceId } = await createInvoice(
+      pageS,
+      { id: ROTATOR_ID, name: ROTATOR_NAME },
+      {
+        numberPrefix: "ROTV",
+        title: "Vanished rotation drill",
+        description: marker,
+      },
+    );
 
     const [, pubKeyStorageKey] = storageKeys(ROTATOR_ID);
     const stagedStorageKey = `sealed-invoices:staged-rotation:${ROTATOR_ID}`;
