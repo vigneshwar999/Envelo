@@ -40,9 +40,9 @@ export function HowItWorks() {
         <section>
           <h2 className="text-2xl font-semibold mb-4 text-primary">3. Payments in Test USDC</h2>
           <p className="mb-4">
-            Payments are settled entirely on the Arc Testnet using a mock USDC stablecoin. 
-            Because this is a testnet demo, the USDC has no real-world value, but it functions exactly 
-            like the real thing. 
+            Payments are settled through real transactions on Arc Testnet using its native test USDC.
+            The test USDC has no real-world value, but balances, gas fees, contract calls, and receipts
+            all come from the live test network.
           </p>
           <p>
             When an invoice is paid, the transaction hash is recorded alongside the invoice metadata, proving 

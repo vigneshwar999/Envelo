@@ -84,11 +84,13 @@ router.get("/chain/status", async (req, res) => {
 router.get("/chain/anchor-preview", async (req, res) => {
   const userId = userIdOf(req);
   const contractAddress = await getContractAddress();
-  const feeWei = await estimateAnchorFeeWei();
   const walletAddress = await ensureWalletFor(userId);
-  const balanceWei = await getBalance(walletAddress);
+  const [feeWei, balanceWei] = await Promise.all([
+    estimateAnchorFeeWei(walletAddress),
+    getBalance(walletAddress),
+  ]);
   const verdict =
-    feeWei !== null && balanceWei !== null
+    balanceWei !== null
       ? decideAffordability(balanceWei, feeWei)
       : null;
   res.json(
@@ -98,7 +100,7 @@ router.get("/chain/anchor-preview", async (req, res) => {
       contractAddress,
       explorerBaseUrl: EXPLORER_BASE_URL,
       faucetUrl: FAUCET_URL,
-      feeEstimateUsdc: feeWei === null ? null : formatFeeUsdc(feeWei),
+      feeEstimateUsdc: formatFeeUsdc(feeWei),
       walletAddress,
       walletBalanceUsdc:
         balanceWei === null ? null : formatFeeUsdc(balanceWei),

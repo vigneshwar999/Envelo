@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 import { parseUnits } from "viem";
-import { formatFeeUsdc } from "./arc";
+import {
+  decideAffordability,
+  FEE_ESTIMATE_FALLBACK_WEI,
+  formatFeeUsdc,
+} from "./arc";
 
 // The approval sheet's one honesty-critical formatter: a POSITIVE fee must
 // never be displayed as "0". Below display precision it says so explicitly.
@@ -38,5 +42,29 @@ describe("formatFeeUsdc", () => {
   it("handles whole and mixed amounts", () => {
     expect(formatFeeUsdc(parseUnits("3", 18))).toBe("3");
     expect(formatFeeUsdc(parseUnits("1.5", 18))).toBe("1.5");
+  });
+
+  it("uses the permanent 0.1 USDC fallback when a live estimate is unavailable", () => {
+    expect(FEE_ESTIMATE_FALLBACK_WEI).toBe(parseUnits("0.1", 18));
+    expect(formatFeeUsdc(FEE_ESTIMATE_FALLBACK_WEI)).toBe("0.1");
+  });
+});
+
+describe("payer-funded transaction affordability", () => {
+  const invoiceAmount = parseUnits("1", 18);
+  const required = invoiceAmount + FEE_ESTIMATE_FALLBACK_WEI;
+
+  it("accepts a built-in wallet that covers the invoice plus the 0.1 fallback exactly", () => {
+    expect(decideAffordability(required, required)).toEqual({
+      canAfford: true,
+      shortfallWei: 0n,
+    });
+    expect(formatFeeUsdc(required)).toBe("1.1");
+  });
+
+  it("reports the exact shortfall when the built-in wallet cannot cover invoice plus fee", () => {
+    const decision = decideAffordability(parseUnits("1.09", 18), required);
+    expect(decision.canAfford).toBe(false);
+    expect(formatFeeUsdc(decision.shortfallWei)).toBe("0.01");
   });
 });

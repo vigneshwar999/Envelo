@@ -45,6 +45,7 @@ export function PayApprovalDialog({
   const insufficient = p?.canPay === false;
   const cannotConfirm =
     preview.isLoading ||
+    preview.isError ||
     !p ||
     p.canPay !== true ||
     p.alreadyPaid ||
@@ -157,13 +158,13 @@ export function PayApprovalDialog({
             {row(
               'Network fee (est.)',
               'text-pay-fee',
-              p?.feeEstimateUsdc != null ? (
-                <span>{p.feeEstimateUsdc} USDC</span>
-              ) : (
-                <span className="text-xs">
-                  Estimate unavailable right now - the exact fee is re-checked at payment
-                </span>
-              ),
+              p ? (
+                p.alreadyPaid ? (
+                  <span className="text-xs">Not applicable</span>
+                ) : (
+                  <span>{p.feeEstimateUsdc ?? '0.1'} USDC</span>
+                )
+              ) : '—',
             )}
             {row(
               'Total from your wallet',
@@ -225,7 +226,10 @@ export function PayApprovalDialog({
             </div>
           )}
 
-          {!preview.isLoading && p && !insufficient && p.canPay !== true && (
+          {!preview.isLoading &&
+            p &&
+            !insufficient &&
+            (p.alreadyPaid || !p.contractAddress || !p.payeeAddress || p.canPay !== true) && (
             <div
               className="flex gap-2.5 rounded-md border border-amber-300 bg-amber-50 p-3 text-xs leading-relaxed text-amber-900 dark:border-amber-900/50 dark:bg-amber-900/20 dark:text-amber-200"
               data-testid="notice-pay-unavailable"
@@ -244,8 +248,10 @@ export function PayApprovalDialog({
           )}
 
           <p className="border-t pt-3 text-xs leading-relaxed text-muted-foreground">
-            Your built-in wallet signs and pays this transaction on Arc. The amount goes to the
-            payee through the registry contract, which records the invoice as paid on-chain.
+            You pay the invoice amount and Arc gas from your built-in wallet; Sealed Invoices does
+            not sponsor gas. The invoice amount goes to the payee through the registry contract,
+            which records the invoice as paid on-chain. If Arc cannot return a live estimate, the
+            displayed fee defaults to 0.1 test USDC.
           </p>
         </div>
 

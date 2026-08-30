@@ -22,12 +22,12 @@ export interface PayPreview {
   /** The invoice amount - exactly what the payee receives. */
   amountUsdc: string;
   /**
-     * Live gas estimate in test USDC for the payment transaction at this moment, or null when the chain is unreachable or the invoice is already paid.
+     * Live gas estimate in test USDC for the payment transaction, with a permanent 0.1 USDC fallback whenever Arc cannot return a live estimate. Null only when the invoice is already paid.
      * @nullable
      */
   feeEstimateUsdc: string | null;
   /**
-     * amountUsdc plus feeEstimateUsdc - the exact total debited from the payer's wallet. Null whenever the fee estimate is null.
+     * amountUsdc plus feeEstimateUsdc - the estimated total required in the payer's built-in wallet. Null only when the invoice is already paid.
      * @nullable
      */
   totalUsdc: string | null;

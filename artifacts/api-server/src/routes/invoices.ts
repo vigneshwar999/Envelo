@@ -43,6 +43,7 @@ import {
   ARC_CHAIN_ID,
   EXPLORER_BASE_URL,
   FAUCET_URL,
+  FEE_ESTIMATE_FALLBACK_WEI,
   NETWORK_NAME,
 } from "../chain/arc";
 import { fmt2, toEvent, toInvoice } from "../lib/serializers";
@@ -182,8 +183,8 @@ router.post("/invoices", async (req, res) => {
   // health, and the pending state is already honest in the UI.
   const senderWallet = await ensureWalletFor(creator.id);
   const senderBalance = await getBalance(senderWallet);
-  const anchorFeeWei = await estimateAnchorFeeWei();
-  if (senderBalance !== null && anchorFeeWei !== null) {
+  const anchorFeeWei = await estimateAnchorFeeWei(senderWallet);
+  if (senderBalance !== null) {
     const verdict = decideAffordability(senderBalance, anchorFeeWei);
     if (!verdict.canAfford) {
       res.status(409).json({
@@ -334,19 +335,23 @@ router.post("/invoices/:invoiceId/pay", async (req, res) => {
         (invoice.contractAddress as `0x${string}` | null) ??
         (await getContractAddress());
       const amountWei = parseUnits(fmt2(invoice.amountUsdc), 18);
-      const feeWei =
-        payee && payContract
-          ? await estimatePayFeeWei({
-              invoiceId: invoice.id,
-              payerAddress,
-              payeeAddress: payee.address,
-              amountWei,
-              contractAddress: payContract,
-            })
-          : null;
-      if (payerBalance === null || feeWei === null) {
+      if (!payee || !payContract) {
         res.status(409).json({
-          error: `Your wallet balance or the current network fee cannot be read right now, so there is no honest total to charge. Nothing was charged - try again in a moment.`,
+          error:
+            "The real payee or registry contract is not available, so no payment was attempted.",
+        });
+        return;
+      }
+      const feeWei = await estimatePayFeeWei({
+        invoiceId: invoice.id,
+        payerAddress,
+        payeeAddress: payee.address,
+        amountWei,
+        contractAddress: payContract,
+      });
+      if (payerBalance === null) {
+        res.status(409).json({
+          error: `Your built-in wallet balance cannot be read right now, so payment cannot be approved safely. Nothing was charged - try again in a moment.`,
         });
         return;
       }
@@ -438,8 +443,9 @@ router.get("/invoices/:invoiceId/pay-preview", async (req, res) => {
   const payee = await resolvePayeeAddress(invoice.freelancerId);
   const amountWei = parseUnits(fmt2(invoice.amountUsdc), 18);
   const alreadyPaid = invoice.status === "paid";
-  const feeWei =
-    connected && contractAddress && payee && !alreadyPaid
+  const feeWei = alreadyPaid
+    ? null
+    : contractAddress && payee
       ? await estimatePayFeeWei({
           invoiceId: invoice.id,
           payerAddress,
@@ -447,10 +453,14 @@ router.get("/invoices/:invoiceId/pay-preview", async (req, res) => {
           amountWei,
           contractAddress,
         })
-      : null;
+      : FEE_ESTIMATE_FALLBACK_WEI;
   const totalWei = feeWei === null ? null : amountWei + feeWei;
   const verdict =
-    payerBalance !== null && totalWei !== null
+    connected &&
+    contractAddress !== null &&
+    payee !== null &&
+    payerBalance !== null &&
+    totalWei !== null
       ? decideAffordability(payerBalance, totalWei)
       : null;
   const names = await namesById();

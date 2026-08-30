@@ -43,6 +43,12 @@ export function AnchorApprovalDialog({
   });
   const p = preview.data;
   const insufficient = p?.canAfford === false;
+  const cannotConfirm =
+    preview.isLoading ||
+    preview.isError ||
+    !p ||
+    p.canAfford !== true ||
+    !p.contractAddress;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -112,13 +118,9 @@ export function AnchorApprovalDialog({
             <span className="text-right" data-testid="text-anchor-fee">
               {preview.isLoading ? (
                 <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-              ) : p?.feeEstimateUsdc != null ? (
-                <span className="font-medium">{p.feeEstimateUsdc} USDC</span>
-              ) : (
-                <span className="text-xs">
-                  Estimate unavailable right now - the fee is re-checked when anchoring runs
-                </span>
-              )}
+              ) : p ? (
+                <span className="font-medium">{p.feeEstimateUsdc ?? '0.1'} USDC</span>
+              ) : '—'}
             </span>
           </div>
 
@@ -162,9 +164,32 @@ export function AnchorApprovalDialog({
             </div>
           )}
 
+          {!preview.isLoading && p && !p.contractAddress && (
+            <div className="flex gap-2.5 rounded-md border border-amber-300 bg-amber-50 p-3 text-xs leading-relaxed text-amber-900 dark:border-amber-900/50 dark:bg-amber-900/20 dark:text-amber-200">
+              <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+              <span>The real Arc registry is not deployed yet, so this transaction cannot be approved.</span>
+            </div>
+          )}
+
+          {preview.isError && (
+            <div className="flex gap-2.5 rounded-md border border-destructive/30 bg-destructive/10 p-3 text-xs leading-relaxed text-destructive">
+              <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+              <span>The transaction details could not be loaded. Close this sheet and try again.</span>
+            </div>
+          )}
+
+          {!preview.isLoading && p && p.contractAddress && !insufficient && p.canAfford !== true && (
+            <div className="flex gap-2.5 rounded-md border border-amber-300 bg-amber-50 p-3 text-xs leading-relaxed text-amber-900 dark:border-amber-900/50 dark:bg-amber-900/20 dark:text-amber-200">
+              <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+              <span>Your built-in wallet balance cannot be read right now, so this transaction cannot be approved safely.</span>
+            </div>
+          )}
+
           <p className="border-t pt-3 text-xs leading-relaxed text-muted-foreground">
-            Your built-in wallet submits and pays this anchor on Arc. Only the invoice
-            fingerprint goes on-chain - the contents stay encrypted in your browser.
+            You pay this Arc network fee from your built-in wallet; Sealed Invoices does not
+            sponsor gas. Only the invoice fingerprint goes on-chain - the contents stay encrypted
+            in your browser. If Arc cannot return a live estimate, the displayed fee defaults to
+            0.1 test USDC.
           </p>
         </div>
 
@@ -180,7 +205,7 @@ export function AnchorApprovalDialog({
           <Button
             type="button"
             onClick={onConfirm}
-            disabled={insufficient}
+            disabled={cannotConfirm}
             data-testid="button-anchor-confirm"
           >
             Confirm

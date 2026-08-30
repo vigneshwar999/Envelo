@@ -83,11 +83,11 @@ export function formatFeeUsdc(wei: bigint): string {
 // anchor gas, payers pay the invoice amount plus gas. No subsidies.
 
 /**
- * Fallback gas units for one payInvoice call, used only when a live
- * simulation is impossible (a node refuses to simulate a payment the payer
- * cannot cover). Generous upper bound; the UI always labels fees "(est.)".
+ * Permanent fee estimate used whenever Arc cannot return a live estimate.
+ * It is deliberately denominated in Arc's native test USDC rather than gas
+ * units so every approval surface shows the same predictable fallback.
  */
-export const PAY_GAS_FALLBACK_UNITS = 120_000n;
+export const FEE_ESTIMATE_FALLBACK_WEI = parseUnits("0.1", 18);
 
 /**
  * THE affordability rule, in one place: can this balance cover this cost?
@@ -133,7 +133,7 @@ export async function ensureWalletFor(ownerId: string): Promise<string> {
   return row?.address ?? account.address;
 }
 
-/** The app's own wallet - the faucet target that funds everything else. */
+/** The app's deployment wallet - used only to deploy or upgrade the registry. */
 export async function ensureOperatorWallet(): Promise<void> {
   await ensureWalletFor("operator");
 }
@@ -190,10 +190,9 @@ function walletClientFor(privateKey: string) {
   return createWalletClient({ account, chain: arcTestnet, transport });
 }
 
-// Every transaction send goes through one queue. The operator wallet issues
-// several kinds of transactions (deploy, fund sharing, anchors), and two
-// concurrent sends from one account race for the same nonce. Volume here is
-// tiny, so strict serialization is the simplest correct answer.
+// Every transaction send goes through one queue. Two concurrent sends from
+// one custodial account can race for the same nonce. Volume here is tiny, so
+// strict serialization is the simplest correct answer.
 let txQueue: Promise<unknown> = Promise.resolve();
 function enqueueTx<T>(fn: () => Promise<T>): Promise<T> {
   const run = () => fn();
@@ -223,8 +222,8 @@ let setupInFlight: Promise<void> | null = null;
 
 /**
  * Idempotent, safe to call often. Once the operator wallet has been funded at
- * the faucet this deploys the registry contract, moves spending money to the
- * client persona's wallet, and anchors any invoices still waiting.
+ * the faucet this deploys the registry contract and retries invoices waiting
+ * to be anchored by their senders' own wallets.
  */
 export function attemptChainSetup(): Promise<void> {
   if (!setupInFlight) {
@@ -609,15 +608,15 @@ export async function readAnchor(
 
 /**
  * Live cost of one anchor transaction (gas x current gas price), estimated
- * against the real contract with a throwaway fingerprint so the number
- * reflects an actual new anchor at this moment's gas price. Null when the
- * chain, contract, or operator wallet is not ready - callers must surface
- * that honestly instead of showing a made-up fee.
+ * against the real contract with a throwaway fingerprint from the acting
+ * sender's address. If Arc cannot provide a live estimate, use the permanent
+ * 0.1 test-USDC fallback requested by the product.
  */
-export async function estimateAnchorFeeWei(): Promise<bigint | null> {
+export async function estimateAnchorFeeWei(
+  senderAddress: string,
+): Promise<bigint> {
   const contractAddress = await getContractAddress();
-  const operator = await getWallet("operator");
-  if (!contractAddress || !operator) return null;
+  if (!contractAddress) return FEE_ESTIMATE_FALLBACK_WEI;
   try {
     const probe = keccak256(
       toBytes(`anchor-fee-probe:${Date.now()}:${Math.random()}`),
@@ -628,13 +627,13 @@ export async function estimateAnchorFeeWei(): Promise<bigint | null> {
         abi: REGISTRY_ABI,
         functionName: "anchorInvoice",
         args: [probe, probe],
-        account: operator.address as Address,
+        account: senderAddress as Address,
       }),
       publicClient.getGasPrice(),
     ]);
     return gas * gasPrice;
   } catch {
-    return null;
+    return FEE_ESTIMATE_FALLBACK_WEI;
   }
 }
 
@@ -751,9 +750,8 @@ export async function retryPendingAnchors(): Promise<void> {
 /**
  * Live cost of one payInvoice transaction for this invoice. Tries a real
  * simulation from the payer's own address first; a node refuses to simulate
- * a payment the payer cannot cover, so that case falls back to a documented
- * fixed gas amount at the live gas price - still a real, current number.
- * Null only when even the gas price is unreadable (RPC down).
+ * a payment the payer cannot cover. Whenever the live estimate is unavailable,
+ * the approval and submit guards use the permanent 0.1 test-USDC fallback.
  */
 export async function estimatePayFeeWei(args: {
   invoiceId: string;
@@ -761,24 +759,22 @@ export async function estimatePayFeeWei(args: {
   payeeAddress: string;
   amountWei: bigint;
   contractAddress: Address;
-}): Promise<bigint | null> {
+}): Promise<bigint> {
   try {
-    const gasPrice = await publicClient.getGasPrice();
-    try {
-      const gas = await publicClient.estimateContractGas({
+    const [gas, gasPrice] = await Promise.all([
+      publicClient.estimateContractGas({
         address: args.contractAddress,
         abi: REGISTRY_ABI,
         functionName: "payInvoice",
         args: [invoiceKey(args.invoiceId), args.payeeAddress as Address],
         account: args.payerAddress as Address,
         value: args.amountWei,
-      });
-      return gas * gasPrice;
-    } catch {
-      return PAY_GAS_FALLBACK_UNITS * gasPrice;
-    }
+      }),
+      publicClient.getGasPrice(),
+    ]);
+    return gas * gasPrice;
   } catch {
-    return null;
+    return FEE_ESTIMATE_FALLBACK_WEI;
   }
 }
 

@@ -20,7 +20,7 @@ export interface AnchorPreview {
   explorerBaseUrl: string;
   faucetUrl: string;
   /**
-     * Live estimate (anchor gas x current gas price) in test USDC at this moment, or null when the chain is unreachable.
+     * Live estimate (anchor gas x current gas price) in test USDC, with a permanent 0.1 USDC fallback whenever Arc cannot return a live estimate.
      * @nullable
      */
   feeEstimateUsdc: string | null;

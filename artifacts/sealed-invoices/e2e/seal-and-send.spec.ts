@@ -36,8 +36,8 @@ function canonicalJson(value: unknown): string {
 //   3. Honesty checks on the detail page: the number, status and fingerprint
 //      shown must AGREE with a fresh API read - the stale-query class of
 //      bug that once hid the wallet transfer button.
-//   4. The background anchor lands onchain (the operator wallet pays gas, so
-//      no faucet dependency) and the UI says so after reload.
+//   4. The background anchor lands onchain from the sender's built-in wallet,
+//      which must hold enough test USDC to pay its own gas.
 //   5. The sealed envelope round-trips for the SENDER: opening it shows the
 //      exact marker text that was typed into the form.
 //   6. "Verify Content Matches Record" recomputes the fingerprint from the
