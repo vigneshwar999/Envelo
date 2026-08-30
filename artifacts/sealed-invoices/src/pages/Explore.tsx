@@ -15,6 +15,7 @@ import {
   Eye,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { trackEvent } from "@/lib/analytics";
 
 function FadeIn({
   children,
@@ -73,7 +74,16 @@ export default function Explore() {
                 className="h-14 w-full rounded-full bg-primary px-8 text-base text-primary-foreground hover:bg-primary/90 sm:w-auto"
                 data-testid="button-hero-dashboard"
               >
-                <Link href="/dashboard" className="flex items-center gap-2">
+                <Link
+                  href="/dashboard"
+                  className="flex items-center gap-2"
+                  onClick={() =>
+                    trackEvent("explore_cta_clicked", {
+                      location: "hero",
+                      action: "open_dashboard",
+                    })
+                  }
+                >
                   Open your dashboard <ArrowRight className="h-4 w-4" />
                 </Link>
               </Button>
@@ -86,7 +96,16 @@ export default function Explore() {
                 className="h-14 w-full rounded-full bg-primary px-8 text-base text-primary-foreground hover:bg-primary/90 sm:w-auto"
                 data-testid="button-hero-signup"
               >
-                <Link href="/sign-up" className="flex items-center gap-2">
+                <Link
+                  href="/sign-up"
+                  className="flex items-center gap-2"
+                  onClick={() =>
+                    trackEvent("explore_cta_clicked", {
+                      location: "hero",
+                      action: "sign_up",
+                    })
+                  }
+                >
                   Create your account <ArrowRight className="h-4 w-4" />
                 </Link>
               </Button>
@@ -97,7 +116,17 @@ export default function Explore() {
                 className="h-14 w-full rounded-full px-8 text-base sm:w-auto"
                 data-testid="button-hero-signin"
               >
-                <Link href="/sign-in">Sign in</Link>
+                <Link
+                  href="/sign-in"
+                  onClick={() =>
+                    trackEvent("explore_cta_clicked", {
+                      location: "hero",
+                      action: "sign_in",
+                    })
+                  }
+                >
+                  Sign in
+                </Link>
               </Button>
             </div>
           )}
@@ -270,6 +299,12 @@ export default function Explore() {
                   target="_blank"
                   rel="noopener noreferrer"
                   data-testid="link-demo-new-tab"
+                  onClick={() =>
+                    trackEvent("explore_demo_opened", {
+                      location: "demo_section",
+                      action: "new_tab",
+                    })
+                  }
                 >
                   Open demo in new tab <ArrowRight className="ml-2 h-4 w-4" />
                 </a>
@@ -433,7 +468,17 @@ export default function Explore() {
                 className="h-14 w-full rounded-full bg-primary px-10 text-base text-primary-foreground hover:bg-primary/90 sm:w-auto"
                 data-testid="button-cta-dashboard"
               >
-                <Link href="/dashboard">Open your dashboard</Link>
+                <Link
+                  href="/dashboard"
+                  onClick={() =>
+                    trackEvent("explore_cta_clicked", {
+                      location: "final",
+                      action: "open_dashboard",
+                    })
+                  }
+                >
+                  Open your dashboard
+                </Link>
               </Button>
             </div>
           ) : (
@@ -444,7 +489,17 @@ export default function Explore() {
                 className="h-14 w-full rounded-full bg-primary px-10 text-base text-primary-foreground hover:bg-primary/90 sm:w-auto"
                 data-testid="button-cta-signup"
               >
-                <Link href="/sign-up">Create your account</Link>
+                <Link
+                  href="/sign-up"
+                  onClick={() =>
+                    trackEvent("explore_cta_clicked", {
+                      location: "final",
+                      action: "sign_up",
+                    })
+                  }
+                >
+                  Create your account
+                </Link>
               </Button>
               <Button
                 asChild
@@ -453,7 +508,17 @@ export default function Explore() {
                 className="h-14 w-full rounded-full px-10 text-base sm:w-auto"
                 data-testid="button-cta-signin"
               >
-                <Link href="/sign-in">Sign in</Link>
+                <Link
+                  href="/sign-in"
+                  onClick={() =>
+                    trackEvent("explore_cta_clicked", {
+                      location: "final",
+                      action: "sign_in",
+                    })
+                  }
+                >
+                  Sign in
+                </Link>
               </Button>
             </div>
           )}
@@ -496,6 +561,12 @@ export default function Explore() {
               rel="noopener noreferrer"
               className="transition-colors hover:text-foreground"
               data-testid="link-footer-demo"
+              onClick={() =>
+                trackEvent("explore_demo_opened", {
+                  location: "footer",
+                  action: "new_tab",
+                })
+              }
             >
               Interactive demo
             </a>
