@@ -57,8 +57,16 @@ const footerGroups: Array<{ title: string; links: FooterLink[] }> = [
   {
     title: "Company",
     links: [
-      { label: "Terms of service" },
-      { label: "Privacy policy" },
+      {
+        label: "Terms of service",
+        href: "/terms",
+        testId: "link-footer-terms",
+      },
+      {
+        label: "Privacy policy",
+        href: "/privacy",
+        testId: "link-footer-privacy",
+      },
     ],
   },
 ];

@@ -18,6 +18,8 @@ const InvoiceDetail = lazy(() => import('@/pages/InvoiceDetail'));
 const WalletSettings = lazy(() => import('@/pages/WalletSettings'));
 const PrivateUsdc = lazy(() => import('@/pages/PrivateUsdc'));
 const HowItWorks = lazy(() => import('@/pages/HowItWorks'));
+const Terms = lazy(() => import('@/pages/Terms'));
+const Privacy = lazy(() => import('@/pages/Privacy'));
 const NotFound = lazy(() => import('@/pages/not-found'));
 const UserProvider = lazy(() =>
   import('@/context/UserContext').then(({ UserProvider: Provider }) => ({
@@ -219,6 +221,8 @@ function ShellRoutes() {
             </Protected>
           </Route>
           <Route path="/how-it-works" component={HowItWorks} />
+          <Route path="/terms" component={Terms} />
+          <Route path="/privacy" component={Privacy} />
           <Route component={NotFound} />
         </Switch>
       </Suspense>
