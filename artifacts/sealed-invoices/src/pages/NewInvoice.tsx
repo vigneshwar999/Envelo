@@ -287,7 +287,7 @@ export function NewInvoice() {
                                   runLookup();
                                 }
                               }}
-                              placeholder="client@email.com or 0x… address"
+                              placeholder="Email or 0x... address"
                               data-testid="input-client-query"
                             />
                           </FormControl>
