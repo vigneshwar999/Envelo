@@ -223,7 +223,9 @@ export function Shell({ children }: { children: React.ReactNode }) {
       </header>
       <main
         className={cn(
-          location === "/" || location === "/explore"
+          location === "/" ||
+            location === "/explore" ||
+            location === "/how-it-works"
             ? "w-full"
             : "container mx-auto px-4 py-8 max-w-5xl",
         )}
