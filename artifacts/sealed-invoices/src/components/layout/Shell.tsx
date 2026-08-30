@@ -17,113 +17,104 @@ const WalletMenu = lazy(() =>
   })),
 );
 
+const desktopNavLinkClass = (active: boolean) =>
+  cn(
+    "rounded-full px-3 py-2 text-sm font-medium transition-colors",
+    active
+      ? "bg-primary text-primary-foreground shadow-sm"
+      : "text-muted-foreground hover:bg-muted hover:text-foreground",
+  );
+
 export function Shell({ children }: { children: React.ReactNode }) {
   const { isLoaded, isSignedIn } = useUser();
   const [location] = useLocation();
+  const dashboardActive =
+    location === "/dashboard" || location.startsWith("/invoices/");
 
   return (
     <div className="min-h-screen bg-background font-sans">
-      <header className="sticky top-0 z-40 w-full border-b bg-background/95 backdrop-blur shadow-sm">
-        <div className="container mx-auto px-4 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-6">
+      <header className="sticky top-0 z-40 w-full border-b bg-background/90 shadow-[0_1px_0_rgba(15,23,42,0.03)] backdrop-blur-xl">
+        <div className="mx-auto flex h-[4.5rem] w-full max-w-7xl items-center gap-4 px-4 sm:px-6 lg:px-8">
+          <Link
+            href="/"
+            className="group flex shrink-0 items-center gap-2 font-medium tracking-tight"
+            data-testid="link-home"
+          >
+            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/5">
+              <ShieldCheck className="h-[1.125rem] w-[1.125rem] text-primary transition-colors group-hover:text-seal" />
+            </span>
+            <span className="text-lg font-semibold tracking-tight">Envelo</span>
+            <span className="ml-1 hidden items-center rounded-full border bg-muted/70 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide text-muted-foreground lg:inline-flex">
+              Arc Testnet
+            </span>
+          </Link>
+
+          <nav
+            className="hidden min-w-0 flex-1 items-center justify-center gap-1 xl:flex"
+            aria-label="Main navigation"
+          >
             <Link
-              href="/"
-              className="flex items-center gap-2 font-medium tracking-tight group"
-              data-testid="link-home"
+              href="/explore"
+              className={desktopNavLinkClass(location === "/explore")}
+              data-testid="link-desktop-explore"
             >
-              <ShieldCheck className="h-5 w-5 text-primary group-hover:text-primary/80 transition-colors" />
-              <span className="text-lg font-semibold tracking-tight">
-                Envelo
-              </span>
-              <span className="hidden sm:inline-flex ml-2 items-center rounded-full bg-muted px-2 py-0.5 text-[10px] uppercase font-bold text-muted-foreground border">
-                Arc Testnet
-              </span>
+              Explore
             </Link>
-            <nav className="hidden md:flex gap-6 ml-4">
-              <Link
-                href="/explore"
-                className={cn(
-                  "text-sm font-medium transition-colors hover:text-primary",
-                  location === "/explore"
-                    ? "text-primary"
-                    : "text-muted-foreground",
-                )}
-                data-testid="link-desktop-explore"
-              >
-                Explore
-              </Link>
-              {isSignedIn && (
-                <>
-                  <Link
-                    href="/dashboard"
-                    className={cn(
-                      "text-sm font-medium transition-colors hover:text-primary",
-                      location === "/dashboard"
-                        ? "text-primary"
-                        : "text-muted-foreground",
-                    )}
-                    data-testid="link-desktop-dashboard"
-                  >
-                    Dashboard
-                  </Link>
-                  <Link
-                    href="/wallet"
-                    className={cn(
-                      "text-sm font-medium transition-colors hover:text-primary",
-                      location === "/wallet"
-                        ? "text-primary"
-                        : "text-muted-foreground",
-                    )}
-                    data-testid="link-desktop-wallet"
-                  >
-                    Wallet
-                  </Link>
-                  <Link
-                    href="/private-usdc"
-                    className={cn(
-                      "text-sm font-medium transition-colors flex items-center gap-1.5 hover:text-primary",
-                      location === "/private-usdc"
-                        ? "text-primary"
-                        : "text-muted-foreground",
-                    )}
-                    data-testid="link-desktop-shielded-usdc"
-                  >
-                    Shielded USDC
-                    <span className="inline-flex items-center rounded-full bg-secondary px-1.5 py-[1px] text-[9px] uppercase font-bold text-secondary-foreground border">
-                      Soon
-                    </span>
-                  </Link>
-                </>
-              )}
-              <Link
-                href="/how-it-works"
-                className={cn(
-                  "text-sm font-medium transition-colors hover:text-primary",
-                  location === "/how-it-works"
-                    ? "text-primary"
-                    : "text-muted-foreground",
-                )}
-                data-testid="link-desktop-how-it-works"
-              >
-                How it Works
-              </Link>
-            </nav>
-          </div>
-          <div className="flex items-center gap-2 sm:gap-3">
-            <div className="md:hidden">
+            {isSignedIn && (
+              <>
+                <Link
+                  href="/dashboard"
+                  className={desktopNavLinkClass(dashboardActive)}
+                  data-testid="link-desktop-dashboard"
+                >
+                  Dashboard
+                </Link>
+                <Link
+                  href="/wallet"
+                  className={desktopNavLinkClass(location === "/wallet")}
+                  data-testid="link-desktop-wallet"
+                >
+                  Wallet
+                </Link>
+                <Link
+                  href="/private-usdc"
+                  className={cn(
+                    desktopNavLinkClass(location === "/private-usdc"),
+                    "flex items-center gap-1.5",
+                  )}
+                  data-testid="link-desktop-shielded-usdc"
+                >
+                  Shielded USDC
+                  <span className="inline-flex items-center rounded-full border border-current/10 bg-secondary px-1.5 py-[1px] text-[8px] font-bold uppercase tracking-wide text-secondary-foreground">
+                    Soon
+                  </span>
+                </Link>
+              </>
+            )}
+            <Link
+              href="/how-it-works"
+              className={desktopNavLinkClass(location === "/how-it-works")}
+              data-testid="link-desktop-how-it-works"
+            >
+              How it Works
+            </Link>
+          </nav>
+
+          <div className="ml-auto flex shrink-0 items-center gap-2 sm:gap-3">
+            <div className="xl:hidden">
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="mr-1"
+                    className="rounded-full"
                     data-testid="button-mobile-menu"
                   >
                     <Menu className="h-5 w-5" />
                     <span className="sr-only">Toggle menu</span>
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="start" className="w-56">
+                <DropdownMenuContent align="end" className="w-56">
                   <DropdownMenuItem asChild>
                     <Link
                       href="/explore"

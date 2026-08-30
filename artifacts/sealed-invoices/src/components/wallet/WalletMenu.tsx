@@ -77,7 +77,7 @@ export function WalletMenu() {
                 {displayName.charAt(0).toUpperCase()}
               </AvatarFallback>
             </Avatar>
-            <span className="text-sm font-medium hidden sm:inline-block">
+            <span className="hidden max-w-36 truncate text-sm font-medium sm:inline-block">
               {displayName}
             </span>
             <ChevronDown className="h-4 w-4 text-muted-foreground" />
