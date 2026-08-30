@@ -188,7 +188,7 @@ export function AnchorApprovalDialog({
           )}
 
           <p className="border-t pt-3 text-xs leading-relaxed text-muted-foreground">
-            You pay this Arc network fee from your built-in wallet; Sealed Invoices does not
+            You pay this Arc network fee from your built-in wallet; Envelo does not
             sponsor gas. Only the invoice fingerprint goes on-chain - the contents stay encrypted
             in your browser. If Arc cannot return a live estimate, the displayed fee defaults to
             0.1 test USDC. For the first invoice, this single transaction also activates the

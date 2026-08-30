@@ -12,7 +12,7 @@ import { UserProvider } from '@/context/UserContext';
 import { Shell } from '@/components/layout/Shell';
 import { Skeleton } from '@/components/ui/skeleton';
 
-import Landing from '@/pages/Landing';
+import Explore from '@/pages/Explore';
 import Dashboard from '@/pages/Dashboard';
 import NewInvoice from '@/pages/NewInvoice';
 import InvoiceDetail from '@/pages/InvoiceDetail';
@@ -162,7 +162,7 @@ function HomeRoute() {
   const { isLoaded, isSignedIn } = useUser();
   if (!isLoaded) return <PageLoading />;
   if (isSignedIn) return <Redirect to="/dashboard" />;
-  return <Landing />;
+  return <Explore />;
 }
 
 function Protected({ children }: { children: React.ReactNode }) {
@@ -186,6 +186,7 @@ function AppRoutes() {
           <Shell>
             <Switch>
               <Route path="/" component={HomeRoute} />
+              <Route path="/explore" component={Explore} />
               <Route path="/dashboard">
                 <Protected>
                   <Dashboard />
@@ -235,13 +236,13 @@ function ClerkProviderWithRoutes() {
         signIn: {
           start: {
             title: 'Welcome back',
-            subtitle: 'Sign in to open your sealed invoices',
+            subtitle: 'Sign in to open your Envelo invoices',
           },
         },
         signUp: {
           start: {
             title: 'Create your account',
-            subtitle: 'Invoices sealed in your browser, receipts on Arc',
+            subtitle: 'Private paperwork. Public proof.',
           },
         },
       }}

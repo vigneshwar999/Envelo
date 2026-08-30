@@ -11,7 +11,7 @@ export default function PrivateUsdc() {
 
   useEffect(() => {
     const previousTitle = document.title;
-    document.title = 'Private USDC — Coming Soon | Sealed Invoices';
+    document.title = 'Shielded USDC — Coming Soon | Envelo';
     return () => {
       document.title = previousTitle;
     };
@@ -27,7 +27,7 @@ export default function PrivateUsdc() {
           <Shield className="mr-2 h-4 w-4" />
           Coming Soon
         </div>
-        <h1 className="text-3xl font-semibold tracking-tight">Private USDC</h1>
+        <h1 className="text-3xl font-semibold tracking-tight">Shielded USDC</h1>
         <p className="text-lg text-muted-foreground leading-relaxed">
           Your invoice documents are already encrypted in the browser. Arc has
           described confidential transfers as a future capability; when official
@@ -68,7 +68,7 @@ export default function PrivateUsdc() {
           <CardHeader className="pb-4">
             <CardTitle className="text-base flex items-center gap-2 text-primary">
               <EyeOff className="h-4 w-4" />
-              Private Balance
+              Shielded Balance
             </CardTitle>
             <CardDescription className="text-primary/80">
                Planned protected balance. Not active on Arc today.
@@ -118,9 +118,9 @@ export default function PrivateUsdc() {
         </Card>
 
         <div className="space-y-2 pt-4">
-          <h2 className="text-xl font-semibold tracking-tight">Pay from Private Balance</h2>
+          <h2 className="text-xl font-semibold tracking-tight">Pay from Shielded Balance</h2>
           <p className="text-sm text-muted-foreground leading-relaxed">
-            The planned invoice flow will let you select Private USDC as the
+            The planned invoice flow will let you select Shielded USDC as the
             payment source. The exact information disclosed to the receiver and
             public ledger will follow Arc's official privacy model.
           </p>
@@ -137,7 +137,7 @@ export default function PrivateUsdc() {
               </div>
               <Button disabled className="w-full sm:w-auto bg-primary/80" data-testid="button-pay-private">
                 <ArrowRight className="mr-2 h-4 w-4" />
-                Pay with Private USDC (Soon)
+                Pay with Shielded USDC (Soon)
               </Button>
             </div>
           </CardContent>

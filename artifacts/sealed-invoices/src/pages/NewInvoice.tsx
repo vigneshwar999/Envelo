@@ -222,7 +222,7 @@ export function NewInvoice() {
         </Link>
         <h1 className="text-3xl font-bold">New Sealed Invoice</h1>
         <p className="text-muted-foreground mt-1">
-          The contents are encrypted in your browser before saving.
+          The invoice body is encrypted in your browser before saving.
         </p>
       </div>
 
@@ -394,8 +394,8 @@ export function NewInvoice() {
             <CardFooter className="flex items-center justify-between gap-4 border-t bg-secondary/10 px-5 py-4">
               <p className="flex max-w-[300px] items-start text-xs leading-4 text-muted-foreground">
                 <Lock className="mr-2 mt-0.5 h-3 w-3 shrink-0 text-primary" />
-                End-to-end encrypted. Only ciphertext reaches the server. You approve the Arc
-                fee from your wallet.
+                Invoice body encrypted. The server receives ciphertext plus required payment
+                metadata. You approve the Arc fee.
               </p>
               <Button type="submit" disabled={isSealing || createInvoiceMutation.isPending || !me}>
                 {(isSealing || createInvoiceMutation.isPending) ? (

@@ -248,7 +248,7 @@ export function PayApprovalDialog({
           )}
 
           <p className="border-t pt-3 text-xs leading-relaxed text-muted-foreground">
-            You pay the invoice amount and Arc gas from your built-in wallet; Sealed Invoices does
+            You pay the invoice amount and Arc gas from your built-in wallet; Envelo does
             not sponsor gas. The invoice amount goes to the payee through the registry contract,
             which records the invoice as paid on-chain. If Arc cannot return a live estimate, the
             displayed fee defaults to 0.1 test USDC.

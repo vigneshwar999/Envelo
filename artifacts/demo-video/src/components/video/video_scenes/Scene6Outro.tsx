@@ -47,7 +47,7 @@ export function Scene6Outro() {
             animate={{ y: phase >= 2 ? '0%' : '100%' }}
             transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] }}
           >
-            Sealed Invoices
+            Envelo
           </motion.h1>
         </div>
         

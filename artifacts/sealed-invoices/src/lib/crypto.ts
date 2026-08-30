@@ -1,9 +1,9 @@
 /**
- * Sealed Invoices — browser encryption library ("the envelope and the stamp").
+ * Envelo — browser encryption library ("the envelope and the stamp").
  *
  * Everything here runs in the user's browser using the built-in Web Crypto API.
- * The server only ever sees ciphertext, wrapped keys, and fingerprints — never
- * plaintext invoice contents and never a private key.
+ * The server receives ciphertext, wrapped keys, fingerprints, and limited
+ * workflow metadata — never the sealed document body or a private key.
  *
  * Model:
  * - Each signed-in user has an RSA-OAEP keypair. The private key lives in
@@ -472,7 +472,7 @@ export async function importKeyBackup(
     file = parsed;
   } catch {
     throw new Error(
-      "That file doesn't look like a Sealed Invoices key backup. Pick the file you downloaded from \u201CBack up my envelope key\u201D.",
+      "That file doesn't look like an Envelo key backup. Pick the file you downloaded from \u201CBack up my envelope key\u201D.",
     );
   }
 
@@ -670,7 +670,7 @@ export async function computeFingerprint(document: InvoiceDocument): Promise<str
 // become unreachable. "Download a copy" closes that gap: whoever can open
 // the envelope right now can save the decrypted document as a small JSON
 // file whose fingerprint anyone can recompute and compare with the anchor
-// transaction on Arc - no Sealed Invoices server involved.
+// transaction on Arc - no Envelo server involved.
 
 /** A downloadable, independently verifiable copy of one opened invoice. */
 export interface InvoiceCopyFile {
@@ -751,7 +751,7 @@ export async function buildInvoiceCopyFile(
   const chainClaim = anchored
     ? " The same value is embedded in the Arc testnet anchor transaction named in `anchor.txHash` " +
       "(open `anchor.explorerTxUrl` to see it), so this copy stays checkable against the chain " +
-      "even if the Sealed Invoices server no longer exists."
+      "even if the Envelo server no longer exists."
     : " When this copy was exported, the fingerprint had NOT yet been anchored onchain " +
       "(`anchor.status` records where it stood), so there is no transaction to check it against yet. " +
       "The invoice's page in the app shows the anchor transaction once it lands; this file's " +

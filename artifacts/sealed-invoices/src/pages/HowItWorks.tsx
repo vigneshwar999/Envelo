@@ -3,17 +3,18 @@ export function HowItWorks() {
     <div className="max-w-3xl mx-auto py-12">
       <h1 className="text-4xl font-bold mb-6">How it Works</h1>
       <p className="text-xl text-muted-foreground mb-12">
-        Sealed Invoices is a privacy-first invoicing system running on the Arc Testnet. 
-        It uses end-to-end encryption so only you and your client can see the invoice contents.
+        Envelo is a privacy-first invoicing system running on the Arc Testnet.
+        It encrypts the invoice body so only authorized viewers can open its sealed details.
       </p>
       
       <div className="space-y-12">
         <section>
           <h2 className="text-2xl font-semibold mb-4 text-primary">1. The Sealed Envelope</h2>
           <p className="mb-4">
-            When you create an invoice, it is encrypted entirely in your browser using an AES-256-GCM key. 
-            We call this the <strong>Sealed Envelope</strong>. The server never sees the plaintext document—only 
-            the ciphertext. 
+            When you create an invoice, its document body is encrypted entirely in your browser using an AES-256-GCM key.
+            We call this the <strong>Sealed Envelope</strong>. The server receives the sealed ciphertext plus limited
+            workflow metadata—including invoice number, amount, due date, parties, status, and fingerprint—but cannot
+            read encrypted fields such as line items or notes.
           </p>
           <p>
             The key to open the envelope is then encrypted (wrapped) with the public keys of the authorized viewers (like you and your client). Only those with the matching private key (kept securely in their browser) can open the envelope.
@@ -22,7 +23,7 @@ export function HowItWorks() {
             That private key — your <strong>envelope key</strong> — stays in the browser where you first signed in. 
             To open your invoices on another device, use <strong>Back up my envelope key</strong> on the Dashboard: 
             it downloads a copy locked with a passphrase you choose, which you can restore on any other device. 
-            The server never sees your envelope key, locked or not.
+            The server never sees your private envelope key or backup passphrase.
           </p>
         </section>
 
