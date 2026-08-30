@@ -24,6 +24,11 @@ test("signed-out visitors can explore Envelo before authentication", async ({
     "href",
     "/sign-in",
   );
+  // The demo must never autoplay: the iframe stays unmounted until the
+  // visitor presses the poster's play button.
+  await expect(page.getByTestId("button-demo-play")).toBeVisible();
+  await expect(page.getByTestId("iframe-demo")).toHaveCount(0);
+  await page.getByTestId("button-demo-play").click();
   await expect(page.getByTestId("iframe-demo")).toHaveAttribute(
     "src",
     "/demo-video/",

@@ -81,6 +81,16 @@ test("Explore records privacy-safe signed-out conversion actions", async ({
   ]);
 
   await page.goto("/explore");
+  await page.getByTestId("button-demo-play").click();
+  await expect(page.getByTestId("iframe-demo")).toBeVisible();
+  expect(await capturedEvents(page)).toEqual([
+    {
+      name: "explore_demo_opened",
+      data: { location: "demo_section", action: "play_inline" },
+    },
+  ]);
+
+  await page.goto("/explore");
   const demoPopup = page.waitForEvent("popup");
   await page.getByTestId("link-demo-new-tab").click();
   await (await demoPopup).close();

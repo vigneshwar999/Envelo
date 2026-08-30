@@ -13,6 +13,7 @@ import {
   Database,
   KeyRound,
   Eye,
+  Play,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SiteFooter } from "@/components/marketing/SiteFooter";
@@ -45,6 +46,7 @@ function FadeIn({
 
 export default function Explore() {
   const [iframeLoaded, setIframeLoaded] = useState(false);
+  const [demoStarted, setDemoStarted] = useState(false);
   const { isSignedIn } = useUser();
 
   return (
@@ -264,34 +266,72 @@ export default function Explore() {
               See Envelo in action
             </h2>
             <p className="text-muted-foreground text-lg">
-              Explore the live interactive demo below to see the complete
-              invoice and payment flow.
+              Press play for a 60-second walkthrough of the complete invoice
+              and payment flow.
             </p>
           </FadeIn>
 
           <FadeIn delay={0.2}>
             <div className="rounded-2xl border bg-card shadow-2xl overflow-hidden relative aspect-[16/10] sm:aspect-video w-full group">
-              {!iframeLoaded && (
-                <div className="absolute inset-0 flex items-center justify-center bg-muted/30">
-                  <div className="flex flex-col items-center gap-4 text-muted-foreground">
-                    <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-r-transparent" />
-                    <span className="text-sm font-medium">
-                      Loading interactive demo...
-                    </span>
-                  </div>
-                </div>
+              {!demoStarted ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setDemoStarted(true);
+                    trackEvent("explore_demo_opened", {
+                      location: "demo_section",
+                      action: "play_inline",
+                    });
+                  }}
+                  aria-label="Play the Envelo demo video"
+                  data-testid="button-demo-play"
+                  className="group/play absolute inset-0 z-10 flex h-full w-full flex-col items-center justify-center gap-5 bg-primary text-primary-foreground"
+                >
+                  <span
+                    aria-hidden="true"
+                    className="absolute -top-24 -right-24 h-64 w-64 rounded-full bg-primary-foreground/5 blur-3xl"
+                  />
+                  <span
+                    aria-hidden="true"
+                    className="absolute -bottom-24 -left-24 h-64 w-64 rounded-full bg-primary-foreground/5 blur-3xl"
+                  />
+                  <span className="flex h-16 w-16 sm:h-20 sm:w-20 items-center justify-center rounded-full bg-white text-primary shadow-2xl ring-8 ring-white/10 transition-transform duration-300 group-hover/play:scale-105">
+                    <Play
+                      className="h-6 w-6 sm:h-8 sm:w-8 translate-x-0.5"
+                      fill="currentColor"
+                    />
+                  </span>
+                  <span className="text-lg sm:text-xl font-semibold tracking-tight">
+                    Watch the demo
+                  </span>
+                  <span className="px-6 text-center text-xs sm:text-sm text-primary-foreground/70">
+                    Seal, anchor, pay, share, and verify — in 60 seconds.
+                  </span>
+                </button>
+              ) : (
+                <>
+                  {!iframeLoaded && (
+                    <div className="absolute inset-0 flex items-center justify-center bg-muted/30">
+                      <div className="flex flex-col items-center gap-4 text-muted-foreground">
+                        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-r-transparent" />
+                        <span className="text-sm font-medium">
+                          Loading the demo...
+                        </span>
+                      </div>
+                    </div>
+                  )}
+                  <iframe
+                    src="/demo-video/"
+                    title="Envelo Interactive Demo"
+                    className={`absolute inset-0 z-10 h-full w-full border-0 transition-opacity duration-500 ${
+                      iframeLoaded ? "opacity-100" : "opacity-0"
+                    }`}
+                    allow="autoplay; clipboard-write"
+                    onLoad={() => setIframeLoaded(true)}
+                    data-testid="iframe-demo"
+                  />
+                </>
               )}
-              <iframe
-                src="/demo-video/"
-                title="Envelo Interactive Demo"
-                className={`absolute inset-0 z-10 h-full w-full border-0 transition-opacity duration-500 ${
-                  iframeLoaded ? "opacity-100" : "opacity-0"
-                }`}
-                allow="autoplay; clipboard-write"
-                loading="lazy"
-                onLoad={() => setIframeLoaded(true)}
-                data-testid="iframe-demo"
-              />
             </div>
             <div className="mt-6 flex justify-center">
               <Button
