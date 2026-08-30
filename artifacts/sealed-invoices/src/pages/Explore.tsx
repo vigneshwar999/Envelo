@@ -15,6 +15,7 @@ import {
   Eye,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { SiteFooter } from "@/components/marketing/SiteFooter";
 import {
   rememberExploreSignupIntent,
   trackEvent,
@@ -47,7 +48,7 @@ export default function Explore() {
   const { isSignedIn } = useUser();
 
   return (
-    <div className="w-full bg-background overflow-hidden selection:bg-seal selection:text-white pb-24">
+    <div className="w-full overflow-hidden bg-background selection:bg-seal selection:text-white">
       {/* 1. HERO */}
       <section className="relative min-h-[90dvh] flex flex-col items-center justify-center px-4 pt-20">
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_center,var(--tw-gradient-stops))] from-primary/5 via-background to-background -z-10" />
@@ -530,58 +531,7 @@ export default function Explore() {
         </FadeIn>
       </section>
 
-      <footer className="border-t px-4 py-10">
-        <div className="mx-auto flex max-w-6xl flex-col gap-8 sm:flex-row sm:items-end sm:justify-between">
-          <div className="space-y-2">
-            <Link
-              href="/"
-              className="inline-flex items-center gap-2 text-lg font-semibold tracking-tight"
-              data-testid="link-footer-home"
-            >
-              <ShieldCheck className="h-5 w-5 text-seal" />
-              Envelo
-            </Link>
-            <p className="text-sm text-muted-foreground">
-              Private paperwork. Public proof.
-            </p>
-          </div>
-          <div className="flex flex-wrap items-center gap-x-6 gap-y-3 text-sm text-muted-foreground">
-            <Link
-              href="/explore"
-              className="transition-colors hover:text-foreground"
-              data-testid="link-footer-explore"
-            >
-              Explore
-            </Link>
-            <Link
-              href="/how-it-works"
-              className="transition-colors hover:text-foreground"
-              data-testid="link-footer-how-it-works"
-            >
-              How it Works
-            </Link>
-            <a
-              href="/demo-video/"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="transition-colors hover:text-foreground"
-              data-testid="link-footer-demo"
-              onClick={() =>
-                trackEvent("explore_demo_opened", {
-                  location: "footer",
-                  action: "new_tab",
-                })
-              }
-            >
-              Interactive demo
-            </a>
-          </div>
-        </div>
-        <p className="mx-auto mt-8 max-w-6xl text-xs leading-relaxed text-muted-foreground">
-          Arc Testnet demonstration only. Test USDC has no real-world value,
-          and current settlement records remain public onchain.
-        </p>
-      </footer>
+      <SiteFooter />
     </div>
   );
 }
