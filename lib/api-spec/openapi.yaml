@@ -2,14 +2,24 @@ openapi: 3.1.0
 info:
   # Do not change the title, if the title changes, the import paths will be broken
   title: Api
-  version: 0.1.0
-  description: API specification
+  version: 0.2.0
+  description: Sealed Invoices API — privacy-first invoicing anchored on the Arc testnet, with real user accounts
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: users
+    description: Signed-in user accounts and their encryption keys
+  - name: invoices
+    description: Sealed invoice lifecycle
+  - name: grants
+    description: Time-limited view access grants
+  - name: chain
+    description: Arc testnet status and anchoring
+  - name: dashboard
+    description: Aggregated overview data for the signed-in user
 paths:
   /healthz:
     get:
@@ -24,7 +34,910 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+  /users/me:
+    get:
+      operationId: getMe
+      tags: [users]
+      summary: The signed-in user's profile, or 404 until the first sync
+      responses:
+        "200":
+          description: Current user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          description: Signed in, but not synced yet (no profile row)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiMessage"
+  /users/me/sync:
+    post:
+      operationId: syncMe
+      tags: [users]
+      summary: Create or update the signed-in user's profile, encryption key, and testnet wallet
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UserSyncInput"
+      responses:
+        "200":
+          description: Synced user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+  /users/me/payout-address:
+    put:
+      operationId: setPayoutAddress
+      tags: [users]
+      summary: Link or unlink a self-owned wallet address for receiving payouts
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PayoutAddressInput"
+      responses:
+        "200":
+          description: Updated user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "400":
+          description: Not a valid wallet address
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiMessage"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          description: Signed in, but not synced yet (no profile row)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiMessage"
+  /users/me/display-name:
+    put:
+      operationId: setDisplayName
+      tags: [users]
+      summary: Change the name shown on invoices, pickers, and the audit trail
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DisplayNameInput"
+      responses:
+        "200":
+          description: Updated user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "400":
+          description: Empty or too-long name
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiMessage"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          description: Signed in, but not synced yet (no profile row)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiMessage"
+  /users/me/push-token:
+    put:
+      operationId: registerPushToken
+      tags: [users]
+      summary: Register this device's Expo push token so new invoices can notify the signed-in user on their phone
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PushTokenInput"
+      responses:
+        "200":
+          description: Token stored for this account (re-registering from another account moves the device, so a shared phone only notifies whoever signed in last)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PushTokenRegistration"
+        "400":
+          description: Not a valid Expo push token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiMessage"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          description: Signed in, but not synced yet (no profile row)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiMessage"
+  /users/me/reset-key:
+    post:
+      operationId: resetEncryptionKey
+      tags: [users]
+      summary: Deliberately replace a lost envelope key with a freshly generated one
+      description: >-
+        The explicit "I lost my key and have no backup" action. Sync
+        deliberately refuses to swap a registered key because that would
+        silently lock old envelopes; this endpoint is the ONE place a swap can
+        happen, and it is meant to sit behind a clearly warned client flow.
+        Every envelope sealed for the old key stays locked until the other
+        party on each invoice re-shares it (re-wraps the envelope key for the
+        new public key in their browser).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ResetKeyInput"
+      responses:
+        "200":
+          description: Updated user with the new registered key
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "400":
+          description: Invalid key, wrong confirmation phrase, or key unchanged
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiMessage"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          description: Signed in, but not synced yet (no profile row)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiMessage"
+  /users/me/wrapped-keys:
+    get:
+      operationId: listMyWrappedKeys
+      tags: [users]
+      summary: Every wrapped envelope-key copy this account currently holds
+      description: >-
+        The complete inventory a browser needs before rotating the account's
+        envelope key: every wrapped copy encrypted for the CURRENT registered
+        key. Invoice copies are the permanent per-party copies; grant copies
+        are time-limited shares received from others (only active, unexpired
+        ones are listed - revoked or expired grants cannot open anything and
+        are ignored). Each wrapped key is ciphertext to the server; only the
+        holder's browser can unwrap it.
+      responses:
+        "200":
+          description: Everything wrapped for this account's current key
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MyWrappedKeys"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          description: Signed in, but not synced yet (no profile row)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiMessage"
+  /users/me/rotation-fence:
+    post:
+      operationId: bumpRotationFence
+      tags: [users]
+      summary: Fence out any in-flight key rotation, then report the registered key
+      description: >-
+        The recovery half of crash-safe rotation. A browser that finds a
+        staged rotation it cannot account for MUST NOT conclude "it never
+        happened" just because the registered key still looks old - the
+        original request may still be in flight somewhere, about to commit.
+        This bumps the user's rotation fence under the same row lock every
+        rotation takes, so any rotation prepared before the bump can no
+        longer commit. The registered key returned here is therefore FINAL
+        with respect to that older rotation: if it is not the staged key by
+        now, it never will be, and the staged record is safe to discard.
+      responses:
+        "200":
+          description: Fence bumped; the registered key as of the bump
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RotationFenceStatus"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          description: Signed in, but not synced yet (no profile row)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiMessage"
+  /users/me/rotate-key:
+    post:
+      operationId: rotateEncryptionKey
+      tags: [users]
+      summary: Swap to a fresh envelope key WITHOUT losing access to anything
+      description: >-
+        The graceful sibling of reset-key, for users who still HAVE their
+        current key. The browser generates a new keypair, unwraps every wrapped
+        copy it holds with the old private key, re-wraps each one for the new
+        public key, and submits everything here in one request. The server
+        applies it all-or-nothing: the registered public key and every wrapped
+        copy change together, or nothing changes at all. Counterparties never
+        notice - no invoice locks and nobody has to re-share. The request must
+        echo the exact registered key it was prepared against and must cover
+        every copy on record; if anything moved since the page loaded (another
+        rotation, a new invoice, a new grant), the server refuses with 409 and
+        the client reloads and retries.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RotateKeyInput"
+      responses:
+        "200":
+          description: Updated user with the new registered key - every copy carried over
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "400":
+          description: Unusable new key, key unchanged, or no registered key to rotate
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiMessage"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          description: Signed in, but not synced yet (no profile row)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiMessage"
+        "409":
+          description: >-
+            Rotation refused because the world moved since the page loaded -
+            the registered key changed, or the submitted copies no longer
+            exactly cover what the account holds. Reload and try again.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiMessage"
+  /users/me/wallet/transfers:
+    get:
+      operationId: listMyTransfers
+      tags: [users]
+      summary: Receipts of past transfers and withdrawals out of the app-managed wallet (newest first)
+      responses:
+        "200":
+          description: Every past transfer that really went through - the receipt is written before the money is sent, but listed only once the Arc testnet confirms it
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/WalletTransferReceipt"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          description: Signed in, but not synced yet (no profile row)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiMessage"
+  /users/me/wallet:
+    get:
+      operationId: getMyWallet
+      tags: [users]
+      summary: The app-managed wallet's live balance and how much of it a transfer would move
+      responses:
+        "200":
+          description: Wallet balance (read straight from the Arc testnet, never guessed)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WalletBalance"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          description: Signed in, but not synced yet (no profile row)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiMessage"
+  /users/me/wallet/transfer:
+    post:
+      operationId: transferMyBalance
+      tags: [users]
+      summary: Move the app-managed wallet's balance (minus a small gas reserve) to the linked payout wallet
+      responses:
+        "200":
+          description: The transfer went through on the Arc testnet
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BalanceTransferResult"
+        "400":
+          description: No payout wallet is linked, so there is nowhere to send the money
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiMessage"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          description: Signed in, but not synced yet (no profile row)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiMessage"
+        "409":
+          description: Nothing to move after the gas reserve, or the chain is unreachable (message explains)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiMessage"
+        "503":
+          description: The permanent receipt could not be prepared, so the transfer was not started - no money moved
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiMessage"
+        "502":
+          description: The real transaction failed or was not confirmed in time - reported honestly, never faked
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiMessage"
+  /users/me/wallet/withdraw:
+    post:
+      operationId: withdrawMyBalance
+      tags: [users]
+      summary: Send a chosen amount of the app-managed wallet's balance to any Arc address
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/WithdrawRequest"
+      responses:
+        "200":
+          description: The withdrawal went through on the Arc testnet
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BalanceTransferResult"
+        "400":
+          description: The address or amount is not usable (message explains what to fix)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiMessage"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          description: Signed in, but not synced yet (no profile row)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiMessage"
+        "409":
+          description: More than the balance allows after the gas reserve, or the chain is unreachable (message explains)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiMessage"
+        "503":
+          description: The permanent receipt could not be prepared, so the withdrawal was not started - no money moved
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiMessage"
+        "502":
+          description: The real transaction failed or was not confirmed in time - reported honestly, never faked
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiMessage"
+  /users:
+    get:
+      operationId: listUsers
+      tags: [users]
+      summary: All registered users (for the sharing/grant picker; the invoice client field uses lookupUser instead)
+      responses:
+        "200":
+          description: Users
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/DirectoryUser"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+  /users/lookup:
+    post:
+      operationId: lookupUser
+      tags: [users]
+      summary: Find one user by exact email or custodial wallet address (the invoice form's client field)
+      description: >-
+        A POST body rather than a query string keeps email addresses out of
+        access logs. The answer never echoes the email or address searched
+        for - a match returns only the public directory entry. Exact matches
+        only; no partial or fuzzy search exists by design, and the same
+        visibility rule as the directory applies.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LookupUserRequest"
+      responses:
+        "200":
+          description: Whether a matching account exists, with its directory entry when found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LookupUserResult"
+        "400":
+          description: The query is neither an email address nor a 0x wallet address
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiMessage"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+  /invoices:
+    get:
+      operationId: listInvoices
+      tags: [invoices]
+      summary: Invoices the signed-in user sent, received, or was granted access to
+      responses:
+        "200":
+          description: Invoices
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Invoice"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+    post:
+      operationId: createInvoice
+      tags: [invoices]
+      summary: Create a sealed invoice (ciphertext + fingerprint prepared in the browser; the signed-in user is the freelancer)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/InvoiceInput"
+      responses:
+        "201":
+          description: Created invoice
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Invoice"
+        "400":
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiMessage"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+  /invoices/{invoiceId}:
+    get:
+      operationId: getInvoice
+      tags: [invoices]
+      summary: Get one invoice's public metadata (parties and active grantees only)
+      parameters:
+        - name: invoiceId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Invoice
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Invoice"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          description: Not found (or no access)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiMessage"
+  /invoices/{invoiceId}/pay:
+    post:
+      operationId: payInvoice
+      tags: [invoices]
+      summary: Pay an invoice in test USDC on the Arc testnet (the signed-in user must be the client)
+      parameters:
+        - name: invoiceId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Updated invoice with payment transaction
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Invoice"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          description: Only the invoice's client can pay it
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiMessage"
+        "409":
+          description: Payment not possible (already paid, insufficient funds in the payer's wallet, or chain not ready — message explains why)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiMessage"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiMessage"
+  /invoices/{invoiceId}/pay-preview:
+    get:
+      operationId: getPayPreview
+      tags: [invoices]
+      summary: What the Pay approval sheet shows - exact amount, live fee estimate, payer balance, and the server's affordability verdict
+      parameters:
+        - name: invoiceId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Payment preview
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PayPreview"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          description: Only the invoice's client can pay it
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiMessage"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiMessage"
+  /invoices/{invoiceId}/envelope:
+    get:
+      operationId: getEnvelope
+      tags: [invoices]
+      summary: Fetch the sealed envelope (ciphertext + the signed-in user's wrapped key) if authorized
+      parameters:
+        - name: invoiceId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Envelope access
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EnvelopeAccess"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          description: No access (never had a key, or the grant expired/was revoked)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiMessage"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiMessage"
+        "409":
+          description: >-
+            The caller is a party but their wrapped copy is gone (key reset) -
+            the other party must re-share before this envelope opens again
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiMessage"
+  /invoices/{invoiceId}/verify:
+    post:
+      operationId: verifyInvoice
+      tags: [invoices]
+      summary: Compare a fingerprint computed in the browser against the stored and onchain records
+      parameters:
+        - name: invoiceId
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/VerificationInput"
+      responses:
+        "200":
+          description: Verification result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VerificationResult"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiMessage"
+  /invoices/{invoiceId}/grants:
+    get:
+      operationId: listGrants
+      tags: [grants]
+      summary: List access grants for an invoice (owner only)
+      parameters:
+        - name: invoiceId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Grants
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Grant"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiMessage"
+    post:
+      operationId: createGrant
+      tags: [grants]
+      summary: Grant another user time-limited access (key wrapped in the owner's browser)
+      parameters:
+        - name: invoiceId
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GrantInput"
+      responses:
+        "201":
+          description: Created grant
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Grant"
+        "400":
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiMessage"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          description: Only the invoice's owner can grant access
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiMessage"
+  /invoices/{invoiceId}/grants/{grantId}/revoke:
+    post:
+      operationId: revokeGrant
+      tags: [grants]
+      summary: Revoke an access grant immediately (the signed-in user must be the grantor)
+      parameters:
+        - name: invoiceId
+          in: path
+          required: true
+          schema: { type: string }
+        - name: grantId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Revoked grant
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Grant"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          description: Only the user who issued the grant can revoke it
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiMessage"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiMessage"
+  /invoices/{invoiceId}/rewrap:
+    post:
+      operationId: rewrapInvoiceKey
+      tags: [invoices]
+      summary: Re-share this envelope with the other party after they reset their key
+      description: >-
+        When the other party on an invoice lost their key and reset it, their
+        wrapped copy of the envelope key became useless and was removed. The
+        party that still holds a working copy unwraps it in their browser,
+        re-wraps it for the counterparty's NEW public key, and stores it here -
+        the same mechanics as a grant, but restoring one of the invoice's two
+        permanent copies. The server never sees plaintext or private keys.
+      parameters:
+        - name: invoiceId
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RewrapKeyInput"
+      responses:
+        "200":
+          description: The invoice, with its re-share flags now cleared
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Invoice"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          description: Only the two parties on the invoice can re-share it
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiMessage"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiMessage"
+        "409":
+          description: >-
+            Re-share impossible right now - the caller's own copy is gone too
+            (nothing to re-share from), the other party already has a working
+            key, has no registered key to wrap for, or reset again since the
+            caller's page loaded (key changed)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiMessage"
+  /invoices/{invoiceId}/events:
+    get:
+      operationId: listInvoiceEvents
+      tags: [invoices]
+      summary: Timeline of everything that happened to an invoice
+      parameters:
+        - name: invoiceId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Events, newest first
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/InvoiceEvent"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiMessage"
+  /chain/status:
+    get:
+      operationId: getChainStatus
+      tags: [chain]
+      summary: Live Arc testnet connection status, wallets, and balances
+      responses:
+        "200":
+          description: Chain status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ChainStatus"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+  /chain/anchor-preview:
+    get:
+      operationId: getAnchorPreview
+      tags: [chain]
+      summary: What the Seal & Send approval sheet shows - the anchor transaction's contract, network, live fee estimate, and whether the sender's wallet can afford it
+      responses:
+        "200":
+          description: Anchor transaction preview
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AnchorPreview"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+  /dashboard/summary:
+    get:
+      operationId: getDashboardSummary
+      tags: [dashboard]
+      summary: Aggregated counts, totals, and recent activity for the signed-in user
+      responses:
+        "200":
+          description: Summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardSummary"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
 components:
+  responses:
+    Unauthorized:
+      description: Not signed in
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ApiMessage"
   schemas:
     HealthStatus:
       type: object
@@ -33,4 +946,633 @@ components:
           type: string
       required:
         - status
-
+    ApiMessage:
+      type: object
+      required: [error]
+      properties:
+        error: { type: string }
+    User:
+      type: object
+      required: [id, displayName, hasEncryptionKey, rotationFence]
+      properties:
+        id: { type: string }
+        displayName: { type: string }
+        email: { type: ["string", "null"] }
+        walletAddress: { type: ["string", "null"] }
+        payoutAddress:
+          type: ["string", "null"]
+          description: Self-owned wallet that receives this user's payouts instead of the app-managed wallet
+        hasEncryptionKey:
+          type: boolean
+          description: True once the user's browser has uploaded a public encryption key
+        publicKeyJwk: { type: ["string", "null"] }
+        rotationFence:
+          type: number
+          description: >-
+            Guard counter for key rotations. A rotation request must echo the
+            value it read here; the crash-recovery check bumps it to fence out
+            a possibly still in-flight rotation before concluding anything.
+    DirectoryUser:
+      type: object
+      required: [id, displayName, hasEncryptionKey]
+      description: What other signed-in users may see - email, wallet, and payout details stay private by contract
+      properties:
+        id: { type: string }
+        displayName: { type: string }
+        hasEncryptionKey: { type: boolean }
+        publicKeyJwk: { type: ["string", "null"] }
+    LookupUserRequest:
+      type: object
+      required: [query]
+      properties:
+        query:
+          type: string
+          minLength: 3
+          maxLength: 320
+          description: An exact email address, or a 0x custodial wallet address
+    LookupUserResult:
+      type: object
+      required: [found]
+      description: found=false is a complete, honest answer - no visible account matched
+      properties:
+        found: { type: boolean }
+        user:
+          $ref: "#/components/schemas/DirectoryUser"
+    UserSyncInput:
+      type: object
+      required: [displayName, publicKeyJwk]
+      properties:
+        displayName:
+          type: string
+          description: Used only when the profile row is first created; after that, names change only through PUT /users/me/display-name so a chosen name survives sign-ins
+        email: { type: ["string", "null"] }
+        publicKeyJwk:
+          type: string
+          description: JSON string of the RSA-OAEP public key JWK generated in the browser
+    PayoutAddressInput:
+      type: object
+      required: [address]
+      properties:
+        address:
+          type: ["string", "null"]
+          description: EVM address (0x...) to receive payouts, or null to switch back to the app-managed wallet
+    DisplayNameInput:
+      type: object
+      required: [displayName]
+      properties:
+        displayName:
+          type: string
+          description: The name clients see on invoices - letterhead, pickers, audit trail
+    PushTokenInput:
+      type: object
+      required: [token, platform]
+      properties:
+        token:
+          type: string
+          description: The Expo push token for this device, like ExponentPushToken[xxxx]. It identifies the device + app install, never the person.
+        platform:
+          type: string
+          enum: [ios, android]
+          description: Where the token came from - web browsers cannot receive Expo pushes
+    PushTokenRegistration:
+      type: object
+      required: [registered]
+      properties:
+        registered:
+          type: boolean
+          description: True once the token is stored for the signed-in account
+    ResetKeyInput:
+      type: object
+      required: [publicKeyJwk, confirm]
+      properties:
+        publicKeyJwk:
+          type: string
+          description: JSON string of the NEW RSA-OAEP public key JWK, generated in the browser
+        confirm:
+          type: string
+          enum: [RESET]
+          description: The literal word RESET - proof the caller came through the warned flow, so no code path can trigger a key swap casually
+    MyInvoiceKeyCopy:
+      type: object
+      required: [invoiceId, wrappedKey]
+      properties:
+        invoiceId: { type: string }
+        wrappedKey:
+          type: string
+          minLength: 1
+          description: The invoice's AES envelope key, wrapped for this account's public key
+    MyGrantKeyCopy:
+      type: object
+      required: [grantId, invoiceId, wrappedKey]
+      properties:
+        grantId: { type: string }
+        invoiceId: { type: string }
+        wrappedKey:
+          type: string
+          minLength: 1
+          description: The shared invoice's AES envelope key, wrapped for this account's public key
+    MyWrappedKeys:
+      type: object
+      required: [invoiceCopies, grantCopies]
+      properties:
+        invoiceCopies:
+          type: array
+          items:
+            $ref: "#/components/schemas/MyInvoiceKeyCopy"
+        grantCopies:
+          type: array
+          description: Active, unexpired grants received from others
+          items:
+            $ref: "#/components/schemas/MyGrantKeyCopy"
+    GrantKeyRewrap:
+      type: object
+      required: [grantId, wrappedKey]
+      properties:
+        grantId: { type: string }
+        wrappedKey:
+          type: string
+          minLength: 1
+          description: The grant's envelope key re-wrapped for the NEW public key
+    RotationFenceStatus:
+      type: object
+      required: [fence, publicKeyJwk]
+      properties:
+        fence:
+          type: number
+          description: The fence value after the bump
+        publicKeyJwk:
+          type: ["string", "null"]
+          description: >-
+            The registered key as of the bump - final with respect to any
+            rotation prepared before it, because such a rotation can no
+            longer commit.
+    RotateKeyInput:
+      type: object
+      required: [currentPublicKeyJwk, newPublicKeyJwk, fence, invoiceCopies, grantCopies]
+      properties:
+        fence:
+          type: number
+          description: >-
+            The rotationFence value this rotation was prepared against (from
+            GET /users/me). If a crash-recovery check bumped the fence since,
+            the server refuses with 409 instead of committing a rotation the
+            recovering browser already gave up on.
+        currentPublicKeyJwk:
+          type: string
+          minLength: 1
+          description: >-
+            The exact registered public key JWK string this rotation was
+            prepared against. If it no longer matches (another tab rotated or
+            reset meanwhile), the server refuses with 409 instead of storing
+            re-wraps that would not open.
+        newPublicKeyJwk:
+          type: string
+          minLength: 1
+          description: JSON string of the NEW RSA-OAEP public key JWK, generated in the browser
+        invoiceCopies:
+          type: array
+          description: >-
+            EVERY invoice copy this account holds, re-wrapped for the new key.
+            Must exactly match the server's record - all-or-nothing.
+          items:
+            $ref: "#/components/schemas/MyInvoiceKeyCopy"
+        grantCopies:
+          type: array
+          description: >-
+            Active grants received from others, re-wrapped for the new key.
+            Together with dropGrantIds this must exactly cover every active
+            grant this account holds.
+          items:
+            $ref: "#/components/schemas/GrantKeyRewrap"
+        dropGrantIds:
+          type: array
+          description: >-
+            Active grants received from others to give up instead of carrying
+            over (e.g. a copy that would not unwrap). Dropped grants are
+            deleted; the grantor can share again later.
+          items: { type: string }
+    RewrapKeyInput:
+      type: object
+      required: [wrappedKey, forPublicKeyJwk]
+      properties:
+        wrappedKey:
+          type: string
+          minLength: 1
+          description: The envelope's AES key re-wrapped for the counterparty's new public key, produced in the caller's browser
+        forPublicKeyJwk:
+          type: string
+          minLength: 1
+          description: >-
+            The exact public key JWK the caller wrapped for (as previously
+            returned in counterpartyPublicKeyJwk). If the counterparty reset
+            again in the meantime, the server refuses with 409 instead of
+            storing a wrap for a destroyed key.
+    WalletBalance:
+      type: object
+      required: [address, balanceUsdc, reserveUsdc, transferableUsdc, canTransfer]
+      properties:
+        address:
+          type: ["string", "null"]
+          description: The app-managed custodial wallet address
+        balanceUsdc:
+          type: ["string", "null"]
+          description: Current balance in test USDC, or null while the Arc testnet is unreachable
+        reserveUsdc:
+          type: string
+          description: Amount always kept behind so the transfer can pay its own network fee
+        transferableUsdc:
+          type: ["string", "null"]
+          description: The most a transfer or withdrawal can send right now (balance minus the reserve, never below zero)
+        canTransfer:
+          type: boolean
+          description: True when a payout wallet is linked and there is a meaningful amount to move
+    WithdrawRequest:
+      type: object
+      required: [toAddress, amountUsdc]
+      properties:
+        toAddress:
+          type: string
+          minLength: 1
+          description: EVM address (0x...) that should receive the money
+        amountUsdc:
+          type: string
+          minLength: 1
+          description: Amount of test USDC to send, as a decimal string like "1.50"
+    BalanceTransferResult:
+      type: object
+      required: [txHash, amountUsdc, toAddress, explorerTxUrl]
+      properties:
+        txHash: { type: string }
+        amountUsdc:
+          type: string
+          description: Amount of test USDC that actually moved
+        toAddress:
+          type: string
+          description: The wallet address that received the money
+        explorerTxUrl:
+          type: string
+          description: Link to the real transaction on the ArcScan explorer
+    WalletTransferReceipt:
+      type: object
+      required: [id, amountUsdc, toAddress, txHash, explorerTxUrl, createdAt]
+      properties:
+        id: { type: string }
+        amountUsdc:
+          type: string
+          description: Amount of test USDC that moved
+        toAddress:
+          type: string
+          description: The wallet address that received the money (a linked payout wallet or a withdrawal destination)
+        txHash: { type: string }
+        explorerTxUrl:
+          type: string
+          description: Link to the real transaction on the ArcScan explorer
+        createdAt: { type: string }
+    WrappedKeyEntry:
+      type: object
+      required: [userId, wrappedKey]
+      properties:
+        userId: { type: string }
+        wrappedKey:
+          type: string
+          description: Base64 AES key wrapped with this user's public key
+    InvoiceInput:
+      type: object
+      required:
+        [
+          clientId,
+          amountUsdc,
+          fingerprint,
+          ciphertext,
+          wrappedKeys,
+          invoiceNumber,
+          creatorPublicKeyJwk,
+          clientPublicKeyJwk,
+        ]
+      properties:
+        clientId:
+          type: string
+          description: The registered user who will pay this invoice
+        creatorPublicKeyJwk:
+          type: string
+          description: >-
+            Echo of the exact registered public key the creator's own wrapped
+            copy was prepared for. The server verifies it under a row lock and
+            refuses if the registered key changed meanwhile (e.g. a rotation
+            in another tab), so a copy sealed for a retired key can never be
+            stored.
+        clientPublicKeyJwk:
+          type: string
+          description: >-
+            Echo of the exact registered public key the client's wrapped copy
+            was prepared for - same stale-key protection as
+            creatorPublicKeyJwk.
+        invoiceNumber: { type: string }
+        amountUsdc:
+          type: string
+          description: Decimal amount as a string, e.g. "125.50"
+        dueDate: { type: ["string", "null"] }
+        fingerprint:
+          type: string
+          description: SHA-256 hex of the canonical plaintext document, computed in the browser
+        ciphertext:
+          type: string
+          description: Base64 AES-GCM sealed envelope, encrypted in the browser
+        wrappedKeys:
+          type: array
+          items:
+            $ref: "#/components/schemas/WrappedKeyEntry"
+    Invoice:
+      type: object
+      required:
+        [
+          id,
+          invoiceNumber,
+          status,
+          amountUsdc,
+          freelancerId,
+          clientId,
+          freelancerName,
+          clientName,
+          fingerprint,
+          anchorStatus,
+          createdAt,
+        ]
+      properties:
+        id: { type: string }
+        invoiceNumber: { type: string }
+        status:
+          type: string
+          enum: [awaiting_payment, paid]
+        amountUsdc: { type: string }
+        freelancerId: { type: string }
+        clientId: { type: string }
+        freelancerName: { type: string }
+        clientName: { type: string }
+        dueDate: { type: ["string", "null"] }
+        fingerprint: { type: string }
+        anchorStatus:
+          type: string
+          enum: [pending, anchored, unavailable]
+          description: Whether the fingerprint has been recorded on the Arc testnet yet
+        anchorTxHash: { type: ["string", "null"] }
+        payTxHash: { type: ["string", "null"] }
+        paidAt: { type: ["string", "null"] }
+        createdAt: { type: string }
+        myCopyLocked:
+          type: boolean
+          description: >-
+            Only set for the two parties on the invoice: true when the
+            signed-in user's own wrapped copy of the envelope key no longer
+            exists (they reset their key), so this envelope will not open for
+            them until the other party re-shares it.
+        counterpartyNeedsRekey:
+          type: boolean
+          description: >-
+            Only set for the two parties on the invoice: true when the OTHER
+            party lost access by resetting their key and has registered a new
+            one - the signed-in user can restore their access with a one-click
+            re-share (re-wrap in the browser).
+        counterpartyPublicKeyJwk:
+          type: ["string", "null"]
+          description: >-
+            The other party's CURRENT public key JWK, present exactly when
+            counterpartyNeedsRekey is true, so the client can re-wrap without
+            a directory lookup.
+    EnvelopeAccess:
+      type: object
+      required: [ciphertext, wrappedKey, accessSource]
+      properties:
+        ciphertext: { type: string }
+        wrappedKey:
+          type: string
+          description: The AES key wrapped for the signed-in user
+        accessSource:
+          type: string
+          enum: [owner, client, grant]
+        grantExpiresAt: { type: ["string", "null"] }
+    GrantInput:
+      type: object
+      required: [granteeId, expiresAt, wrappedKey, granteePublicKeyJwk]
+      properties:
+        granteeId: { type: string }
+        expiresAt: { type: string }
+        wrappedKey:
+          type: string
+          description: AES key re-wrapped for the grantee, produced in the grantor's browser
+        granteePublicKeyJwk:
+          type: string
+          description: >-
+            Echo of the exact registered public key the wrap was prepared for.
+            Verified under a row lock so a share sealed for a key the grantee
+            just rotated or reset away is refused instead of stored.
+    Grant:
+      type: object
+      required:
+        [id, invoiceId, grantorId, granteeId, granteeName, expiresAt, status, createdAt]
+      properties:
+        id: { type: string }
+        invoiceId: { type: string }
+        grantorId: { type: string }
+        granteeId: { type: string }
+        granteeName: { type: string }
+        expiresAt: { type: string }
+        status:
+          type: string
+          enum: [active, expired, revoked]
+        revokedAt: { type: ["string", "null"] }
+        createdAt: { type: string }
+    VerificationInput:
+      type: object
+      required: [computedFingerprint]
+      properties:
+        computedFingerprint:
+          type: string
+          description: SHA-256 hex recomputed in the verifier's browser from the decrypted document
+    VerificationResult:
+      type: object
+      required: [matchesRecord, recordFingerprint, computedFingerprint, checkedAt, summary]
+      properties:
+        matchesRecord: { type: boolean }
+        matchesOnchain: { type: ["boolean", "null"] }
+        recordFingerprint: { type: string }
+        onchainFingerprint: { type: ["string", "null"] }
+        computedFingerprint: { type: string }
+        anchorTxHash: { type: ["string", "null"] }
+        checkedAt: { type: string }
+        summary:
+          type: string
+          description: Plain-language explanation of the verification outcome
+    InvoiceEvent:
+      type: object
+      required: [id, invoiceId, kind, detail, createdAt]
+      properties:
+        id: { type: string }
+        invoiceId: { type: string }
+        kind:
+          type: string
+          enum:
+            [
+              created,
+              anchored,
+              paid,
+              grant_issued,
+              grant_revoked,
+              envelope_opened,
+              verified,
+              key_reshared,
+            ]
+        actorId: { type: ["string", "null"] }
+        detail: { type: string }
+        txHash: { type: ["string", "null"] }
+        createdAt: { type: string }
+    AnchorPreview:
+      type: object
+      description: Everything the pre-seal approval sheet displays. All values are live server facts - clients must never invent or cache fee numbers. The anchor is paid by the sender's own built-in wallet.
+      required:
+        [
+          network,
+          chainId,
+          contractAddress,
+          explorerBaseUrl,
+          faucetUrl,
+          feeEstimateUsdc,
+          walletAddress,
+          walletBalanceUsdc,
+          canAfford,
+          shortfallUsdc,
+        ]
+      properties:
+        network: { type: string }
+        chainId: { type: number }
+        contractAddress:
+          type: ["string", "null"]
+          description: Null while the registry contract is still waiting on faucet funds; anchoring then happens automatically once it deploys.
+        explorerBaseUrl: { type: string }
+        faucetUrl: { type: string }
+        feeEstimateUsdc:
+          type: ["string", "null"]
+          description: Live estimate (anchor gas x current gas price) in test USDC at this moment, or null when the chain is unreachable.
+        walletAddress:
+          type: string
+          description: The sender's built-in wallet - the account that submits and pays the anchor transaction.
+        walletBalanceUsdc:
+          type: ["string", "null"]
+          description: That wallet's live balance in test USDC, or null when the chain is unreachable.
+        canAfford:
+          type: ["boolean", "null"]
+          description: Server verdict from the same affordability rule the create route enforces (balance covers the estimated fee). False should disable Confirm; null means the fee or balance was unreadable, so no verdict exists - the route re-checks at submit.
+        shortfallUsdc:
+          type: ["string", "null"]
+          description: How much test USDC is missing when canAfford is false, else null.
+    PayPreview:
+      type: object
+      description: Everything the Pay approval sheet displays. All values are live server facts computed with the same affordability rule the pay route enforces - clients must never re-derive money math.
+      required:
+        [
+          network,
+          chainId,
+          contractAddress,
+          explorerBaseUrl,
+          faucetUrl,
+          amountUsdc,
+          feeEstimateUsdc,
+          totalUsdc,
+          walletAddress,
+          walletBalanceUsdc,
+          canPay,
+          shortfallUsdc,
+          payeeAddress,
+          payeeName,
+          paidToLinkedWallet,
+          alreadyPaid,
+        ]
+      properties:
+        network: { type: string }
+        chainId: { type: number }
+        contractAddress:
+          type: ["string", "null"]
+          description: The registry contract this payment goes through - the one this invoice was anchored on (old invoices stay pinned to their original deployment), or null while none is deployed yet.
+        explorerBaseUrl: { type: string }
+        faucetUrl: { type: string }
+        amountUsdc:
+          type: string
+          description: The invoice amount - exactly what the payee receives.
+        feeEstimateUsdc:
+          type: ["string", "null"]
+          description: Live gas estimate in test USDC for the payment transaction at this moment, or null when the chain is unreachable or the invoice is already paid.
+        totalUsdc:
+          type: ["string", "null"]
+          description: amountUsdc plus feeEstimateUsdc - the exact total debited from the payer's wallet. Null whenever the fee estimate is null.
+        walletAddress:
+          type: string
+          description: The payer's built-in wallet - the account that signs and pays this transaction.
+        walletBalanceUsdc:
+          type: ["string", "null"]
+          description: That wallet's live balance in test USDC, or null when the chain is unreachable.
+        canPay:
+          type: ["boolean", "null"]
+          description: Server verdict from the same rule the pay route enforces (balance covers amount plus fee). False should disable Confirm; null means balance or fee was unreadable, so no verdict exists - the route re-checks at submit.
+        shortfallUsdc:
+          type: ["string", "null"]
+          description: How much test USDC is missing when canPay is false, else null.
+        payeeAddress:
+          type: ["string", "null"]
+          description: Where the USDC lands - the payee's linked wallet when they linked one, otherwise their built-in wallet. Display only; the pay route re-resolves this at submit time.
+        payeeName: { type: ["string", "null"] }
+        paidToLinkedWallet:
+          type: boolean
+          description: True when payeeAddress is a wallet the payee linked themselves rather than their built-in custodial one.
+        alreadyPaid: { type: boolean }
+    ChainStatus:
+      type: object
+      required:
+        [
+          network,
+          rpcConnected,
+          contractDeployed,
+          readyForPayments,
+          faucetUrl,
+          statusMessage,
+        ]
+      properties:
+        network: { type: string }
+        chainId: { type: ["number", "null"] }
+        rpcConnected: { type: boolean }
+        contractAddress: { type: ["string", "null"] }
+        contractDeployed: { type: boolean }
+        operatorAddress: { type: ["string", "null"] }
+        operatorBalanceUsdc: { type: ["string", "null"] }
+        myWalletAddress: { type: ["string", "null"] }
+        myBalanceUsdc: { type: ["string", "null"] }
+        faucetUrl: { type: string }
+        explorerBaseUrl: { type: ["string", "null"] }
+        readyForPayments: { type: boolean }
+        statusMessage:
+          type: string
+          description: Plain-language explanation of what works right now and what step is next
+    DashboardSummary:
+      type: object
+      required:
+        [
+          totalInvoices,
+          awaitingPayment,
+          paid,
+          totalPaidUsdc,
+          totalOutstandingUsdc,
+          activeGrants,
+          anchoredCount,
+          recentEvents,
+        ]
+      properties:
+        totalInvoices: { type: number }
+        awaitingPayment: { type: number }
+        paid: { type: number }
+        totalPaidUsdc: { type: string }
+        totalOutstandingUsdc: { type: string }
+        activeGrants: { type: number }
+        anchoredCount: { type: number }
+        recentEvents:
+          type: array
+          items:
+            $ref: "#/components/schemas/InvoiceEvent"

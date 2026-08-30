@@ -1,0 +1,66 @@
+[
+  {
+    "id": "7f2c9a41-3b8e-4d16-9c25-a1e4f8b06d31",
+    "position": 1,
+    "filepath": "src/pages/slides/TitleSlide.tsx",
+    "title": "Sealed Invoices",
+    "description": "Title slide: product one-liner and Arc Testnet facts.",
+    "speakerNotes": "Open with the one-liner: invoices are sealed inside the sender's browser so nobody in the middle can read them, proof of the paperwork lives on Arc, and payment settles in test USDC. Mention that this runs today on Arc Testnet - the chain ID and explorer on screen are the real ones. Spend twenty seconds here, then move; the story starts on the next slide."
+  },
+  {
+    "id": "2a6d0e83-95c4-47f2-b8a1-3c7e5d92f460",
+    "position": 2,
+    "filepath": "src/pages/slides/ProblemSlide.tsx",
+    "title": "Invoices in the open",
+    "description": "The two failures of email-and-PDF billing: leaked private data and unverifiable payment records.",
+    "speakerNotes": "Billing today runs on emailed PDFs and shared drive links, and two things break: private details like rates and client names are readable by everyone who handles the email, and 'paid' is just a claim - a screenshot the other side cannot check, while an edited invoice looks identical to the original. Land the bottom line exactly as written: freelancers over-share, clients cannot prove, auditors cannot trust. No blockchain words are needed yet - this is a paperwork problem everyone in the room has had."
+  },
+  {
+    "id": "c48b17f5-6a02-4e9d-8f36-b25a90c1e784",
+    "position": 3,
+    "filepath": "src/pages/slides/SolutionSlide.tsx",
+    "title": "The sealed envelope",
+    "description": "Envelope, wax stamp, one currency: the product explained in paper-mail terms.",
+    "speakerNotes": "Walk the three parts left to right in paper-mail terms. The envelope: the invoice is encrypted in the browser before anything is uploaded, so the server only ever stores a sealed envelope it cannot open. The wax stamp: a fingerprint of the document is recorded on Arc, so anyone can check the document is untouched without seeing what is inside. The payment: one plain test-USDC transfer whose receipt stays pinned to the invoice - and the fact to land is that even we, the operators, cannot read our users' invoices."
+  },
+  {
+    "id": "91e3d5a7-4c68-4b0f-a2d9-6f81c35b7e02",
+    "position": 4,
+    "filepath": "src/pages/slides/HowItWorksSlide.tsx",
+    "title": "Seal, anchor, pay, grant",
+    "description": "The four-step flow across the three demo accounts.",
+    "speakerNotes": "Introduce the three people once - Riya bills, Arjun pays, Meera audits - then read the four moves in order. Riya's browser seals the invoice; its fingerprint is anchored on Arc Testnet; Arjun pays in test USDC and the paid mark flips on the chain right next to that fingerprint; Meera gets a temporary key, and revoking it stops her next open - though nothing can take back what she already read. Tell the room these same four moves are exactly what the live demo will show in three slides."
+  },
+  {
+    "id": "5b0f82c6-d1a9-4735-9e48-027c6ba1f593",
+    "position": 5,
+    "filepath": "src/pages/slides/OnchainSlide.tsx",
+    "title": "What touches the chain",
+    "description": "Data minimalism: browser, server, and Arc each hold only what they need.",
+    "speakerNotes": "This is the privacy slide: each layer keeps only what it needs - the invoice is readable only in the browser, the server holds sealed envelopes and wrapped keys, and the chain holds the wax stamp and the payment record. Land the closing line: no names, no amounts, no addresses in the wax stamp - verify without revealing. If a judge notes that paying shows an amount and wallet addresses on the explorer, agree cheerfully: that public receipt is the point - the document and the people behind the wallets stay private. If someone asks why use a chain at all, the answer is that proof of the paperwork should not depend on trusting our server."
+  },
+  {
+    "id": "e7a4c210-8f5b-46d3-b19e-74d0a3c8f625",
+    "position": 6,
+    "filepath": "src/pages/slides/WhyArcSlide.tsx",
+    "title": "Why Arc",
+    "description": "USDC as native gas, one-currency payments, and the network facts panel.",
+    "speakerNotes": "Three practical reasons, no investment talk: on Arc the network fee is paid in the same unit as the invoice - USDC - so a client needs no second token before they can pay, and every anchor and payment is a public transaction anyone can open on the explorer. Point at the panel and read the facts: Arc Testnet, chain ID 5042002, gas in test USDC, free top-ups at faucet.circle.com. Say 'test money on a test network' out loud - honesty plays well with this audience."
+  },
+  {
+    "id": "38d6f9b2-0c71-4a84-95c3-e82f14a7d0b6",
+    "position": 7,
+    "filepath": "src/pages/slides/DemoSlide.tsx",
+    "title": "The live demo",
+    "description": "Account-by-account walkthrough of the running app, plus the verify tool.",
+    "speakerNotes": "Switch to the running app and walk the loop signing in as each demo account - mention these are real email sign-ups, not built-in roles, so anyone in the room could make their own. As Riya, create an invoice and point out the Sealed badge, then the explorer link once the anchor lands on Arc. As Arjun, open the same invoice, press Pay, and click the transaction hash so the room sees the real record on testnet.arcscan.app. As Meera, open it through the time-limited grant, revoke it and show the app now refuses to open it for her - then finish with Verify (available to the sender, the client, or a grantee), which recomputes the fingerprint in the browser and checks it against both the database and the chain."
+  },
+  {
+    "id": "a05c3e78-b924-4f61-8d07-59f2c6e13a48",
+    "position": 8,
+    "filepath": "src/pages/slides/LimitsSlide.tsx",
+    "title": "Known limits",
+    "description": "Testnet scope, custodial demo wallets, revoke honesty, and the no-mocked-receipts rule.",
+    "speakerNotes": "Read the limits plainly - being upfront here earns trust rather than losing it. Everything runs on test USDC with no real-world value; the demo wallets are held server-side so nobody needs a browser extension, which the app discloses and which would never be acceptable for real funds; a revoked share only blocks the next open, because nothing can take back what was already read; and one visit to Circle's faucet funds the operator wallet. If wallets come up, add the undersold part: sign-in is real email, envelope keys have passphrase-locked backups plus a change-key flow, and payouts can already go to an address a user brings - typed in, not ownership-proven. Close on the promise: the app never fakes a receipt - when the chain is not ready, it says so; private by default, verifiable when it matters."
+  }
+]

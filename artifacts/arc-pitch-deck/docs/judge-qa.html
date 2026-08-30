@@ -1,0 +1,156 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Sealed Invoices — Judges' Q&amp;A Crib Sheet</title>
+<style>
+  :root {
+    --ink: #1c1917;
+    --muted: #6b6560;
+    --line: #e5e0da;
+    --seal: #9d2b2b;
+    --paper: #faf8f5;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: "Outfit", "Avenir Next", "Segoe UI", system-ui, -apple-system, sans-serif;
+    background: var(--paper);
+    color: var(--ink);
+    line-height: 1.55;
+    padding: 48px 24px;
+  }
+  .sheet { max-width: 760px; margin: 0 auto; }
+  header { display: flex; align-items: center; gap: 14px; padding-bottom: 18px; border-bottom: 2px solid var(--ink); }
+  header svg { width: 44px; height: 44px; flex-shrink: 0; color: var(--seal); }
+  header h1 { font-size: 26px; font-weight: 650; letter-spacing: -0.02em; }
+  header p { font-size: 13.5px; color: var(--muted); margin-top: 2px; }
+  .howto {
+    margin-top: 14px; font-size: 14px; color: var(--muted);
+    border-left: 3px solid var(--seal); padding-left: 12px;
+  }
+  .qa { margin-top: 26px; break-inside: avoid; page-break-inside: avoid; }
+  .qa h2 {
+    font-size: 16.5px; font-weight: 650; letter-spacing: -0.01em;
+    display: flex; gap: 10px; align-items: baseline;
+  }
+  .qa h2 .n {
+    font-family: ui-monospace, "JetBrains Mono", "SFMono-Regular", Menlo, monospace;
+    font-size: 12px; color: var(--seal); font-weight: 600; letter-spacing: 0.08em;
+  }
+  .qa p { margin-top: 7px; font-size: 15px; color: #3d3835; }
+  .qa p strong { color: var(--ink); font-weight: 600; }
+  .facts {
+    margin-top: 34px; border: 1px solid var(--line); border-radius: 8px;
+    background: #ffffff; padding: 16px 18px; break-inside: avoid; page-break-inside: avoid;
+  }
+  .facts h3 {
+    font-family: ui-monospace, "JetBrains Mono", Menlo, monospace;
+    font-size: 11.5px; text-transform: uppercase; letter-spacing: 0.16em; color: var(--muted);
+  }
+  .facts ul { margin-top: 10px; list-style: none; }
+  .facts li {
+    font-family: ui-monospace, "JetBrains Mono", Menlo, monospace;
+    font-size: 13px; padding: 5px 0; border-top: 1px solid var(--line);
+  }
+  .facts li:first-child { border-top: none; }
+  .facts li b { font-weight: 600; }
+  footer { margin-top: 26px; font-size: 12.5px; color: var(--muted); text-align: center; }
+  @media print {
+    body { background: #fff; padding: 0; font-size: 13px; }
+    .sheet { max-width: none; }
+    header h1 { font-size: 21px; }
+    header p { font-size: 11.5px; }
+    .howto { font-size: 11.5px; margin-top: 10px; }
+    .qa { margin-top: 15px; }
+    .qa h2 { font-size: 13.5px; }
+    .qa p { font-size: 11.5px; margin-top: 4px; line-height: 1.45; }
+    .facts { margin-top: 18px; padding: 10px 14px; }
+    .facts li { font-size: 10.5px; padding: 3px 0; }
+    footer { margin-top: 14px; font-size: 10px; }
+    @page { margin: 14mm 15mm; }
+  }
+</style>
+</head>
+<body>
+<div class="sheet">
+
+  <header>
+    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <circle cx="12" cy="12" r="10.5" stroke="currentColor" stroke-width="1.4" />
+      <circle cx="12" cy="12" r="6.5" stroke="currentColor" stroke-width="1.2" stroke-dasharray="2.4 2.6" />
+      <circle cx="12" cy="12" r="1.6" fill="currentColor" />
+    </svg>
+    <div>
+      <h1>Judges' Q&amp;A — Sealed Invoices</h1>
+      <p>Arc Builder Program · the ten questions most likely to come up, with answers you can say in about twenty seconds each</p>
+    </div>
+  </header>
+
+  <p class="howto">Skim this once before the Q&amp;A. Every answer is honest about what is and is not built — reviewers reward that more than polish. The bold phrase in each answer is the one line to land.</p>
+
+  <section class="qa">
+    <h2><span class="n">Q1</span> Why does this need a blockchain at all?</h2>
+    <p>Because "paid" should be checkable without trusting us. The invoice itself stays private, but its fingerprint and paid status live on a public network that our server cannot edit — so <strong>the proof does not depend on believing the company behind the app</strong>. Everything that doesn't need that guarantee deliberately stays off the chain.</p>
+  </section>
+
+  <section class="qa">
+    <h2><span class="n">Q2</span> What exactly ends up on the chain?</h2>
+    <p>The anchor stores a scrambled invoice reference, the document's SHA-256 fingerprint — the wax stamp — and the time it was stamped; payment later flips a paid mark next to it. <strong>The document itself — names, line items, rates — never leaves the sealed envelope</strong>, and a fingerprint cannot be reversed back into the document.</p>
+  </section>
+
+  <section class="qa">
+    <h2><span class="n">Q3</span> So the payment amount is public?</h2>
+    <p>Yes — a payment is an ordinary transfer on a public network, so the amount and the wallet addresses are visible; that is exactly what makes the receipt checkable. What stays private is everything the invoice says and who the people are — the app never publishes which person owns which wallet. <strong>Private paperwork, public receipt — each where it belongs.</strong></p>
+  </section>
+
+  <section class="qa">
+    <h2><span class="n">Q4</span> What happens if a user loses their key?</h2>
+    <p>Three layers, from gentle to last resort. The dashboard makes a passphrase-locked backup file that restores the key on any device, and while a key still works the user can switch to a fresh one — the app re-wraps every stored copy in one atomic step, so everything that opens today still opens under the new key. If the key is truly gone, a typed-RESET issues a new one: <strong>old envelopes stay sealed until each counterparty re-shares with one click, but payments and onchain records are untouched</strong>.</p>
+  </section>
+
+  <section class="qa">
+    <h2><span class="n">Q5</span> Can you — the people running the server — read the invoices?</h2>
+    <p>No. Sealing happens in the sender's browser, so our database holds only sealed envelopes and locked key copies — <strong>there is no admin key</strong>. That is also why lost keys were a real problem we had to engineer around: a system where we could "just recover it" would be a system where we could read everything.</p>
+  </section>
+
+  <section class="qa">
+    <h2><span class="n">Q6</span> Why custodial wallets? Isn't that against the point?</h2>
+    <p>It is a disclosed testnet shortcut: holding the demo wallet keys server-side means anyone can try the app with nothing installed — and the app says this out loud. It is already loosening: <strong>a user can enter their own payout address, and payments then land there instead of the app-managed wallet</strong>; earlier balance can be moved out with a permanent receipt. To be precise: the app trusts the address the user types — it does not yet make them prove they hold its keys — and with real money, custodial keys would be unacceptable.</p>
+  </section>
+
+  <section class="qa">
+    <h2><span class="n">Q7</span> What happens if your server disappears?</h2>
+    <p>The proof outlives us: fingerprints and payment records sit on a public network with a public read function, so they stay checkable without our server. The sealed envelopes are stored by us the way any service holds files, so the honest trade-off is availability, not privacy — <strong>if we vanish, an unopened backup may become unreachable, but nobody gains the power to read it</strong>.</p>
+  </section>
+
+  <section class="qa">
+    <h2><span class="n">Q8</span> What would change on mainnet?</h2>
+    <p>The flow stays the same; the money and the duty change. Test USDC becomes real dollars, so the custodial shortcut must be replaced by wallets users control, and running it becomes a real financial service with the obligations that follow. <strong>Today's build is deliberately a testnet demo, says so in the app, and never fakes a receipt</strong> to look more finished than it is.</p>
+  </section>
+
+  <section class="qa">
+    <h2><span class="n">Q9</span> Why Arc specifically?</h2>
+    <p>On Arc the network fee is paid in USDC itself, so the invoice, the fee, and the balance are one unit — <strong>a client needs no second coin before they can pay</strong>, which is one less thing to explain to a non-crypto user. And every anchor and payment is an ordinary transaction on a public explorer, so "paid" is checkable rather than claimed. The argument is simplicity, not price talk.</p>
+  </section>
+
+  <section class="qa">
+    <h2><span class="n">Q10</span> You revoked the accountant's access — but she already saw it. What did revoke actually do?</h2>
+    <p>It ended her future access through the app: from now on the server refuses to hand her the envelope or her key copy, and a share's built-in expiry (24 hours in the demo) ends access the same way. What it cannot undo is the past — someone who opened or saved a copy while access was live keeps what they took, exactly like paper. <strong>Revoke and expiry stop the next look; nothing can repossess the last one, and we say so plainly.</strong></p>
+  </section>
+
+  <div class="facts">
+    <h3>Numbers to have ready</h3>
+    <ul>
+      <li><b>Network</b> — Arc Testnet, chain ID 5042002 · explorer testnet.arcscan.app</li>
+      <li><b>Money</b> — native gas is test USDC (18 decimals) · free top-ups at faucet.circle.com</li>
+      <li><b>Running costs</b> — one operator wallet, funded once from the faucet, pays contract deploys and anchors and tops up payers on demand</li>
+      <li><b>Honesty rule</b> — the dashboard shows "demo payments left"; when funds run short the app refuses in plain language instead of faking a receipt</li>
+    </ul>
+  </div>
+
+  <footer>Sealed Invoices · Arc Builder Program · testnet demo — test USDC has no real-world value</footer>
+
+</div>
+</body>
+</html>

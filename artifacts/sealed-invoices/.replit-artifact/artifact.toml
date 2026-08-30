@@ -1,0 +1,28 @@
+kind = "web"
+previewPath = "/"
+title = "Sealed Invoices"
+description = "A privacy-first invoicing app built on the Arc testnet. Freelancers create invoices that are encrypted in the browser (a sealed envelope only sender and client can open); only a tamper-proof fingerprint and payment status are recorded on the Arc blockchain. Clients pay in test USDC, and the freelancer can grant time-limited view access to an accountant, who can verify the document against its onchain fingerprint."
+version = "1.0.0"
+id = "artifacts/sealed-invoices"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 21544
+
+[services.development]
+run = "pnpm --filter @workspace/sealed-invoices run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/sealed-invoices", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/sealed-invoices/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "21544"
+BASE_PATH = "/"

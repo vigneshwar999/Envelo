@@ -1,0 +1,28 @@
+kind = "video"
+previewPath = "/demo-video/"
+title = "Sealed Invoices Demo Video"
+description = "A roughly 60-second animated walkthrough of the Sealed Invoices seal, pay, verify loop: an invoice encrypted in the browser, its wax-seal fingerprint anchored on Arc testnet, payment in test USDC, a time-limited accountant grant, and public verification. Made for builder-program reviewers to watch before opening the live demo."
+version = "1.0.0"
+id = "artifacts/demo-video"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/demo-video/" ]
+localPort = 24892
+
+[services.development]
+run = "pnpm --filter @workspace/demo-video run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/demo-video", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/demo-video/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "24892"
+BASE_PATH = "/demo-video/"

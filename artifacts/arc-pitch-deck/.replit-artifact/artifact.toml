@@ -1,0 +1,28 @@
+kind = "slides"
+previewPath = "/arc-pitch-deck/"
+title = "Sealed Invoices Pitch Deck"
+description = "An 8-slide pitch deck for the Arc builder program submission of Sealed Invoices: the problem of leaky, unverifiable invoices; the sealed-envelope/wax-stamp solution anchored on Arc Testnet; USDC-native payments; live demo pointers; and honest testnet limitations."
+version = "1.0.0"
+id = "artifacts/arc-pitch-deck"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/arc-pitch-deck/" ]
+localPort = 22322
+
+[services.development]
+run = "pnpm --filter @workspace/arc-pitch-deck run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/arc-pitch-deck", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/arc-pitch-deck/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "22322"
+BASE_PATH = "/arc-pitch-deck/"
