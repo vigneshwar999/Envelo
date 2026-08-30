@@ -26,6 +26,12 @@ export function Shell({ children }: { children: React.ReactNode }) {
                 <>
                   <Link href="/dashboard" className={cn("text-sm font-medium transition-colors hover:text-primary", location === "/dashboard" ? "text-primary" : "text-muted-foreground")}>Dashboard</Link>
                   <Link href="/wallet" className={cn("text-sm font-medium transition-colors hover:text-primary", location === "/wallet" ? "text-primary" : "text-muted-foreground")}>Wallet</Link>
+                  <Link href="/private-usdc" className={cn("text-sm font-medium transition-colors flex items-center gap-1.5 hover:text-primary", location === "/private-usdc" ? "text-primary" : "text-muted-foreground")}>
+                    Private USDC
+                    <span className="inline-flex items-center rounded-full bg-secondary px-1.5 py-[1px] text-[9px] uppercase font-bold text-secondary-foreground border">
+                      Soon
+                    </span>
+                  </Link>
                 </>
               )}
               <Link href="/how-it-works" className={cn("text-sm font-medium transition-colors hover:text-primary", location === "/how-it-works" ? "text-primary" : "text-muted-foreground")}>How it Works</Link>

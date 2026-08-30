@@ -17,6 +17,7 @@ import Dashboard from '@/pages/Dashboard';
 import NewInvoice from '@/pages/NewInvoice';
 import InvoiceDetail from '@/pages/InvoiceDetail';
 import HowItWorks from '@/pages/HowItWorks';
+import PrivateUsdc from '@/pages/PrivateUsdc';
 import NotFound from '@/pages/not-found';
 
 const queryClient = new QueryClient({
@@ -203,6 +204,11 @@ function AppRoutes() {
               <Route path="/wallet">
                 <Protected>
                   <WalletSettings />
+                </Protected>
+              </Route>
+              <Route path="/private-usdc">
+                <Protected>
+                  <PrivateUsdc />
                 </Protected>
               </Route>
               <Route path="/how-it-works" component={HowItWorks} />
