@@ -1,6 +1,11 @@
 import { Link } from 'wouter';
 import { useMe } from '@/context/UserContext';
-import { useGetDashboardSummary, useListInvoices, Invoice } from '@workspace/api-client-react';
+import {
+  useGetDashboardSummary,
+  useListInvoices,
+  Invoice,
+  type InvoiceEventKind,
+} from '@workspace/api-client-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -9,11 +14,16 @@ import { EnvelopeKeyCard } from '@/components/keys/EnvelopeKeyCard';
 import { BackupReminderBanner } from '@/components/keys/BackupReminderBanner';
 import { ReshareNeededBanner } from '@/components/keys/ReshareNeededBanner';
 import { EditDisplayNameDialog } from '@/components/profile/EditDisplayNameDialog';
-import { PlusCircle, FileText, CheckCircle2, Clock, ShieldCheck, Activity, Fuel, AlertTriangle, KeyRound, Lock } from 'lucide-react';
+import { 
+  PlusCircle, FileText, CheckCircle2, Clock, 
+  ShieldCheck, Activity, KeyRound, Lock,
+  Key, ShieldAlert, Unlock, BadgeCheck, Share2
+} from 'lucide-react';
 import { format } from 'date-fns';
+import { cn } from '@/lib/utils';
 
 export function Dashboard() {
-  const { me, keyStatus } = useMe();
+  const { me } = useMe();
   const { data: summary, isLoading: isLoadingSummary } = useGetDashboardSummary();
   const { data: invoices, isLoading: isLoadingInvoices } = useListInvoices();
 
@@ -65,8 +75,8 @@ export function Dashboard() {
         />
       </div>
 
-      <div className="grid gap-6 md:grid-cols-3">
-        <div className="md:col-span-2 space-y-6">
+      <div className="grid gap-6 lg:grid-cols-3 items-start">
+        <div className="lg:col-span-2 space-y-6">
           <Card>
             <CardHeader>
               <CardTitle>Recent Invoices</CardTitle>
@@ -104,42 +114,58 @@ export function Dashboard() {
           </Card>
         </div>
 
-        <div className="space-y-6">
-          {/* When this browser can't open the user's envelopes, the fix comes first. */}
-          {keyStatus === 'needs-restore' && <EnvelopeKeyCard />}
-
-          {keyStatus !== 'needs-restore' && <EnvelopeKeyCard />}
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Recent Activity</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {isLoadingSummary ? (
-                <div className="space-y-3">
-                  {[1, 2, 3].map(i => <Skeleton key={i} className="h-8 w-full" />)}
-                </div>
-              ) : summary?.recentEvents.length === 0 ? (
-                <p className="text-sm text-muted-foreground text-center py-4">No recent activity.</p>
-              ) : (
-                <div className="space-y-4">
-                  {summary?.recentEvents.map(event => (
-                    <div key={event.id} className="flex gap-3 text-sm">
-                      <div className="mt-0.5"><Activity className="h-3.5 w-3.5 text-muted-foreground" /></div>
-                      <div>
-                        <p className="text-foreground leading-tight">{event.detail}</p>
-                        <p className="text-xs text-muted-foreground mt-0.5">
-                          {format(new Date(event.createdAt), 'MMM d, h:mm a')}
-                        </p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
+        <div className="lg:col-span-1">
+          <EnvelopeKeyCard />
         </div>
       </div>
+
+      <Card className="shadow-sm" data-testid="card-recent-activity">
+        <CardHeader>
+          <CardTitle>Recent Activity</CardTitle>
+          <CardDescription>
+            Your latest invoice, payment, and access events.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {isLoadingSummary ? (
+            <div className="space-y-4">
+              {[1, 2, 3].map(i => <Skeleton key={i} className="h-10 w-full" />)}
+            </div>
+          ) : summary?.recentEvents.length === 0 ? (
+            <div className="text-center py-8">
+              <Activity className="h-8 w-8 text-muted-foreground/30 mx-auto mb-3" />
+              <p className="text-sm text-muted-foreground">No recent activity found.</p>
+            </div>
+          ) : (
+            <div className="space-y-0">
+              {summary?.recentEvents.map((event, index) => (
+                <div 
+                  key={event.id} 
+                  data-testid={`row-activity-${event.id}`}
+                  className={cn(
+                    "group flex flex-col sm:flex-row sm:items-center justify-between gap-1 sm:gap-4 py-3.5 border-b border-border/40 last:border-0",
+                    index === 0 ? "pt-0" : ""
+                  )}
+                >
+                  <div className="flex min-w-0 items-center gap-3.5">
+                    <div className="flex shrink-0 items-center justify-center w-8 h-8 rounded-full bg-secondary/60 border border-border/40 text-muted-foreground group-hover:bg-secondary transition-colors">
+                      {getEventIcon(event.kind)}
+                    </div>
+                    <p className="text-sm font-medium leading-relaxed text-foreground/90">
+                      {event.detail}
+                    </p>
+                  </div>
+                  <div className="text-[13px] text-muted-foreground sm:text-right font-mono tracking-tight shrink-0 pl-11 sm:pl-0 opacity-60">
+                    {format(new Date(event.createdAt), 'MMM d, yyyy')} 
+                    <span className="opacity-40 mx-1.5">•</span> 
+                    {format(new Date(event.createdAt), 'h:mm a')}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }
@@ -230,6 +256,20 @@ function InvoiceRow({ invoice, currentUserId }: { invoice: Invoice, currentUserI
       </div>
     </Link>
   );
+}
+
+function getEventIcon(kind: InvoiceEventKind) {
+  switch(kind) {
+    case 'created': return <FileText className="h-4 w-4 text-blue-500" />;
+    case 'anchored': return <ShieldCheck className="h-4 w-4 text-primary" />;
+    case 'paid': return <CheckCircle2 className="h-4 w-4 text-green-500" />;
+    case 'grant_issued': return <Key className="h-4 w-4 text-amber-500" />;
+    case 'grant_revoked': return <ShieldAlert className="h-4 w-4 text-destructive" />;
+    case 'envelope_opened': return <Unlock className="h-4 w-4 text-indigo-500" />;
+    case 'verified': return <BadgeCheck className="h-4 w-4 text-teal-500" />;
+    case 'key_reshared': return <Share2 className="h-4 w-4 text-orange-500" />;
+    default: return <Activity className="h-4 w-4 text-muted-foreground" />;
+  }
 }
 
 export default Dashboard;

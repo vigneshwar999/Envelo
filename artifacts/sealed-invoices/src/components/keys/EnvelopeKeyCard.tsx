@@ -22,80 +22,86 @@ export function EnvelopeKeyCard() {
   return (
     <Card
       data-testid="card-envelope-key"
-      className={keyStatus === 'needs-restore' ? 'border-amber-300 dark:border-amber-800' : undefined}
+      className={keyStatus === 'needs-restore' ? 'border-amber-300 dark:border-amber-800 shadow-sm' : 'shadow-sm'}
     >
-      <CardHeader>
-        <CardTitle className="text-lg flex items-center gap-2">
-          <KeyRound className="h-5 w-5 text-primary" /> Envelope Key
+      <CardHeader className="pb-4">
+        <CardTitle className="text-base flex items-center gap-2">
+          <KeyRound className="h-4 w-4 text-primary" /> Envelope Key
         </CardTitle>
-        <CardDescription>The key that opens invoices sealed for you.</CardDescription>
+        <CardDescription className="text-xs">
+          Controls access to invoices sealed for you.
+        </CardDescription>
       </CardHeader>
-      <CardContent className="space-y-4">
+      <CardContent>
         {keyStatus === 'checking' || !me ? (
           <Skeleton className="h-24 w-full" />
         ) : keyStatus === 'ready' ? (
-          <>
+          <div className="space-y-4">
             <div
-              className="flex items-start gap-2.5 text-sm p-3 rounded-md border bg-green-50 border-green-200 text-green-800 dark:bg-green-950/20 dark:border-green-900 dark:text-green-300"
+              className="flex items-start gap-2.5 text-xs p-3 rounded-md border bg-primary/5 border-primary/20 text-foreground"
               data-testid="text-key-status"
             >
-              <ShieldCheck className="h-4 w-4 mt-0.5 shrink-0" />
-              <p>This browser can open your envelopes.</p>
+              <ShieldCheck className="h-4 w-4 mt-0.5 text-primary shrink-0" />
+              <p className="leading-relaxed">
+                Your envelope key is ready on this browser.
+              </p>
             </div>
-            <p className="text-sm text-muted-foreground">
-              The key lives only in this browser. Back it up once, and you can open your
-              invoices on any device.
+            <p className="text-xs text-muted-foreground">
+              Save a protected backup so you can restore access if you change
+              devices or clear this browser.
             </p>
-            <div className="space-y-2">
+            <div className="space-y-3 pt-1">
               <Button
-                className="w-full"
+                className="w-full font-medium"
                 onClick={() => setBackupOpen(true)}
                 data-testid="button-backup-key"
               >
-                Back up my envelope key
+                Back up key
               </Button>
-              <Button
-                variant="outline"
-                className="w-full"
-                onClick={() => setRotateOpen(true)}
-                data-testid="button-rotate-key"
-              >
-                Change to a fresh key
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="w-full text-muted-foreground"
-                onClick={() => setRestoreOpen(true)}
-                data-testid="button-restore-key"
-              >
-                Restore from a backup instead
-              </Button>
+              <div className="flex items-center justify-between border-t px-1 pt-3">
+                <button
+                  type="button"
+                  className="text-xs font-medium text-muted-foreground hover:text-foreground transition-colors"
+                  onClick={() => setRestoreOpen(true)}
+                  data-testid="button-restore-key"
+                >
+                  Restore backup
+                </button>
+                <button
+                  type="button"
+                  className="text-xs font-medium text-muted-foreground hover:text-foreground transition-colors"
+                  onClick={() => setRotateOpen(true)}
+                  data-testid="button-rotate-key"
+                >
+                  Use a new key
+                </button>
+              </div>
             </div>
-          </>
+          </div>
         ) : (
-          <>
+          <div className="space-y-4">
             <div
-              className="flex items-start gap-2.5 text-sm p-3 rounded-md border bg-amber-50 border-amber-200 text-amber-800 dark:bg-amber-950/20 dark:border-amber-900 dark:text-amber-300"
+              className="flex items-start gap-2.5 text-xs p-3 rounded-md border bg-amber-50 border-amber-200 text-amber-900 dark:bg-amber-950/30 dark:border-amber-900/50 dark:text-amber-300"
               data-testid="text-key-status"
             >
               <AlertTriangle className="h-4 w-4 mt-0.5 shrink-0" />
-              <p>This browser can't open your sealed invoices yet.</p>
+              <p className="leading-relaxed">
+                An envelope key is needed on this browser.
+              </p>
             </div>
-            <p className="text-sm text-muted-foreground">
-              Your envelope key stayed in the browser where you first signed in. On that
-              device, choose{' '}
-              <span className="font-medium text-foreground">Back up my envelope key</span> on
-              the Dashboard, then bring the file here.
+            <p className="text-xs text-muted-foreground">
+              Restore your key from a backup file to unlock your invoices on this device.
             </p>
-            <Button
-              className="w-full"
-              onClick={() => setRestoreOpen(true)}
-              data-testid="button-restore-key"
-            >
-              Restore my key
-            </Button>
-          </>
+            <div className="pt-1">
+              <Button
+                className="w-full font-medium"
+                onClick={() => setRestoreOpen(true)}
+                data-testid="button-restore-key"
+              >
+                Restore my key
+              </Button>
+            </div>
+          </div>
         )}
       </CardContent>
       {me && (
