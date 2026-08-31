@@ -82,7 +82,7 @@ export default function Explore() {
           <h1 className="mb-8 text-5xl font-light tracking-tight text-foreground/90 text-balance !leading-[1.04] sm:text-7xl md:text-[5.6rem]">
             Private paperwork.
             <br />
-            <span className="text-neo">Public proof.</span>
+            <span className="text-muted-foreground/50">Public proof.</span>
           </h1>
 
           <p className="mx-auto mb-12 max-w-2xl text-balance text-base leading-relaxed text-muted-foreground sm:text-lg">
@@ -424,7 +424,7 @@ export default function Explore() {
                   <span className="block text-muted-foreground/50">
                     Privacy &amp;
                   </span>
-                  <span className="block text-primary">Proof.</span>
+                  <span className="block text-muted-foreground/50">Proof.</span>
                 </h2>
               </div>
               <p className="max-w-xs text-sm leading-relaxed text-muted-foreground lg:pb-2">
