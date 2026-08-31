@@ -91,7 +91,7 @@ export default function Explore() {
                     });
                   }}
                 >
-                  Create account <ArrowRight className="h-4 w-4" />
+                  Create your account <ArrowRight className="h-4 w-4" />
                 </Link>
               </Button>
               <Button
@@ -512,7 +512,7 @@ export default function Explore() {
                     });
                   }}
                 >
-                  Create account
+                  Create your account
                 </Link>
               </Button>
               <Button

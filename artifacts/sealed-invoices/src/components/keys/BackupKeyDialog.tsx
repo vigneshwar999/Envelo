@@ -113,7 +113,7 @@ export function BackupKeyDialog({ open, onOpenChange, userId }: BackupKeyDialogP
               data-testid="input-backup-passphrase-confirm"
             />
           </div>
-          <div className="flex gap-2.5 text-sm text-amber-800 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900 rounded-md p-3">
+          <div className="flex gap-2.5 text-sm text-amber-200 bg-amber-500/10 border border-amber-500/30 rounded-md p-3">
             <AlertTriangle className="h-4 w-4 mt-0.5 shrink-0" />
             <p>
               There is no way to reset this passphrase. If you lose the file or forget the

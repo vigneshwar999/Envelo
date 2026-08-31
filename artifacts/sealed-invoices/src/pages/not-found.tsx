@@ -1,35 +1,23 @@
-import { Link } from 'wouter';
-import { FileQuestion, ArrowLeft } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { AlertCircle } from 'lucide-react';
 import { Background } from '@/components/marketing/Background';
 
 export default function NotFound() {
   return (
-    <div className="min-h-[80vh] w-full flex flex-col items-center justify-center relative selection:bg-primary/30 selection:text-foreground">
+    <div className="min-h-[80vh] w-full flex items-center justify-center relative selection:bg-primary/30 selection:text-foreground">
       <Background />
-      <div className="relative z-10 flex flex-col items-center text-center max-w-lg mx-auto px-4 space-y-8">
-        <div className="h-20 w-20 rounded-3xl bg-white/5 border border-white/10 flex items-center justify-center shadow-2xl backdrop-blur-md">
-          <FileQuestion className="h-10 w-10 text-muted-foreground/50" />
-        </div>
-        
-        <div className="space-y-4">
-          <h1 className="text-6xl font-light tracking-tight text-foreground">
-            404
-          </h1>
-          <p className="text-xl text-muted-foreground/80 leading-relaxed text-balance">
-            The page you're looking for cannot be found. It may have been moved or deleted.
+      <div className="relative z-10 w-full max-w-md mx-4">
+        <div className="rounded-2xl bg-white/5 border border-white/10 backdrop-blur-md shadow-2xl p-6">
+          <div className="flex mb-4 gap-2">
+            <AlertCircle className="h-8 w-8 text-red-400" />
+            <h1 className="text-2xl font-bold text-foreground">
+              404 Page Not Found
+            </h1>
+          </div>
+
+          <p className="mt-4 text-sm text-muted-foreground">
+            Did you forget to add the page to the router?
           </p>
         </div>
-
-        <Button
-          asChild
-          size="lg"
-          className="h-12 rounded-full bg-white/5 border border-white/10 px-8 text-sm font-medium hover:bg-white/10 text-foreground transition-all backdrop-blur-md"
-        >
-          <Link href="/">
-            <ArrowLeft className="mr-2 h-4 w-4" /> Return Home
-          </Link>
-        </Button>
       </div>
     </div>
   );

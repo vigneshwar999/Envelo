@@ -336,7 +336,7 @@ export default function WalletSettings() {
                 <Input
                   value={draft}
                   onChange={(e) => setDraft(e.target.value)}
-                  placeholder="0x\u2026 paste your wallet address"
+                  placeholder="0x… paste your wallet address"
                   className="font-mono"
                   data-testid="input-payout-address"
                 />

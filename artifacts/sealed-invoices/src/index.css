@@ -109,3 +109,16 @@
     @apply font-sans antialiased bg-background text-foreground;
   }
 }
+
+/* Reduced motion: complete every animation instantly (fill-mode-both then
+   leaves content at its final, visible state) and stop ambient drift. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

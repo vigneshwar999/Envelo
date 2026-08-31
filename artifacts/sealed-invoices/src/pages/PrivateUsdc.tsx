@@ -102,7 +102,7 @@ export default function PrivateUsdc() {
                 <span className="absolute left-4 top-3.5 text-muted-foreground/60 font-mono text-sm uppercase tracking-widest">USDC</span>
                 <Input 
                   className="pl-20 h-12 rounded-xl font-mono bg-black/40 border-white/10 text-foreground/50 text-lg" 
-                  placeholder="0.00" 
+                  placeholder="0.00 (Coming Soon)" 
                   disabled 
                   data-testid="input-shield-amount"
                 />

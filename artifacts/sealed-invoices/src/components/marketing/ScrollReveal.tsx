@@ -1,4 +1,4 @@
-import { motion } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
 import React from "react";
 
 export function ScrollReveal({
@@ -12,9 +12,16 @@ export function ScrollReveal({
   className?: string;
   direction?: "up" | "left" | "right" | "down";
 }) {
+  const reduceMotion = useReducedMotion();
   const yOffset = direction === "up" ? 30 : direction === "down" ? -30 : 0;
   const xOffset = direction === "left" ? 30 : direction === "right" ? -30 : 0;
-  
+
+  // Fail open: with reduced motion (or when the in-view observer never
+  // fires), content must not be trapped at opacity 0.
+  if (reduceMotion) {
+    return <div className={className}>{children}</div>;
+  }
+
   return (
     <motion.div
       initial={{ opacity: 0, y: yOffset, x: xOffset }}

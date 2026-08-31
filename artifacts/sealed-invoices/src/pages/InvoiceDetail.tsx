@@ -463,8 +463,8 @@ export function InvoiceDetail() {
                 // backup cannot help here, because the server-side copy for
                 // that key is gone. Only a re-share brings this one back.
                 <div className="p-12 text-center flex flex-col items-center justify-center" data-testid="panel-my-copy-locked">
-                  <div className="h-16 w-16 bg-amber-100 dark:bg-amber-950/30 rounded-full flex items-center justify-center mb-4">
-                    <KeyRound className="h-8 w-8 text-amber-600" />
+                  <div className="h-16 w-16 bg-amber-500/10 rounded-full flex items-center justify-center mb-4">
+                    <KeyRound className="h-8 w-8 text-amber-400" />
                   </div>
                   <h3 className="text-xl font-medium mb-2">Sealed for a key you no longer have</h3>
                   <p className="text-muted-foreground max-w-md">
@@ -487,8 +487,8 @@ export function InvoiceDetail() {
                 </div>
               ) : keyStatus === 'needs-restore' ? (
                 <div className="p-12 text-center flex flex-col items-center justify-center">
-                  <div className="h-16 w-16 bg-amber-100 dark:bg-amber-950/30 rounded-full flex items-center justify-center mb-4">
-                    <KeyRound className="h-8 w-8 text-amber-600" />
+                  <div className="h-16 w-16 bg-amber-500/10 rounded-full flex items-center justify-center mb-4">
+                    <KeyRound className="h-8 w-8 text-amber-400" />
                   </div>
                   <h3 className="text-xl font-medium mb-2">Your envelope key isn't in this browser</h3>
                   <p className="text-muted-foreground max-w-md mb-6">
@@ -542,12 +542,12 @@ export function InvoiceDetail() {
 
                 {verificationResult && (
                   <div
-                    className={`p-4 rounded-md border ${verificationResult.matchesRecord ? 'bg-green-50 border-green-200 dark:bg-green-950/20 dark:border-green-900' : 'bg-red-50 border-red-200 dark:bg-red-950/20 dark:border-red-900'}`}
+                    className={`p-4 rounded-md border ${verificationResult.matchesRecord ? 'bg-emerald-500/10 border-emerald-500/30' : 'bg-red-500/10 border-red-500/30'}`}
                     data-testid={verificationResult.matchesRecord ? 'verify-result-match' : 'verify-result-mismatch'}
                   >
                     <div className="flex items-start gap-3">
                       {verificationResult.matchesRecord ? (
-                        <CheckCircle2 className="h-5 w-5 text-green-600 mt-0.5" />
+                        <CheckCircle2 className="h-5 w-5 text-emerald-400 mt-0.5" />
                       ) : (
                         <ShieldAlert className="h-5 w-5 text-destructive mt-0.5" />
                       )}
