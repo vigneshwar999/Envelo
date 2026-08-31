@@ -1,7 +1,7 @@
 import { lazy, Suspense } from "react";
 import { Link, useLocation } from "wouter";
 import { useUser } from "@clerk/react";
-import { ArrowRight, ShieldCheck, Menu } from "lucide-react";
+import { ArrowRight, Menu } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import {
@@ -46,7 +46,11 @@ export function Shell({ children }: { children: React.ReactNode }) {
             className="group mr-2 flex shrink-0 items-center gap-2"
             data-testid="link-home"
           >
-            <ShieldCheck className="h-4 w-4 text-foreground transition-colors group-hover:text-primary" />
+            <img
+              src={`${import.meta.env.BASE_URL}logo.svg`}
+              alt="Envelo logo"
+              className="h-5 w-5 transition-transform group-hover:scale-110"
+            />
             <span className="text-[15px] font-bold tracking-tight">
               Envelo
             </span>
