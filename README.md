@@ -8,6 +8,12 @@ Envelo is a privacy-first invoicing platform built on Circle's Arc Testnet. Invo
 
 ---
 
+## Screenshots
+
+| Landing | How it works |
+| --- | --- |
+| ![Envelo landing page](docs/screenshots/landing.jpg) | ![How Envelo works](docs/screenshots/how-it-works.jpg) |
+
 ## How it works
 
 | Step | What happens | Where |
