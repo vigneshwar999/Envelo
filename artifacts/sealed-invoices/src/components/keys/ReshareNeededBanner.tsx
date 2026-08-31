@@ -43,13 +43,13 @@ export function ReshareNeededBanner() {
 
   return (
     <div
-      className="flex items-start gap-3 rounded-lg border border-amber-300 bg-amber-50 p-4 dark:border-amber-900 dark:bg-amber-950/20"
+      className="flex items-start gap-4 rounded-lg border border-amber-500/30 bg-amber-500/10 backdrop-blur-md p-5 shadow-xl"
       data-testid="banner-reshare-needed"
     >
-      <KeyRound className="h-5 w-5 text-amber-600 dark:text-amber-500 mt-0.5 shrink-0" />
+      <KeyRound className="h-5 w-5 text-amber-500 mt-0.5 shrink-0" />
       <div className="flex-1 space-y-2">
-        <p className="text-sm font-medium text-foreground">{headline}</p>
-        <p className="text-sm text-muted-foreground">
+        <p className="text-sm font-medium text-amber-200">{headline}</p>
+        <p className="text-sm text-amber-200/80 leading-relaxed">
           A key reset locked{' '}
           {waiting.length === 1
             ? 'their copy of the invoice below'
@@ -58,12 +58,12 @@ export function ReshareNeededBanner() {
         </p>
         {/* Every pending re-share gets a link - an obligation the user
             cannot reach is an obligation they cannot clear. */}
-        <div className="flex flex-wrap items-center gap-2 pt-1">
+        <div className="flex flex-wrap items-center gap-2 pt-2">
           {waiting.map((inv) => (
             <Link
               key={inv.id}
               href={`/invoices/${inv.id}`}
-              className="inline-flex items-center gap-1.5 rounded-md border border-amber-300 bg-background px-2.5 py-1 text-xs font-medium hover:bg-amber-100 dark:border-amber-900 dark:hover:bg-amber-950/40 transition-colors"
+              className="inline-flex items-center gap-1.5 rounded-md border border-amber-500/30 bg-amber-500/10 px-3 py-1.5 text-xs font-medium text-amber-200 hover:bg-amber-500/20 transition-colors"
               data-testid={`link-reshare-invoice-${inv.id}`}
             >
               <span className="font-mono">{inv.invoiceNumber}</span>

@@ -6,6 +6,7 @@ import {
   Invoice,
   type InvoiceEventKind,
 } from '@workspace/api-client-react';
+import { Background } from '@/components/marketing/Background';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -28,7 +29,8 @@ export function Dashboard() {
   const { data: invoices, isLoading: isLoadingInvoices } = useListInvoices();
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-500">
+    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700 relative z-10">
+      <Background />
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold tracking-tight text-foreground flex items-center gap-2">
@@ -52,7 +54,7 @@ export function Dashboard() {
       <ReshareNeededBanner />
       <BackupReminderBanner placement="dashboard" />
 
-      <div className="grid gap-6 md:grid-cols-4">
+      <div className="grid gap-6 md:grid-cols-4 animate-in fade-in slide-in-from-bottom-4 duration-700 delay-100 fill-mode-both">
         <SummaryCard 
           title="Total Outstanding" 
           value={summary ? `$${summary.totalOutstandingUsdc}` : null} 
@@ -75,9 +77,9 @@ export function Dashboard() {
         />
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-3 items-start">
+      <div className="grid gap-6 lg:grid-cols-3 items-start animate-in fade-in slide-in-from-bottom-4 duration-700 delay-200 fill-mode-both">
         <div className="lg:col-span-2 space-y-6">
-          <Card>
+          <Card className="bg-white/5 border-white/10 backdrop-blur-md shadow-xl">
             <CardHeader>
               <CardTitle>Recent Invoices</CardTitle>
               <CardDescription>Your latest billing documents.</CardDescription>
@@ -88,7 +90,7 @@ export function Dashboard() {
                   {[1, 2, 3].map(i => <Skeleton key={i} className="h-16 w-full" />)}
                 </div>
               ) : invoices?.length === 0 ? (
-                <div className="text-center py-12 bg-secondary/30 rounded-lg border border-dashed">
+                <div className="text-center py-12 bg-white/[0.02] rounded-xl border border-white/10 border-dashed">
                   <FileText className="h-8 w-8 text-muted-foreground mx-auto mb-3 opacity-50" />
                   <h3 className="text-lg font-medium text-foreground mb-1">No invoices yet</h3>
                   <p className="text-sm text-muted-foreground mb-4">
@@ -119,7 +121,7 @@ export function Dashboard() {
         </div>
       </div>
 
-      <Card className="shadow-sm" data-testid="card-recent-activity">
+      <Card className="shadow-xl bg-white/5 border-white/10 backdrop-blur-md animate-in fade-in slide-in-from-bottom-4 duration-700 delay-300 fill-mode-both" data-testid="card-recent-activity">
         <CardHeader>
           <CardTitle>Recent Activity</CardTitle>
           <CardDescription>
@@ -148,7 +150,7 @@ export function Dashboard() {
                   )}
                 >
                   <div className="flex min-w-0 items-center gap-3.5">
-                    <div className="flex shrink-0 items-center justify-center w-8 h-8 rounded-full bg-secondary/60 border border-border/40 text-muted-foreground group-hover:bg-secondary transition-colors">
+                    <div className="flex shrink-0 items-center justify-center w-8 h-8 rounded-full bg-white/5 border border-white/10 text-muted-foreground group-hover:bg-white/10 transition-colors">
                       {getEventIcon(event.kind)}
                     </div>
                     <p className="text-sm font-medium leading-relaxed text-foreground/90">
@@ -172,7 +174,7 @@ export function Dashboard() {
 
 function SummaryCard({ title, value, icon }: { title: string, value: string | null, icon: React.ReactNode }) {
   return (
-    <Card>
+    <Card className="bg-white/5 border-white/10 backdrop-blur-md shadow-xl transition-all hover:bg-white/[0.07]">
       <CardContent className="p-6">
         <div className="flex items-center justify-between space-y-0 pb-2">
           <p className="text-sm font-medium text-muted-foreground">{title}</p>
@@ -208,7 +210,7 @@ function InvoiceRow({ invoice, currentUserId }: { invoice: Invoice, currentUserI
 
   return (
     <Link href={`/invoices/${invoice.id}`}>
-      <div className="group flex flex-col sm:flex-row sm:items-center justify-between p-4 rounded-lg border bg-card hover:bg-secondary/20 transition-colors cursor-pointer gap-4" data-testid={`row-invoice-${invoice.id}`}>
+      <div className="group flex flex-col sm:flex-row sm:items-center justify-between p-4 rounded-xl border border-white/10 bg-white/[0.02] hover:bg-white/[0.08] transition-all cursor-pointer gap-4 shadow-sm" data-testid={`row-invoice-${invoice.id}`}>
         <div className="flex items-start gap-4">
           <div className="p-2 bg-primary/10 text-primary rounded-md hidden sm:block">
             <FileText className="h-5 w-5" />

@@ -83,7 +83,7 @@ export function WalletMenu() {
             <ChevronDown className="h-4 w-4 text-muted-foreground" />
           </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="w-72">
+        <DropdownMenuContent align="end" className="w-72 bg-card/90 backdrop-blur-xl border-white/10 shadow-2xl">
           <div className="flex items-baseline justify-between px-3 pt-2.5 pb-1.5">
             <span className="text-sm text-muted-foreground">Wallet</span>
             {walletQuery.isLoading ? (
@@ -98,7 +98,7 @@ export function WalletMenu() {
           </div>
           {address ? (
             <div className="px-3 pb-2.5">
-              <div className="flex items-center gap-1.5 rounded-md border bg-muted/50 px-2.5 py-1.5">
+              <div className="flex items-center gap-1.5 rounded-md border border-white/5 bg-white/[0.02] px-2.5 py-1.5">
                 <span
                   className="flex-1 truncate font-mono text-xs"
                   data-testid="text-menu-address"

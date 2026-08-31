@@ -58,7 +58,7 @@ export function BackupReminderBanner({ placement }: BackupReminderBannerProps) {
   return (
     <>
       <div
-        className="flex items-start gap-3 rounded-lg border border-primary/30 bg-primary/5 p-4"
+        className="flex items-start gap-4 rounded-lg border border-primary/30 bg-primary/10 backdrop-blur-md p-5 shadow-xl"
         data-testid="banner-backup-reminder"
       >
         <KeyRound className="h-5 w-5 text-primary mt-0.5 shrink-0" />

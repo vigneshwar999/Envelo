@@ -186,7 +186,7 @@ export function RotateKeyDialog({ open, onOpenChange }: RotateKeyDialogProps) {
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-md bg-card/90 backdrop-blur-xl border-white/10">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <RefreshCw className="h-5 w-5 text-primary" />
@@ -198,7 +198,7 @@ export function RotateKeyDialog({ open, onOpenChange }: RotateKeyDialogProps) {
           </DialogDescription>
         </DialogHeader>
         <div
-          className="text-sm space-y-2 p-3 rounded-md border bg-muted/40"
+          className="text-sm space-y-2 p-3 rounded-lg border border-white/5 bg-white/[0.02]"
           data-testid="text-rotate-explainer"
         >
           <p className="font-medium">What happens - all inside this browser:</p>

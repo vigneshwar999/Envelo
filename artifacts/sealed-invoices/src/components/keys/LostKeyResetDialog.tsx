@@ -79,7 +79,7 @@ export function LostKeyResetDialog({ open, onOpenChange }: LostKeyResetDialogPro
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-md bg-card/90 backdrop-blur-xl border-white/10">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <AlertTriangle className="h-5 w-5 text-destructive" />
@@ -91,19 +91,19 @@ export function LostKeyResetDialog({ open, onOpenChange }: LostKeyResetDialogPro
           </DialogDescription>
         </DialogHeader>
         <div
-          className="text-sm space-y-2 p-3 rounded-md border border-destructive/30 bg-destructive/5"
+          className="text-sm space-y-2 p-4 rounded-lg border border-destructive/30 bg-destructive/10"
           data-testid="text-reset-warning"
         >
           <p className="font-medium text-destructive">What a reset really means:</p>
-          <ul className="list-disc pl-5 space-y-1 text-muted-foreground">
+          <ul className="list-disc pl-5 space-y-1 text-destructive/80">
             <li>
               Invoices sealed for your current key will{' '}
-              <span className="font-medium text-foreground">not</span> open with the new
+              <span className="font-medium text-destructive">not</span> open with the new
               one - that is the whole point of the encryption.
             </li>
             <li>
               Each of those invoices comes back only when the other person on it presses{' '}
-              <span className="font-medium text-foreground">Re-share</span>. Their copy
+              <span className="font-medium text-destructive">Re-share</span>. Their copy
               still works.
             </li>
             <li>Payments, amounts, and onchain records are not affected.</li>

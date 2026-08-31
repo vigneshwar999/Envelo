@@ -82,7 +82,7 @@ export function RestoreKeyDialog({ open, onOpenChange }: RestoreKeyDialogProps) 
   return (
     <>
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-md bg-card/90 backdrop-blur-xl border-white/10">
         <DialogHeader>
           <DialogTitle>Restore your envelope key</DialogTitle>
           <DialogDescription>

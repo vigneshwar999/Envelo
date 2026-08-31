@@ -12,6 +12,7 @@ import {
 import { openEnvelope, computeFingerprint, InvoiceDocument, rewrapKeyForUser, buildInvoiceCopyFile } from '@/lib/crypto';
 import { format } from 'date-fns';
 
+import { Background } from '@/components/marketing/Background';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -319,7 +320,8 @@ export function InvoiceDetail() {
   const downloadBlockedByChain = invoice.anchorStatus === 'anchored' && !chainIdentityReady;
 
   return (
-    <div className="space-y-6 max-w-5xl mx-auto pb-20">
+    <div className="space-y-8 max-w-5xl mx-auto pb-20 relative z-10 animate-in fade-in slide-in-from-bottom-4 duration-700">
+      <Background />
       <div className="flex items-center gap-4">
         <Link href="/dashboard" className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground transition-colors">
           <ArrowLeft className="mr-2 h-4 w-4" /> Back
@@ -331,10 +333,10 @@ export function InvoiceDetail() {
           memory with the dashboard banner. */}
       <BackupReminderBanner placement="invoice" />
 
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 animate-in fade-in slide-in-from-bottom-4 duration-700 delay-100 fill-mode-both">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Invoice {invoice.invoiceNumber}</h1>
-          <div className="text-sm text-muted-foreground mt-2 flex items-center gap-3 flex-wrap">
+          <h1 className="text-4xl font-light tracking-tight">Invoice {invoice.invoiceNumber}</h1>
+          <div className="text-sm text-muted-foreground/80 mt-2 flex items-center gap-3 flex-wrap">
             <span>{invoice.freelancerName} to {invoice.clientName}</span>
             <span>•</span>
             <span>Created {format(new Date(invoice.createdAt), 'MMM d, yyyy')}</span>
@@ -358,12 +360,12 @@ export function InvoiceDetail() {
         </div>
       </div>
 
-      <div className="grid md:grid-cols-3 gap-6">
+      <div className="grid md:grid-cols-3 gap-8 animate-in fade-in slide-in-from-bottom-4 duration-700 delay-200 fill-mode-both">
         
         {/* Main Content - The Envelope / Document */}
-        <div className="md:col-span-2 space-y-6">
-          <Card className="overflow-hidden border-2">
-            <div className="bg-secondary/30 px-6 py-4 border-b flex justify-between items-center">
+        <div className="md:col-span-2 space-y-8">
+          <Card className="overflow-hidden border-white/10 bg-white/5 backdrop-blur-md shadow-2xl">
+            <div className="bg-white/[0.02] px-6 py-4 border-b border-white/5 flex justify-between items-center">
               <div className="flex items-center gap-2 font-medium">
                 {document ? <Unlock className="h-4 w-4 text-green-600" /> : <Lock className="h-4 w-4 text-amber-600" />}
                 {document ? 'Decrypted Document' : 'Sealed Envelope'}
@@ -397,7 +399,7 @@ export function InvoiceDetail() {
             
             <CardContent className="p-0">
               {document ? (
-                <div className="p-8 bg-card font-sans">
+                <div className="p-8 bg-transparent font-sans">
                   {exportError && (
                     <div className="mb-8 text-sm text-destructive p-3 bg-destructive/10 rounded-md border border-destructive/30" data-testid="text-export-error">
                       {exportError}
@@ -414,46 +416,46 @@ export function InvoiceDetail() {
                     </div>
                   </div>
                   
-                  <div className="border rounded-md overflow-hidden mb-8">
+                  <div className="border border-white/10 rounded-xl overflow-hidden mb-8 shadow-sm">
                     <table className="w-full text-sm">
-                      <thead className="bg-secondary/50 text-left">
+                      <thead className="bg-white/5 text-left border-b border-white/10">
                         <tr>
-                          <th className="px-4 py-3 font-medium text-muted-foreground">Description</th>
-                          <th className="px-4 py-3 font-medium text-muted-foreground text-right">Qty</th>
-                          <th className="px-4 py-3 font-medium text-muted-foreground text-right">Rate</th>
-                          <th className="px-4 py-3 font-medium text-muted-foreground text-right">Amount</th>
+                          <th className="px-5 py-4 font-medium text-muted-foreground">Description</th>
+                          <th className="px-5 py-4 font-medium text-muted-foreground text-right">Qty</th>
+                          <th className="px-5 py-4 font-medium text-muted-foreground text-right">Rate</th>
+                          <th className="px-5 py-4 font-medium text-muted-foreground text-right">Amount</th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y">
+                      <tbody className="divide-y divide-white/10">
                         {document.lineItems.map((item, i) => (
-                          <tr key={i}>
-                            <td className="px-4 py-4">{item.description}</td>
-                            <td className="px-4 py-4 text-right">{item.quantity}</td>
-                            <td className="px-4 py-4 text-right">${item.unitPriceUsdc}</td>
-                            <td className="px-4 py-4 text-right font-medium">${(item.quantity * parseFloat(item.unitPriceUsdc)).toFixed(2)}</td>
+                          <tr key={i} className="hover:bg-white/[0.02] transition-colors">
+                            <td className="px-5 py-5 text-foreground/90">{item.description}</td>
+                            <td className="px-5 py-5 text-right text-foreground/90">{item.quantity}</td>
+                            <td className="px-5 py-5 text-right font-mono text-foreground/90">${item.unitPriceUsdc}</td>
+                            <td className="px-5 py-5 text-right font-mono font-medium text-foreground">${(item.quantity * parseFloat(item.unitPriceUsdc)).toFixed(2)}</td>
                           </tr>
                         ))}
                       </tbody>
-                      <tfoot className="bg-secondary/20">
+                      <tfoot className="bg-white/5 border-t border-white/10">
                         <tr>
-                          <td colSpan={3} className="px-4 py-4 text-right font-semibold">Total (USDC)</td>
-                          <td className="px-4 py-4 text-right font-bold text-lg">${document.amountUsdc}</td>
+                          <td colSpan={3} className="px-5 py-5 text-right font-medium text-muted-foreground">Total (USDC)</td>
+                          <td className="px-5 py-5 text-right font-mono font-bold text-xl text-foreground">${document.amountUsdc}</td>
                         </tr>
                       </tfoot>
                     </table>
                   </div>
 
                   {document.notes && (
-                    <div className="mb-8 p-4 bg-muted/30 rounded-md">
-                      <p className="text-sm font-medium mb-1">Notes</p>
-                      <p className="text-sm text-muted-foreground whitespace-pre-wrap">{document.notes}</p>
+                    <div className="mb-8 p-5 bg-white/5 border border-white/5 rounded-xl backdrop-blur-sm">
+                      <p className="text-xs uppercase tracking-widest text-muted-foreground mb-2">Notes</p>
+                      <p className="text-sm text-foreground/80 leading-relaxed whitespace-pre-wrap">{document.notes}</p>
                     </div>
                   )}
                   
-                  <div className="pt-6 border-t flex flex-col sm:flex-row justify-between text-xs text-muted-foreground gap-4">
+                  <div className="pt-8 border-t border-white/10 flex flex-col sm:flex-row justify-between text-xs text-muted-foreground/60 gap-4">
                     <div>Issue Date: {format(new Date(document.issueDate), 'PP')}</div>
                     {document.dueDate && <div>Due Date: {format(new Date(document.dueDate), 'PP')}</div>}
-                    <div className="font-mono bg-secondary px-2 py-1 rounded">Nonce: {document.nonce.substring(0,8)}...</div>
+                    <div className="font-mono px-2 py-1 rounded bg-white/5 border border-white/10">Nonce: {document.nonce.substring(0,8)}...</div>
                   </div>
                 </div>
               ) : myCopyLocked ? (
@@ -517,14 +519,14 @@ export function InvoiceDetail() {
 
           {/* Verification Panel - for anyone who opened it */}
           {document && (
-            <Card className="border-primary/20 shadow-sm">
-              <CardHeader className="bg-primary/5 pb-4">
-                <CardTitle className="text-lg flex items-center gap-2">
+            <Card className="bg-white/5 border-white/10 backdrop-blur-md shadow-xl">
+              <CardHeader className="bg-white/[0.02] border-b border-white/5 pb-4">
+                <CardTitle className="text-lg flex items-center gap-2 font-light">
                   <ShieldCheck className="h-5 w-5 text-primary" /> Cryptographic Verification
                 </CardTitle>
               </CardHeader>
               <CardContent className="pt-6 space-y-4">
-                <div className="flex justify-between items-center bg-secondary/50 p-3 rounded-md border font-mono text-xs">
+                <div className="flex justify-between items-center bg-white/[0.02] p-3 rounded-lg border border-white/5 font-mono text-xs">
                   <div className="truncate mr-4 text-muted-foreground">
                     <span className="font-semibold text-foreground">Record: </span> 
                     <span data-testid="text-fingerprint">{invoice.fingerprint}</span>
@@ -589,13 +591,13 @@ export function InvoiceDetail() {
         </div>
 
         {/* Sidebar */}
-        <div className="space-y-6">
+        <div className="space-y-8">
 
           {/* Re-share panel - shown to the party whose copy still works when
               the other party reset their key. One click: re-wrap in THIS
               browser for their new key, store it as their permanent copy. */}
           {counterpartyNeedsRekey && (
-            <Card className="border-amber-300 bg-amber-50/50 dark:bg-amber-950/10 dark:border-amber-900" data-testid="panel-reshare">
+            <Card className="border-amber-500/30 bg-amber-500/5 backdrop-blur-md shadow-xl" data-testid="panel-reshare">
               <CardHeader>
                 <CardTitle className="text-lg flex items-center gap-2">
                   <KeyRound className="h-5 w-5 text-amber-600" /> Re-share needed
@@ -629,9 +631,9 @@ export function InvoiceDetail() {
 
           {/* Payment Panel */}
           {isClient && invoice.status === 'awaiting_payment' && invoice.anchorStatus !== 'anchored' && (
-            <Card className="border-amber-200 bg-amber-50/50 dark:border-amber-900 dark:bg-amber-950/10" data-testid="panel-payment-waiting-for-anchor">
+            <Card className="border-amber-500/30 bg-amber-500/5 backdrop-blur-md shadow-xl" data-testid="panel-payment-waiting-for-anchor">
               <CardHeader>
-                <CardTitle className="text-lg flex items-center gap-2">
+                <CardTitle className="text-lg flex items-center gap-2 font-light">
                   <ShieldAlert className="h-5 w-5 text-amber-600" /> Waiting for Arc anchor
                 </CardTitle>
                 <CardDescription>
@@ -644,21 +646,21 @@ export function InvoiceDetail() {
 
           {isClient && invoice.status === 'awaiting_payment' && invoice.anchorStatus === 'anchored' && (
             <>
-              <Card className="border-blue-200 shadow-md bg-blue-50/50 dark:bg-blue-950/10 dark:border-blue-900">
+              <Card className="border-primary/30 bg-primary/5 backdrop-blur-md shadow-xl">
                 <CardHeader>
-                  <CardTitle className="text-lg flex items-center gap-2">
-                    <CreditCard className="h-5 w-5 text-blue-600" /> Settle Invoice
+                  <CardTitle className="text-lg flex items-center gap-2 font-light">
+                    <CreditCard className="h-5 w-5 text-primary" /> Settle Invoice
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <div className="text-3xl font-bold text-center py-2">${invoice.amountUsdc}</div>
-                  <p className="text-sm text-muted-foreground text-center">
+                  <div className="text-4xl font-light text-center py-2">${invoice.amountUsdc}</div>
+                  <p className="text-sm text-muted-foreground/80 text-center">
                     Paid from your built-in wallet in test USDC on Arc.
                   </p>
 
                   {!chainStatusQ.isLoading && !chainStatus?.readyForPayments && (
                     <div
-                      className="text-sm p-3 rounded-md border border-amber-300 bg-amber-50 text-amber-900 dark:border-amber-900/50 dark:bg-amber-900/20 dark:text-amber-200 leading-relaxed"
+                      className="text-sm p-3 rounded-lg border border-amber-500/30 bg-amber-500/10 text-amber-200 leading-relaxed"
                       data-testid="notice-chain-not-ready"
                     >
                       {chainStatus?.statusMessage ?? 'The Arc payment rails are not ready right now.'}
@@ -668,7 +670,7 @@ export function InvoiceDetail() {
                   <Button
                     onClick={() => setPayApprovalOpen(true)}
                     disabled={payMutation.isPending}
-                    className="w-full bg-blue-600 hover:bg-blue-700 text-white"
+                    className="w-full bg-primary hover:bg-primary/90 text-primary-foreground shadow-[0_0_15px_rgba(37,99,235,0.3)]"
                     data-testid="button-pay"
                   >
                     {payMutation.isPending ? "Processing..." : "Review & Pay with Test USDC"}
@@ -694,20 +696,20 @@ export function InvoiceDetail() {
 
           {/* Access Grants Panel - owner only */}
           {isOwner && (
-            <Card>
+            <Card className="bg-white/5 border-white/10 backdrop-blur-md shadow-xl">
               <CardHeader>
-                <CardTitle className="text-lg flex items-center gap-2">
+                <CardTitle className="text-lg flex items-center gap-2 font-light">
                   <Key className="h-5 w-5 text-primary" /> Access Control
                 </CardTitle>
-                <CardDescription>Grant someone temporary access to open this envelope, e.g. an accountant.</CardDescription>
+                <CardDescription className="text-muted-foreground/80">Grant someone temporary access to open this envelope, e.g. an accountant.</CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
                 {!document ? (
-                  <div className="text-sm text-amber-600 p-3 bg-amber-50 rounded-md border border-amber-200">
+                  <div className="text-sm text-amber-500 p-3 bg-amber-500/10 rounded-lg border border-amber-500/30">
                     You must open the envelope yourself first before you can wrap a key for someone else.
                   </div>
                 ) : granteeCandidates.length === 0 ? (
-                  <div className="text-sm text-muted-foreground p-3 bg-secondary/40 rounded-md border">
+                  <div className="text-sm text-muted-foreground/80 p-3 bg-white/5 rounded-lg border border-white/10">
                     No one available to share with. Grantees must have a registered account here.
                   </div>
                 ) : (
@@ -729,14 +731,14 @@ export function InvoiceDetail() {
                 )}
                 
                 <div className="space-y-3">
-                  <h4 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Active Grants</h4>
+                  <h4 className="text-xs font-medium text-muted-foreground uppercase tracking-widest">Active Grants</h4>
                   {activeGrants.length === 0 ? (
-                    <p className="text-sm text-muted-foreground italic">No active grants. Revoked and expired grants appear in the audit trail below.</p>
+                    <p className="text-sm text-muted-foreground/60 italic">No active grants. Revoked and expired grants appear in the audit trail below.</p>
                   ) : (
                     activeGrants.map(grant => (
-                      <div key={grant.id} className="flex items-center justify-between p-3 rounded-md border bg-secondary/30 text-sm" data-testid={`grant-row-${grant.id}`}>
+                      <div key={grant.id} className="flex items-center justify-between p-3 rounded-lg border border-white/5 bg-white/[0.02] text-sm" data-testid={`grant-row-${grant.id}`}>
                         <div>
-                          <p className="font-medium">{grant.granteeName}</p>
+                          <p className="font-medium text-foreground/90">{grant.granteeName}</p>
                           <p className="text-xs text-muted-foreground">Expires: {format(new Date(grant.expiresAt), 'MMM d, h:mm a')}</p>
                         </div>
                         <Button variant="ghost" size="sm" className="text-destructive h-8 px-2" onClick={() => handleRevoke(grant.id)} data-testid={`button-revoke-${grant.id}`}>
@@ -751,19 +753,19 @@ export function InvoiceDetail() {
           )}
 
           {/* Activity Timeline */}
-          <Card>
+          <Card className="bg-white/5 border-white/10 backdrop-blur-md shadow-xl">
             <CardHeader>
-              <CardTitle className="text-lg flex items-center gap-2">
-                <Activity className="h-5 w-5 text-muted-foreground" /> Audit Trail
+              <CardTitle className="text-lg flex items-center gap-2 font-light">
+                <Activity className="h-5 w-5 text-primary" /> Audit Trail
               </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
                 {events?.map((event: InvoiceEvent) => (
-                  <div key={event.id} className="relative pl-6 pb-4 border-l-2 border-muted last:pb-0 last:border-transparent">
-                    <div className="absolute -left-[5px] top-1 h-2 w-2 rounded-full bg-primary ring-4 ring-background" />
-                    <p className="text-sm font-medium leading-none mb-1">{event.detail}</p>
-                    <p className="text-xs text-muted-foreground">{format(new Date(event.createdAt), 'MMM d, yyyy h:mm a')}</p>
+                  <div key={event.id} className="relative pl-6 pb-4 border-l border-white/10 last:pb-0 last:border-transparent">
+                    <div className="absolute -left-[5px] top-1.5 h-2.5 w-2.5 rounded-full bg-primary ring-4 ring-background" />
+                    <p className="text-sm font-medium leading-relaxed text-foreground/90 mb-0.5">{event.detail}</p>
+                    <p className="text-xs font-mono text-muted-foreground/60">{format(new Date(event.createdAt), 'MMM d, yyyy h:mm a')}</p>
                     {event.txHash && (
                       <a href={`${chainStatus?.explorerBaseUrl}/tx/${event.txHash}`} target="_blank" rel="noopener noreferrer" className="text-[10px] text-primary hover:underline font-mono mt-1 inline-block truncate max-w-full">
                         tx: {event.txHash}

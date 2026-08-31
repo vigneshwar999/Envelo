@@ -68,7 +68,7 @@ export function PayApprovalDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md" data-testid="dialog-pay-approve">
+      <DialogContent className="sm:max-w-md bg-card/90 backdrop-blur-xl border-white/10" data-testid="dialog-pay-approve">
         <DialogHeader>
           <div className="flex items-center gap-2 text-xs text-muted-foreground">
             <ShieldCheck className="h-4 w-4 text-primary" />
@@ -190,7 +190,7 @@ export function PayApprovalDialog({
 
           {insufficient && (
             <div
-              className="flex gap-2.5 rounded-md border border-amber-300 bg-amber-50 p-3 text-xs leading-relaxed text-amber-900 dark:border-amber-900/50 dark:bg-amber-900/20 dark:text-amber-200"
+              className="flex gap-2.5 rounded-lg border border-amber-500/30 bg-amber-500/10 p-4 text-xs leading-relaxed text-amber-200"
               data-testid="notice-pay-insufficient"
             >
               <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
@@ -215,7 +215,7 @@ export function PayApprovalDialog({
 
           {preview.isError && (
             <div
-              className="flex gap-2.5 rounded-md border border-destructive/30 bg-destructive/10 p-3 text-xs leading-relaxed text-destructive"
+              className="flex gap-2.5 rounded-lg border border-destructive/30 bg-destructive/10 p-4 text-xs leading-relaxed text-destructive"
               data-testid="notice-pay-preview-error"
             >
               <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
@@ -231,7 +231,7 @@ export function PayApprovalDialog({
             !insufficient &&
             (p.alreadyPaid || !p.contractAddress || !p.payeeAddress || p.canPay !== true) && (
             <div
-              className="flex gap-2.5 rounded-md border border-amber-300 bg-amber-50 p-3 text-xs leading-relaxed text-amber-900 dark:border-amber-900/50 dark:bg-amber-900/20 dark:text-amber-200"
+              className="flex gap-2.5 rounded-lg border border-amber-500/30 bg-amber-500/10 p-4 text-xs leading-relaxed text-amber-200"
               data-testid="notice-pay-unavailable"
             >
               <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />

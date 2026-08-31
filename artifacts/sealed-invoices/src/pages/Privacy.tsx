@@ -6,7 +6,7 @@ import {
 } from "@/components/marketing/LegalPageLayout";
 
 const linkClass =
-  "font-medium text-seal underline-offset-4 hover:underline";
+  "font-medium text-foreground underline-offset-4 hover:underline transition-colors";
 
 const sections: LegalSection[] = [
   {

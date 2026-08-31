@@ -7,6 +7,7 @@ import { useMe } from '@/context/UserContext';
 import { useCreateInvoice, useLookupUser, getListInvoicesQueryKey, getGetDashboardSummaryQueryKey } from '@workspace/api-client-react';
 import { useQueryClient } from '@tanstack/react-query';
 import { sealInvoice, getStoredPublicKeyJwk } from '@/lib/crypto';
+import { Background } from '@/components/marketing/Background';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -215,7 +216,8 @@ export function NewInvoice() {
   };
 
   return (
-    <div className="max-w-2xl mx-auto space-y-6">
+    <div className="max-w-2xl mx-auto space-y-8 relative z-10 animate-in fade-in slide-in-from-bottom-4 duration-700">
+      <Background />
       <div>
         <Link href="/dashboard" className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground mb-4 transition-colors">
           <ArrowLeft className="mr-2 h-4 w-4" /> Back to Dashboard
@@ -227,14 +229,14 @@ export function NewInvoice() {
       </div>
 
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(requestApproval)} className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg flex items-center gap-2">
+        <form onSubmit={form.handleSubmit(requestApproval)} className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700 delay-150 fill-mode-both">
+          <Card className="bg-white/5 border-white/10 backdrop-blur-md shadow-2xl overflow-hidden">
+            <CardHeader className="bg-white/[0.02] border-b border-white/5">
+              <CardTitle className="text-lg flex items-center gap-2 font-light">
                 <FileText className="h-5 w-5 text-primary" /> Invoice Details
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-6 pt-6">
               <div className="grid grid-cols-2 gap-4">
                 <FormField
                   control={form.control}
@@ -391,9 +393,9 @@ export function NewInvoice() {
                 <span>{sealError}</span>
               </div>
             )}
-            <CardFooter className="flex items-center justify-between gap-4 border-t bg-secondary/10 px-5 py-4">
-              <p className="flex max-w-[300px] items-start text-xs leading-4 text-muted-foreground">
-                <Lock className="mr-2 mt-0.5 h-3 w-3 shrink-0 text-primary" />
+            <CardFooter className="flex items-center justify-between gap-4 border-t border-white/5 bg-white/[0.02] px-6 py-5">
+              <p className="flex max-w-[300px] items-start text-xs leading-5 text-muted-foreground/80">
+                <Lock className="mr-2 mt-0.5 h-3.5 w-3.5 shrink-0 text-primary" />
                 Invoice body encrypted. The server receives ciphertext plus required payment
                 metadata. You approve the Arc fee.
               </p>

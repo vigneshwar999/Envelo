@@ -22,13 +22,15 @@ export function EnvelopeKeyCard() {
   return (
     <Card
       data-testid="card-envelope-key"
-      className={keyStatus === 'needs-restore' ? 'border-amber-300 dark:border-amber-800 shadow-sm' : 'shadow-sm'}
+      className={keyStatus === 'needs-restore' 
+        ? 'border-amber-500/30 bg-amber-500/5 backdrop-blur-md shadow-xl transition-all' 
+        : 'bg-white/5 border-white/10 backdrop-blur-md shadow-xl transition-all'}
     >
       <CardHeader className="pb-4">
-        <CardTitle className="text-base flex items-center gap-2">
-          <KeyRound className="h-4 w-4 text-primary" /> Envelope Key
+        <CardTitle className="text-lg font-medium flex items-center gap-2">
+          <KeyRound className="h-5 w-5 text-primary" /> Envelope Key
         </CardTitle>
-        <CardDescription className="text-xs">
+        <CardDescription className="text-xs text-muted-foreground/80">
           Controls access to invoices sealed for you.
         </CardDescription>
       </CardHeader>
@@ -38,7 +40,7 @@ export function EnvelopeKeyCard() {
         ) : keyStatus === 'ready' ? (
           <div className="space-y-4">
             <div
-              className="flex items-start gap-2.5 text-xs p-3 rounded-md border bg-primary/5 border-primary/20 text-foreground"
+              className="flex items-start gap-2.5 text-xs p-3 rounded-lg border border-primary/20 bg-primary/5 text-foreground/90"
               data-testid="text-key-status"
             >
               <ShieldCheck className="h-4 w-4 mt-0.5 text-primary shrink-0" />
@@ -58,7 +60,7 @@ export function EnvelopeKeyCard() {
               >
                 Back up key
               </Button>
-              <div className="flex items-center justify-between border-t px-1 pt-3">
+              <div className="flex items-center justify-between border-t border-white/5 px-1 pt-3">
                 <button
                   type="button"
                   className="text-xs font-medium text-muted-foreground hover:text-foreground transition-colors"
@@ -81,7 +83,7 @@ export function EnvelopeKeyCard() {
         ) : (
           <div className="space-y-4">
             <div
-              className="flex items-start gap-2.5 text-xs p-3 rounded-md border bg-amber-50 border-amber-200 text-amber-900 dark:bg-amber-950/30 dark:border-amber-900/50 dark:text-amber-300"
+              className="flex items-start gap-2.5 text-xs p-3 rounded-lg border border-amber-500/30 bg-amber-500/10 text-amber-200"
               data-testid="text-key-status"
             >
               <AlertTriangle className="h-4 w-4 mt-0.5 shrink-0" />
@@ -89,7 +91,7 @@ export function EnvelopeKeyCard() {
                 An envelope key is needed on this browser.
               </p>
             </div>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-xs text-muted-foreground/80">
               Restore your key from a backup file to unlock your invoices on this device.
             </p>
             <div className="pt-1">

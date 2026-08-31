@@ -73,17 +73,17 @@ const footerGroups: Array<{ title: string; links: FooterLink[] }> = [
 
 function FooterNavLink({ link }: { link: FooterLink }) {
   const className =
-    "group inline-flex items-center gap-1.5 text-sm text-primary-foreground/65 transition-colors hover:text-primary-foreground";
+    "group inline-flex items-center gap-1.5 text-sm text-muted-foreground/80 transition-colors hover:text-foreground";
 
   if (!link.href) {
     return (
       <span
-        className="inline-flex cursor-default items-center gap-2 text-sm text-primary-foreground/40"
+        className="inline-flex cursor-default items-center gap-2 text-sm text-muted-foreground/40"
         aria-disabled="true"
         title="Coming soon"
       >
         {link.label}
-        <span className="rounded-full border border-primary-foreground/15 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-[0.14em] text-primary-foreground/45">
+        <span className="rounded-full border border-white/5 bg-white/5 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-[0.14em] text-muted-foreground/60">
           Soon
         </span>
       </span>
@@ -134,18 +134,19 @@ export function SiteFooter() {
   return (
     <footer
       id="site-footer"
-      className="relative scroll-mt-8 overflow-hidden border-t border-white/10 bg-primary px-4 py-14 text-primary-foreground sm:py-16"
+      className="relative scroll-mt-8 overflow-hidden border-t border-white/5 bg-background px-4 py-14 text-foreground sm:py-16 z-10"
     >
+      <div className="absolute inset-0 bg-gradient-to-b from-transparent to-primary/5 pointer-events-none" />
       <div
-        className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-seal/70 to-transparent"
+        className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent"
         aria-hidden="true"
       />
       <Sparkles
-        className="pointer-events-none absolute right-[5%] top-8 h-5 w-5 text-seal sm:right-[9%]"
+        className="pointer-events-none absolute right-[5%] top-8 h-4 w-4 text-primary opacity-50 sm:right-[9%]"
         aria-hidden="true"
       />
 
-      <div className="mx-auto max-w-6xl">
+      <div className="mx-auto max-w-6xl relative z-10">
         <div className="grid gap-12 md:grid-cols-2 lg:grid-cols-[1.45fr_repeat(4,minmax(0,1fr))] lg:gap-8">
           <div>
             <Link
@@ -153,23 +154,23 @@ export function SiteFooter() {
               className="inline-flex items-center gap-2 text-lg font-semibold tracking-tight"
               data-testid="link-footer-home"
             >
-              <ShieldCheck className="h-5 w-5 text-seal" />
+              <ShieldCheck className="h-5 w-5 text-foreground" />
               Envelo
             </Link>
 
-            <h2 className="mt-8 max-w-xs text-3xl font-bold uppercase leading-none tracking-[-0.04em] sm:text-4xl">
+            <h2 className="mt-8 max-w-xs text-3xl font-light uppercase leading-none tracking-[-0.04em] sm:text-4xl text-muted-foreground">
               Come say hi
-              <span className="ml-2 text-seal">.</span>
+              <span className="ml-2 text-primary">.</span>
             </h2>
 
-            <p className="mt-7 text-xs font-semibold uppercase tracking-[0.2em] text-primary-foreground/45">
+            <p className="mt-7 text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground/50">
               Connect
             </p>
             <a
               href="https://x.com/enveloarc"
               target="_blank"
               rel="noopener noreferrer"
-              className="group mt-3 inline-flex items-center gap-2.5 text-sm font-medium text-primary-foreground/75 transition-colors hover:text-primary-foreground"
+              className="group mt-3 inline-flex items-center gap-2.5 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
               aria-label="Follow Envelo on X"
               data-testid="link-footer-x"
             >
@@ -181,11 +182,11 @@ export function SiteFooter() {
 
           {footerGroups.map((group) => (
             <nav key={group.title} aria-label={`${group.title} footer links`}>
-              <h2 className="text-sm font-bold uppercase tracking-[0.12em] text-primary-foreground">
+              <h2 className="text-sm font-semibold uppercase tracking-[0.12em] text-foreground">
                 {group.title}
               </h2>
-              <div className="mt-4 h-px w-full bg-primary-foreground/10">
-                <div className="h-px w-7 bg-seal" />
+              <div className="mt-4 h-px w-full bg-white/5">
+                <div className="h-px w-7 bg-primary" />
               </div>
               <ul className="mt-5 space-y-3">
                 {group.links.map((link) => (
@@ -198,7 +199,7 @@ export function SiteFooter() {
           ))}
         </div>
 
-        <div className="mt-14 flex flex-col gap-3 border-t border-primary-foreground/10 pt-6 text-xs leading-relaxed text-primary-foreground/45 sm:flex-row sm:items-center sm:justify-between">
+        <div className="mt-14 flex flex-col gap-3 border-t border-white/5 pt-6 text-xs leading-relaxed text-muted-foreground/60 sm:flex-row sm:items-center sm:justify-between">
           <p>© {new Date().getFullYear()} Envelo. All rights reserved.</p>
           <p className="max-w-2xl sm:text-right">
             Arc Testnet demonstration only. Test USDC has no real-world value,

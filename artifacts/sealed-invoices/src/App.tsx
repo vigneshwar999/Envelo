@@ -63,7 +63,7 @@ if (!clerkPubKey) {
   throw new Error('Missing VITE_CLERK_PUBLISHABLE_KEY in .env file');
 }
 
-// Matches the app theme in index.css: Outfit, near-white paper, dark navy ink.
+// Matches the app theme in index.css: Plus Jakarta Sans, dark mode.
 const clerkAppearance = {
   theme: shadcn,
   cssLayerName: 'clerk',
@@ -73,58 +73,60 @@ const clerkAppearance = {
     logoImageUrl: `${window.location.origin}${basePath}/logo.svg`,
   },
   variables: {
-    colorPrimary: 'hsl(222 47% 11%)',
-    colorForeground: 'hsl(220 15% 15%)',
-    colorMutedForeground: 'hsl(220 10% 45%)',
+    colorPrimary: 'hsl(221 83% 53%)',
+    colorForeground: 'hsl(0 0% 98%)',
+    colorMutedForeground: 'hsl(0 0% 60%)',
     colorDanger: 'hsl(0 84% 60%)',
-    colorBackground: '#ffffff',
-    colorInput: '#ffffff',
-    colorInputForeground: 'hsl(220 15% 15%)',
-    colorNeutral: 'hsl(220 15% 25%)',
-    fontFamily: "'Outfit', sans-serif",
-    borderRadius: '0.5rem',
+    colorBackground: 'transparent',
+    colorInput: 'hsl(0 0% 5%)',
+    colorInputForeground: 'hsl(0 0% 98%)',
+    colorNeutral: 'hsl(0 0% 60%)',
+    fontFamily: "'Plus Jakarta Sans', sans-serif",
+    borderRadius: '0.75rem',
   },
   elements: {
     rootBox: 'w-full flex justify-center',
     cardBox:
-      'bg-white rounded-2xl w-[440px] max-w-full overflow-hidden border border-border shadow-lg',
-    card: '!shadow-none !border-0 !bg-transparent !rounded-none',
-    footer: '!shadow-none !border-0 !bg-transparent !rounded-none',
-    headerTitle: 'text-foreground font-semibold tracking-tight',
-    headerSubtitle: 'text-muted-foreground',
+      'bg-background/80 backdrop-blur-xl rounded-3xl w-[440px] max-w-full overflow-hidden border border-white/10 shadow-2xl',
+    card: '!shadow-none !border-0 !bg-transparent !rounded-none p-8',
+    footer: '!shadow-none !border-0 !bg-transparent !rounded-none p-8 pt-0',
+    headerTitle: 'text-foreground text-3xl font-light tracking-tight',
+    headerSubtitle: 'text-muted-foreground/80 mt-2 text-base',
     socialButtonsBlockButtonText: 'text-foreground font-medium',
     formFieldLabel: 'text-foreground font-medium',
-    footerActionLink: 'text-primary font-semibold hover:underline',
+    footerActionLink: 'text-primary font-medium hover:text-primary/80 transition-colors',
     footerActionText: 'text-muted-foreground',
-    dividerText: 'text-muted-foreground',
-    identityPreviewEditButton: 'text-primary',
+    dividerText: 'text-muted-foreground/50 text-xs font-bold uppercase tracking-widest',
+    identityPreviewEditButton: 'text-primary hover:text-primary/80 transition-colors',
     formFieldSuccessText: 'text-muted-foreground',
     alertText: 'text-foreground',
     logoBox: 'justify-center',
-    logoImage: 'h-10 w-10 rounded-lg',
-    socialButtonsBlockButton: 'border border-input bg-white hover:bg-secondary',
+    logoImage: 'h-12 w-12 rounded-xl border border-white/10 shadow-lg',
+    socialButtonsBlockButton: 'border border-white/10 bg-white/5 hover:bg-white/10 transition-colors',
     formButtonPrimary:
-      'bg-primary text-primary-foreground hover:bg-primary/90 shadow-none font-medium',
-    formFieldInput: 'bg-white border border-input text-foreground',
+      'bg-primary text-primary-foreground hover:bg-primary/90 shadow-[0_0_20px_rgba(37,99,235,0.3)] transition-all font-medium rounded-full h-11',
+    formFieldInput: 'bg-black/40 border border-white/10 text-foreground focus:border-primary/50 transition-colors rounded-xl h-11',
     footerAction: 'justify-center',
-    dividerLine: 'bg-border',
-    alert: 'border border-border',
-    otpCodeFieldInput: 'border border-input text-foreground',
+    dividerLine: 'bg-white/10',
+    alert: 'border border-white/10 bg-white/5',
+    otpCodeFieldInput: 'bg-black/40 border border-white/10 text-foreground focus:border-primary/50 transition-colors rounded-xl',
     formFieldRow: 'gap-2',
-    main: 'gap-5',
+    main: 'gap-6',
   },
 };
 
 function AuthLoading() {
   return (
-    <div className="flex min-h-[100dvh] items-center justify-center bg-background px-4">
-      <div className="w-full max-w-[440px] space-y-5">
-        <Skeleton className="mx-auto h-10 w-10 rounded-lg" />
-        <Skeleton className="mx-auto h-8 w-48" />
-        <Skeleton className="mx-auto h-5 w-64 max-w-full" />
-        <Skeleton className="h-12 w-full" />
-        <Skeleton className="h-12 w-full" />
-        <Skeleton className="h-12 w-full" />
+    <div className="flex min-h-[100dvh] items-center justify-center bg-transparent relative overflow-hidden px-4">
+      <div className="w-full max-w-[440px] space-y-6 bg-background/80 backdrop-blur-xl border border-white/10 p-8 rounded-3xl shadow-2xl relative z-10">
+        <Skeleton className="mx-auto h-12 w-12 rounded-xl bg-white/5" />
+        <Skeleton className="mx-auto h-8 w-48 bg-white/5" />
+        <Skeleton className="mx-auto h-5 w-64 max-w-full bg-white/5" />
+        <div className="space-y-4 pt-4">
+          <Skeleton className="h-11 w-full rounded-xl bg-white/5" />
+          <Skeleton className="h-11 w-full rounded-xl bg-white/5" />
+          <Skeleton className="h-11 w-full rounded-full bg-white/5 mt-2" />
+        </div>
       </div>
     </div>
   );

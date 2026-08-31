@@ -129,7 +129,7 @@ export function DepositWithdrawDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-md bg-card/90 backdrop-blur-xl border-white/10">
         <DialogHeader>
           <DialogTitle>Deposit &amp; withdraw</DialogTitle>
           <DialogDescription>
@@ -173,7 +173,7 @@ export function DepositWithdrawDialog({
             </div>
             {address && (
               <div className="flex justify-center">
-                <div className="rounded-lg border bg-white p-3" data-testid="qr-deposit">
+                <div className="rounded-2xl border border-white/10 bg-white p-4 shadow-xl" data-testid="qr-deposit">
                   <QRCodeSVG value={address} size={168} />
                 </div>
               </div>
@@ -274,7 +274,7 @@ export function DepositWithdrawDialog({
             </div>
             {withdrawError && (
               <div
-                className="rounded-md border border-destructive/30 bg-destructive/5 px-3 py-2.5 text-sm text-destructive"
+                className="rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive"
                 data-testid="text-withdraw-error"
               >
                 {withdrawError}
@@ -282,7 +282,7 @@ export function DepositWithdrawDialog({
             )}
             {receipt && (
               <div
-                className="rounded-md border border-emerald-300 bg-emerald-50 px-3 py-2.5 text-sm text-emerald-900"
+                className="rounded-lg border border-primary/30 bg-primary/10 px-4 py-3 text-sm text-foreground/90"
                 data-testid="text-withdraw-success"
               >
                 Sent {receipt.amountUsdc} test USDC.{' '}
@@ -290,7 +290,7 @@ export function DepositWithdrawDialog({
                   href={receipt.explorerTxUrl}
                   target="_blank"
                   rel="noreferrer"
-                  className="inline-flex items-center gap-0.5 font-medium underline underline-offset-2"
+                  className="inline-flex items-center gap-0.5 font-medium underline underline-offset-2 text-primary"
                   data-testid="link-withdraw-tx"
                 >
                   View on ArcScan

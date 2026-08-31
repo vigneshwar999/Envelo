@@ -13,6 +13,7 @@ import { useMe } from '@/context/UserContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Background } from '@/components/marketing/Background';
 import {
   Card,
   CardContent,
@@ -154,21 +155,22 @@ export default function WalletSettings() {
   }
 
   return (
-    <div className="max-w-2xl mx-auto space-y-6">
+    <div className="max-w-2xl mx-auto space-y-8 relative z-10 animate-in fade-in slide-in-from-bottom-4 duration-700">
+      <Background />
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight flex items-center gap-2">
+        <h1 className="text-3xl font-light tracking-tight flex items-center gap-2">
           <Wallet className="h-6 w-6 text-primary" />
           Payout wallet
         </h1>
-        <p className="text-muted-foreground mt-1">
+        <p className="text-muted-foreground/80 mt-2">
           Choose where the money lands when one of your invoices is paid.
         </p>
       </div>
 
-      <Card data-testid="card-managed-wallet">
+      <Card className="bg-white/5 border-white/10 backdrop-blur-md shadow-xl animate-in fade-in slide-in-from-bottom-4 duration-700 delay-100 fill-mode-both" data-testid="card-managed-wallet">
         <CardHeader>
-          <CardTitle className="text-base">App-managed wallet</CardTitle>
-          <CardDescription>
+          <CardTitle className="text-lg font-medium">App-managed wallet</CardTitle>
+          <CardDescription className="text-muted-foreground/80">
             Created for you automatically when you signed up. Zero setup, but
             the app holds its keys for you.
           </CardDescription>
@@ -181,12 +183,12 @@ export default function WalletSettings() {
             {me.walletAddress ?? 'Being created\u2026'}
           </p>
 
-          <div className="rounded-md border bg-muted/40 px-3 py-2">
-            <p className="text-xs text-muted-foreground">Balance</p>
+          <div className="rounded-lg border border-white/5 bg-white/[0.02] px-4 py-3">
+            <p className="text-xs uppercase tracking-widest text-muted-foreground/80">Balance</p>
             {walletQuery.isLoading ? (
               <Skeleton className="h-6 w-36 mt-1" />
             ) : (
-              <p className="font-mono text-lg" data-testid="text-managed-balance">
+              <p className="font-mono text-2xl font-light mt-1" data-testid="text-managed-balance">
                 {wallet?.balanceUsdc != null
                   ? `${wallet.balanceUsdc} test USDC`
                   : 'Unavailable right now'}
@@ -276,10 +278,10 @@ export default function WalletSettings() {
         </CardContent>
       </Card>
 
-      <Card data-testid="card-own-wallet">
+      <Card className="bg-white/5 border-white/10 backdrop-blur-md shadow-xl animate-in fade-in slide-in-from-bottom-4 duration-700 delay-200 fill-mode-both" data-testid="card-own-wallet">
         <CardHeader>
-          <CardTitle className="text-base">Your own wallet</CardTitle>
-          <CardDescription>
+          <CardTitle className="text-lg font-medium">Your own wallet</CardTitle>
+          <CardDescription className="text-muted-foreground/80">
             Optional. Link a wallet only you control, and every future payment
             to you skips the app and lands straight there. Sign-in stays
             exactly the same.
@@ -288,11 +290,11 @@ export default function WalletSettings() {
         <CardContent className="space-y-4">
           {linked ? (
             <>
-              <div className="flex items-center justify-between gap-4 rounded-md border bg-muted/40 px-3 py-2">
-                <div className="flex items-center gap-2 min-w-0">
-                  <Link2 className="h-4 w-4 text-primary shrink-0" />
+              <div className="flex items-center justify-between gap-4 rounded-lg border border-white/5 bg-white/[0.02] px-4 py-3">
+                <div className="flex items-center gap-3 min-w-0">
+                  <Link2 className="h-5 w-5 text-primary shrink-0" />
                   <span
-                    className="font-mono text-sm truncate"
+                    className="font-mono text-sm truncate text-foreground/90"
                     data-testid="text-linked-address"
                     title={linked}
                   >
@@ -369,13 +371,13 @@ export default function WalletSettings() {
       </Card>
 
       {transfersQuery.data && transfersQuery.data.length > 0 && (
-        <Card data-testid="card-transfer-history">
+        <Card className="bg-white/5 border-white/10 backdrop-blur-md shadow-xl animate-in fade-in slide-in-from-bottom-4 duration-700 delay-300 fill-mode-both" data-testid="card-transfer-history">
           <CardHeader>
-            <CardTitle className="text-base flex items-center gap-2">
-              <ReceiptText className="h-4 w-4 text-primary" />
+            <CardTitle className="text-lg font-medium flex items-center gap-2">
+              <ReceiptText className="h-5 w-5 text-primary" />
               Past transfers
             </CardTitle>
-            <CardDescription>
+            <CardDescription className="text-muted-foreground/80">
               Your receipts. Every time you moved money out of the app is
               listed here, each with a link to the real transaction on
               ArcScan.
@@ -386,12 +388,12 @@ export default function WalletSettings() {
               {transfersQuery.data.map((receipt) => (
                 <li
                   key={receipt.id}
-                  className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 rounded-md border bg-muted/40 px-3 py-2"
+                  className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 rounded-lg border border-white/5 bg-white/[0.02] px-4 py-3"
                   data-testid={`row-transfer-${receipt.id}`}
                 >
                   <div className="min-w-0">
                     <p className="text-sm">
-                      <span className="font-medium">
+                      <span className="font-medium text-foreground/90">
                         {receipt.amountUsdc} test USDC
                       </span>{' '}
                       to{' '}

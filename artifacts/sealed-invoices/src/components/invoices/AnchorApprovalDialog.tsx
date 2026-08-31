@@ -51,7 +51,7 @@ export function AnchorApprovalDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md" data-testid="dialog-anchor-approve">
+      <DialogContent className="sm:max-w-md bg-card/90 backdrop-blur-xl border-white/10" data-testid="dialog-anchor-approve">
         <DialogHeader>
           <div className="flex items-center gap-2 text-xs text-muted-foreground">
             <ShieldCheck className="h-4 w-4 text-primary" />
@@ -140,7 +140,7 @@ export function AnchorApprovalDialog({
 
           {insufficient && (
             <div
-              className="flex gap-2.5 rounded-md border border-amber-300 bg-amber-50 p-3 text-xs leading-relaxed text-amber-900 dark:border-amber-900/50 dark:bg-amber-900/20 dark:text-amber-200"
+              className="flex gap-2.5 rounded-lg border border-amber-500/30 bg-amber-500/10 p-4 text-xs leading-relaxed text-amber-200"
               data-testid="notice-anchor-insufficient"
             >
               <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
@@ -164,8 +164,8 @@ export function AnchorApprovalDialog({
           )}
 
           {!preview.isLoading && p && !p.contractAddress && (
-            <div className="flex gap-2.5 rounded-md border border-blue-200 bg-blue-50 p-3 text-xs leading-relaxed text-blue-900 dark:border-blue-900/50 dark:bg-blue-900/20 dark:text-blue-200">
-              <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0" />
+            <div className="flex gap-2.5 rounded-lg border border-primary/30 bg-primary/10 p-4 text-xs leading-relaxed text-foreground/90">
+              <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
               <span>
                 This is the first anchor. Your approved transaction will deploy the shared Arc
                 registry and record this invoice fingerprint in one transaction.
@@ -174,14 +174,14 @@ export function AnchorApprovalDialog({
           )}
 
           {preview.isError && (
-            <div className="flex gap-2.5 rounded-md border border-destructive/30 bg-destructive/10 p-3 text-xs leading-relaxed text-destructive">
+            <div className="flex gap-2.5 rounded-lg border border-destructive/30 bg-destructive/10 p-4 text-xs leading-relaxed text-destructive">
               <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
               <span>The transaction details could not be loaded. Close this sheet and try again.</span>
             </div>
           )}
 
           {!preview.isLoading && p && !insufficient && p.canAfford !== true && (
-            <div className="flex gap-2.5 rounded-md border border-amber-300 bg-amber-50 p-3 text-xs leading-relaxed text-amber-900 dark:border-amber-900/50 dark:bg-amber-900/20 dark:text-amber-200">
+            <div className="flex gap-2.5 rounded-lg border border-amber-500/30 bg-amber-500/10 p-4 text-xs leading-relaxed text-amber-200">
               <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
               <span>Your built-in wallet balance cannot be read right now, so this transaction cannot be approved safely.</span>
             </div>

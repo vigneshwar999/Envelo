@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');
 @layer theme, base, clerk, components, utilities;
 @import 'tailwindcss';
 @import '@clerk/themes/shadcn.css';
@@ -39,78 +39,66 @@
   --color-seal: hsl(var(--seal));
   --color-seal-foreground: hsl(var(--seal-foreground));
 
-  --font-sans: 'Outfit', sans-serif;
+  --font-sans: 'Plus Jakarta Sans', sans-serif;
   --font-mono: 'JetBrains Mono', monospace;
 
   --radius-sm: calc(var(--radius) - 2px);
   --radius-md: var(--radius);
   --radius-lg: calc(var(--radius) + 2px);
+
+  @keyframes slow-drift {
+    0% { transform: translate(0, 0) scale(1); }
+    33% { transform: translate(3%, 5%) scale(1.05); }
+    66% { transform: translate(-2%, 2%) scale(0.95); }
+    100% { transform: translate(0, 0) scale(1); }
+  }
+  @keyframes slow-drift-reverse {
+    0% { transform: translate(0, 0) scale(1); }
+    33% { transform: translate(-3%, -5%) scale(0.95); }
+    66% { transform: translate(2%, -2%) scale(1.05); }
+    100% { transform: translate(0, 0) scale(1); }
+  }
+  --animate-slow-drift: slow-drift 20s ease-in-out infinite;
+  --animate-slow-drift-reverse: slow-drift-reverse 25s ease-in-out infinite;
 }
 
 :root {
-  --background: 0 0% 98%;
-  --foreground: 220 15% 15%;
-  --border: 220 15% 90%;
-  --input: 220 15% 90%;
-  --ring: 222 47% 11%;
-  --card: 0 0% 100%;
-  --card-foreground: 220 15% 15%;
-  --card-border: 220 15% 92%;
+  --background: 0 0% 3%;
+  --foreground: 0 0% 98%;
+  --border: 0 0% 12%;
+  --input: 0 0% 12%;
+  --ring: 221 83% 53%;
+  
+  --card: 0 0% 5%;
+  --card-foreground: 0 0% 98%;
+  --card-border: 0 0% 12%;
 
-  --popover: 0 0% 100%;
-  --popover-foreground: 220 15% 15%;
+  --popover: 0 0% 5%;
+  --popover-foreground: 0 0% 98%;
 
-  --primary: 222 47% 11%;
+  --primary: 221 83% 53%;
   --primary-foreground: 0 0% 100%;
   
-  --secondary: 220 14% 96%;
-  --secondary-foreground: 220 15% 15%;
+  --secondary: 0 0% 12%;
+  --secondary-foreground: 0 0% 98%;
   
-  --muted: 220 14% 96%;
-  --muted-foreground: 220 10% 45%;
+  --muted: 0 0% 12%;
+  --muted-foreground: 0 0% 60%;
   
-  --accent: 220 14% 94%;
-  --accent-foreground: 220 15% 15%;
+  --accent: 0 0% 15%;
+  --accent-foreground: 0 0% 98%;
   
   --destructive: 0 84% 60%;
   --destructive-foreground: 0 0% 100%;
 
-  --seal: 350 75% 45%;
+  --seal: 350 75% 55%;
   --seal-foreground: 0 0% 100%;
 
-  --radius: 0.5rem;
+  --radius: 0.75rem;
 }
 
 .dark {
-  --background: 222 47% 11%;
-  --foreground: 210 40% 98%;
-  --border: 217 32% 17%;
-  --input: 217 32% 17%;
-  --ring: 212.7 26.8% 83.9%;
-  --card: 222 47% 11%;
-  --card-foreground: 210 40% 98%;
-  --card-border: 217 32% 17%;
-
-  --popover: 222 47% 11%;
-  --popover-foreground: 210 40% 98%;
-
-  --primary: 210 40% 98%;
-  --primary-foreground: 222.2 47.4% 11.2%;
-  
-  --secondary: 217.2 32.6% 17.5%;
-  --secondary-foreground: 210 40% 98%;
-  
-  --muted: 217.2 32.6% 17.5%;
-  --muted-foreground: 215 20.2% 65.1%;
-  
-  --accent: 217.2 32.6% 17.5%;
-  --accent-foreground: 210 40% 98%;
-  
-  --destructive: 0 62.8% 30.6%;
-  --destructive-foreground: 210 40% 98%;
-
-  --seal: 350 70% 40%;
-  --seal-foreground: 0 0% 100%;
+  /* Inherits directly from root for single theme dark */
 }
 
 @layer base {
