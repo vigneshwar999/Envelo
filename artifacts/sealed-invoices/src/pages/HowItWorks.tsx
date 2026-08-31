@@ -247,7 +247,7 @@ export default function HowItWorks() {
                     </div>
                     <div className="h-px w-16 bg-white/10 relative">
                       <div className="absolute inset-0 bg-gradient-to-r from-transparent via-primary/50 to-transparent" />
-                      <div className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-1/2 w-2 h-2 rounded-full bg-primary shadow-[0_0_10px_rgba(249,115,22,0.8)]" />
+                      <div className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-1/2 w-2 h-2 rounded-full bg-primary shadow-[0_0_10px_rgba(201,206,212,0.8)]" />
                     </div>
                     <div className="bg-background/80 border border-white/10 rounded-2xl p-5 shadow-xl flex flex-col items-center gap-2 min-w-[140px] backdrop-blur-md transition-transform duration-500 group-hover:translate-x-2">
                       <div className="text-[10px] font-bold text-primary uppercase tracking-widest">
@@ -310,7 +310,7 @@ export default function HowItWorks() {
               <Button
                 asChild
                 size="lg"
-                className="h-14 rounded-full bg-primary px-10 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-all shadow-[0_0_20px_rgba(249,115,22,0.3)]"
+                className="h-14 rounded-full bg-primary px-10 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-all shadow-[0_0_20px_rgba(201,206,212,0.3)]"
                 data-testid="button-cta-dashboard"
               >
                 <Link
@@ -328,7 +328,7 @@ export default function HowItWorks() {
               <Button
                 asChild
                 size="lg"
-                className="h-14 w-full sm:w-auto rounded-full bg-primary px-10 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-all shadow-[0_0_20px_rgba(249,115,22,0.3)] hover:shadow-[0_0_30px_rgba(249,115,22,0.5)]"
+                className="h-14 w-full sm:w-auto rounded-full bg-primary px-10 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-all shadow-[0_0_20px_rgba(201,206,212,0.3)] hover:shadow-[0_0_30px_rgba(201,206,212,0.5)]"
                 data-testid="button-cta-signup"
               >
                 <Link

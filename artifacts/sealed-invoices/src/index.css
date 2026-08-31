@@ -107,6 +107,23 @@
   --radius: 0.75rem;
 }
 
+/* ============================================================
+   TEMPORARY EXPERIMENT: silver theme trial (nebula-react vibe).
+   Silver replaces the orange primary; --neo is a neon-yellow
+   reserved for emphasized text. Delete this block (and the
+   text-neo usages) to restore the orange theme.
+   ============================================================ */
+:root {
+  --primary: 210 6% 80%;
+  --primary-foreground: 0 0% 9%;
+  --ring: 210 6% 80%;
+  --neo: 66 100% 62%;
+}
+.text-neo {
+  color: hsl(var(--neo));
+}
+/* ===================== end temporary block ================== */
+
 .dark {
   /* Inherits directly from root for single theme dark */
 }

@@ -82,7 +82,7 @@ export default function Explore() {
           <h1 className="mb-8 text-5xl font-light tracking-tight text-foreground/90 text-balance !leading-[1.04] sm:text-7xl md:text-[5.6rem]">
             Private paperwork.
             <br />
-            <span className="text-primary">Public proof.</span>
+            <span className="text-neo">Public proof.</span>
           </h1>
 
           <p className="mx-auto mb-12 max-w-2xl text-balance text-base leading-relaxed text-muted-foreground sm:text-lg">
@@ -95,7 +95,7 @@ export default function Explore() {
               <Button
                 asChild
                 size="lg"
-                className="h-12 rounded-full border border-white/15 bg-white/[0.05] px-8 text-[11px] font-bold uppercase tracking-[0.18em] text-foreground shadow-[0_14px_50px_-12px_rgba(249,115,22,0.55)] transition-all hover:bg-white/10"
+                className="h-12 rounded-full border border-white/15 bg-white/[0.05] px-8 text-[11px] font-bold uppercase tracking-[0.18em] text-foreground shadow-[0_14px_50px_-12px_rgba(201,206,212,0.55)] transition-all hover:bg-white/10"
                 data-testid="button-hero-dashboard"
               >
                 <Link
@@ -117,7 +117,7 @@ export default function Explore() {
               <Button
                 asChild
                 size="lg"
-                className="h-12 w-full rounded-full border border-white/15 bg-white/[0.05] px-8 text-[11px] font-bold uppercase tracking-[0.18em] text-foreground shadow-[0_14px_50px_-12px_rgba(249,115,22,0.55)] transition-all hover:bg-white/10 hover:shadow-[0_14px_60px_-10px_rgba(249,115,22,0.7)] sm:w-auto"
+                className="h-12 w-full rounded-full border border-white/15 bg-white/[0.05] px-8 text-[11px] font-bold uppercase tracking-[0.18em] text-foreground shadow-[0_14px_50px_-12px_rgba(201,206,212,0.55)] transition-all hover:bg-white/10 hover:shadow-[0_14px_60px_-10px_rgba(201,206,212,0.7)] sm:w-auto"
                 data-testid="button-hero-signup"
               >
                 <Link
@@ -322,7 +322,7 @@ export default function Explore() {
                 <div className="absolute h-40 w-40 animate-[spin_24s_linear_infinite]">
                   <span className="absolute -top-1 left-1/2 h-2 w-2 -translate-x-1/2 rounded-full bg-primary/70" />
                 </div>
-                <div className="flex h-16 w-16 items-center justify-center rounded-full border border-white/10 bg-white/5 shadow-[0_0_40px_rgba(249,115,22,0.18)]">
+                <div className="flex h-16 w-16 items-center justify-center rounded-full border border-white/10 bg-white/5 shadow-[0_0_40px_rgba(201,206,212,0.18)]">
                   <Fingerprint className="h-7 w-7 text-seal" />
                 </div>
               </div>
@@ -521,7 +521,7 @@ export default function Explore() {
 
                   <div className="mb-6 flex items-start justify-center gap-7">
                     <div className="flex flex-col items-center gap-2">
-                      <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary shadow-[0_8px_24px_-6px_rgba(249,115,22,0.6)]">
+                      <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary shadow-[0_8px_24px_-6px_rgba(201,206,212,0.6)]">
                         <Plus className="h-4.5 w-4.5 text-primary-foreground" />
                       </span>
                       <span className="text-[9px] font-medium text-muted-foreground">
@@ -570,7 +570,7 @@ export default function Explore() {
                 <div className="rounded-[24px] border border-white/10 bg-gradient-to-b from-white/[0.05] to-white/[0.015] p-7 backdrop-blur-sm">
                   <div className="mb-6 flex items-center justify-between">
                     <div className="flex items-center gap-3.5">
-                      <span className="flex h-11 w-11 items-center justify-center rounded-2xl border border-primary/30 bg-gradient-to-b from-primary/30 to-primary/10 shadow-[0_0_24px_rgba(249,115,22,0.25)]">
+                      <span className="flex h-11 w-11 items-center justify-center rounded-2xl border border-primary/30 bg-gradient-to-b from-primary/30 to-primary/10 shadow-[0_0_24px_rgba(201,206,212,0.25)]">
                         <Anchor className="h-5 w-5 text-primary" />
                       </span>
                       <div>
@@ -723,7 +723,7 @@ export default function Explore() {
                     className="absolute inset-0 z-10 flex h-full w-full flex-col items-center justify-center gap-6 bg-transparent"
                   >
                     <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-background/80 to-transparent" />
-                    <span className="relative flex h-20 w-20 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-[0_0_40px_rgba(249,115,22,0.45)] transition-transform duration-300 group-hover:scale-110">
+                    <span className="relative flex h-20 w-20 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-[0_0_40px_rgba(201,206,212,0.45)] transition-transform duration-300 group-hover:scale-110">
                       <Play
                         className="h-8 w-8 translate-x-1"
                         fill="currentColor"
@@ -899,7 +899,7 @@ export default function Explore() {
               <Button
                 asChild
                 size="lg"
-                className="h-14 rounded-full border border-white/15 bg-white/[0.05] px-10 text-[11px] font-bold uppercase tracking-[0.18em] text-foreground shadow-[0_14px_50px_-12px_rgba(249,115,22,0.55)] transition-all hover:bg-white/10"
+                className="h-14 rounded-full border border-white/15 bg-white/[0.05] px-10 text-[11px] font-bold uppercase tracking-[0.18em] text-foreground shadow-[0_14px_50px_-12px_rgba(201,206,212,0.55)] transition-all hover:bg-white/10"
                 data-testid="button-cta-dashboard"
               >
                 <Link
@@ -920,7 +920,7 @@ export default function Explore() {
               <Button
                 asChild
                 size="lg"
-                className="h-14 w-full rounded-full border border-white/15 bg-white/[0.05] px-10 text-[11px] font-bold uppercase tracking-[0.18em] text-foreground shadow-[0_14px_50px_-12px_rgba(249,115,22,0.55)] transition-all hover:bg-white/10 hover:shadow-[0_14px_60px_-10px_rgba(249,115,22,0.7)] sm:w-auto"
+                className="h-14 w-full rounded-full border border-white/15 bg-white/[0.05] px-10 text-[11px] font-bold uppercase tracking-[0.18em] text-foreground shadow-[0_14px_50px_-12px_rgba(201,206,212,0.55)] transition-all hover:bg-white/10 hover:shadow-[0_14px_60px_-10px_rgba(201,206,212,0.7)] sm:w-auto"
                 data-testid="button-cta-signup"
               >
                 <Link

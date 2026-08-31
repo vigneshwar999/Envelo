@@ -73,7 +73,7 @@ const clerkAppearance = {
     logoImageUrl: `${window.location.origin}${basePath}/logo.svg`,
   },
   variables: {
-    colorPrimary: 'hsl(24 95% 53%)',
+    colorPrimary: 'hsl(210 6% 80%)', // TEMPORARY: silver theme trial (was orange 24 95% 53%)
     colorForeground: 'hsl(0 0% 98%)',
     colorMutedForeground: 'hsl(0 0% 60%)',
     colorDanger: 'hsl(0 84% 60%)',
@@ -104,7 +104,7 @@ const clerkAppearance = {
     logoImage: 'h-12 w-12 rounded-xl border border-white/10 shadow-lg',
     socialButtonsBlockButton: 'border border-white/10 bg-white/5 hover:bg-white/10 transition-colors',
     formButtonPrimary:
-      'bg-primary text-primary-foreground hover:bg-primary/90 shadow-[0_0_20px_rgba(249,115,22,0.3)] transition-all font-medium rounded-full h-11',
+      'bg-primary text-primary-foreground hover:bg-primary/90 shadow-[0_0_20px_rgba(201,206,212,0.3)] transition-all font-medium rounded-full h-11',
     formFieldInput: 'bg-black/40 border border-white/10 text-foreground focus:border-primary/50 transition-colors rounded-xl h-11',
     footerAction: 'justify-center',
     dividerLine: 'bg-white/10',
