@@ -1,7 +1,7 @@
 import { lazy, Suspense } from "react";
 import { Link, useLocation } from "wouter";
 import { useUser } from "@clerk/react";
-import { ShieldCheck, Menu } from "lucide-react";
+import { ArrowRight, ShieldCheck, Menu } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import {
@@ -12,17 +12,15 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 const WalletMenu = lazy(() =>
-  import("@/components/wallet/WalletMenu").then(({ WalletMenu: Menu }) => ({
-    default: Menu,
+  import("@/components/wallet/WalletMenu").then((mod) => ({
+    default: mod.WalletMenu,
   })),
 );
 
 const desktopNavLinkClass = (active: boolean) =>
   cn(
-    "text-sm font-medium transition-colors relative px-3 py-2",
-    active
-      ? "text-foreground"
-      : "text-muted-foreground hover:text-foreground"
+    "text-xs font-medium transition-colors relative px-2.5 py-2 whitespace-nowrap",
+    active ? "text-foreground" : "text-muted-foreground hover:text-foreground",
   );
 
 export function Shell({ children }: { children: React.ReactNode }) {
@@ -30,30 +28,35 @@ export function Shell({ children }: { children: React.ReactNode }) {
   const [location] = useLocation();
   const dashboardActive =
     location === "/dashboard" || location.startsWith("/invoices/");
+  const isMarketingRoute = [
+    "/",
+    "/explore",
+    "/how-it-works",
+    "/terms",
+    "/privacy",
+  ].includes(location);
 
   return (
     <div className="min-h-screen bg-transparent font-sans flex flex-col">
-      <div 
-        className="fixed top-0 inset-x-0 h-32 bg-gradient-to-b from-background via-background/80 to-transparent z-30 pointer-events-none" 
-        style={{ backdropFilter: 'blur(8px)', maskImage: 'linear-gradient(to bottom, black 20%, transparent 100%)', WebkitMaskImage: 'linear-gradient(to bottom, black 20%, transparent 100%)' }} 
-      />
-
-      <header className="sticky top-0 z-40 w-full border-b border-white/5 bg-background/40 backdrop-blur-xl transition-all">
-        <div className="mx-auto flex h-16 w-full max-w-7xl items-center gap-4 px-4 sm:px-6 lg:px-8">
+      {/* Nebula floating pill navbar */}
+      <header className="fixed top-0 inset-x-0 z-40 flex justify-center px-3 pt-3 sm:pt-4 pointer-events-none">
+        <div className="pointer-events-auto flex h-[52px] w-full max-w-fit items-center gap-1 rounded-full border border-white/10 bg-[#0a0a0a]/90 pl-5 pr-2 shadow-[0_18px_50px_-12px_rgba(0,0,0,0.9)] backdrop-blur-xl">
           <Link
             href="/"
-            className="group flex shrink-0 items-center gap-2 font-medium tracking-tight"
+            className="group mr-2 flex shrink-0 items-center gap-2"
             data-testid="link-home"
           >
-            <ShieldCheck className="h-[1.125rem] w-[1.125rem] text-foreground transition-colors group-hover:text-primary" />
-            <span className="text-lg font-semibold tracking-tight">Envelo</span>
-            <span className="ml-1 hidden items-center rounded-full border border-white/10 bg-white/5 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide text-muted-foreground lg:inline-flex">
+            <ShieldCheck className="h-4 w-4 text-foreground transition-colors group-hover:text-primary" />
+            <span className="text-[15px] font-bold tracking-tight">
+              Envelo
+            </span>
+            <span className="ml-0.5 hidden items-center rounded-full border border-white/10 bg-white/5 px-2 py-0.5 text-[8px] font-bold uppercase tracking-wide text-muted-foreground lg:inline-flex">
               Arc Testnet
             </span>
           </Link>
 
           <nav
-            className="hidden min-w-0 flex-1 items-center justify-center gap-4 xl:flex"
+            className="hidden min-w-0 items-center xl:flex"
             aria-label="Main navigation"
           >
             <Link
@@ -103,7 +106,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
             </Link>
           </nav>
 
-          <div className="ml-auto flex shrink-0 items-center gap-2 sm:gap-3">
+          <div className="ml-1 flex shrink-0 items-center gap-1.5">
             <div className="xl:hidden">
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -117,7 +120,10 @@ export function Shell({ children }: { children: React.ReactNode }) {
                     <span className="sr-only">Toggle menu</span>
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-56 bg-card/80 backdrop-blur-xl border-white/10">
+                <DropdownMenuContent
+                  align="end"
+                  className="w-56 bg-[#0c0c0c]/95 backdrop-blur-xl border-white/10 rounded-2xl"
+                >
                   <DropdownMenuItem asChild>
                     <Link
                       href="/explore"
@@ -195,7 +201,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
                 </DropdownMenuContent>
               </DropdownMenu>
             </div>
-            
+
             {!isLoaded ? null : isSignedIn ? (
               <Suspense
                 fallback={
@@ -209,15 +215,29 @@ export function Shell({ children }: { children: React.ReactNode }) {
                 <WalletMenu />
               </Suspense>
             ) : (
-              <div className="hidden items-center gap-3 sm:flex">
-                <Button asChild variant="ghost" size="sm" className="rounded-full text-sm font-medium text-muted-foreground hover:bg-white/5 hover:text-foreground">
+              <div className="hidden items-center gap-1.5 sm:flex">
+                <Button
+                  asChild
+                  variant="ghost"
+                  size="sm"
+                  className="rounded-full text-xs font-medium text-muted-foreground hover:bg-white/5 hover:text-foreground"
+                >
                   <Link href="/sign-in" data-testid="link-header-signin">
                     Sign in
                   </Link>
                 </Button>
-                <Button asChild size="sm" className="rounded-full bg-primary text-primary-foreground shadow-[0_0_15px_rgba(37,99,235,0.3)] hover:bg-primary/90 hover:shadow-[0_0_20px_rgba(37,99,235,0.4)] transition-all">
-                  <Link href="/sign-up" data-testid="link-header-signup">
+                <Button
+                  asChild
+                  size="sm"
+                  className="h-9 rounded-full border border-white/15 bg-white/[0.06] px-4 text-[10px] font-bold uppercase tracking-[0.18em] text-foreground shadow-none hover:bg-white/10 transition-all"
+                >
+                  <Link
+                    href="/sign-up"
+                    className="flex items-center gap-2"
+                    data-testid="link-header-signup"
+                  >
                     Create account
+                    <ArrowRight className="h-3.5 w-3.5" />
                   </Link>
                 </Button>
               </div>
@@ -225,14 +245,12 @@ export function Shell({ children }: { children: React.ReactNode }) {
           </div>
         </div>
       </header>
-      
+
       <main
         className={cn(
-          ["/", "/explore", "/how-it-works", "/terms", "/privacy"].includes(
-            location,
-          )
+          isMarketingRoute
             ? "w-full"
-            : "container mx-auto px-4 py-8 max-w-5xl relative z-10 flex-1 flex flex-col",
+            : "container mx-auto px-4 pt-28 pb-10 max-w-5xl relative z-10 flex-1 flex flex-col",
         )}
       >
         {children}

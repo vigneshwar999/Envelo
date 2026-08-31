@@ -2,17 +2,23 @@ import { Link } from "wouter";
 import { useState } from "react";
 import { useUser } from "@clerk/react";
 import {
-  ShieldCheck,
-  Lock,
-  Fingerprint,
-  Coins,
-  EyeOff,
-  FileKey,
+  Anchor,
   ArrowRight,
+  ArrowUpRight,
+  BadgeCheck,
+  CheckCircle2,
+  ChevronLeft,
+  Coins,
   Database,
+  EyeOff,
+  FileText,
+  Fingerprint,
   KeyRound,
-  Eye,
+  Lock,
+  MoreHorizontal,
   Play,
+  Plus,
+  Send,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SiteFooter } from "@/components/marketing/SiteFooter";
@@ -23,29 +29,63 @@ import {
   trackEvent,
 } from "@/lib/analytics";
 
+const stackMarks = [
+  "ARC",
+  "CIRCLE",
+  "USDC",
+  "CLERK",
+  "REACT",
+  "VITE",
+  "DRIZZLE",
+  "PLAYWRIGHT",
+];
+
+function LogoMarquee() {
+  const row = [...stackMarks, ...stackMarks];
+  return (
+    <div className="marquee-mask overflow-hidden">
+      <div className="flex w-max items-center gap-16 animate-marquee-x">
+        {row.map((mark, i) => (
+          <span
+            key={`${mark}-${i}`}
+            className="text-lg font-semibold tracking-[0.22em] text-muted-foreground/40 whitespace-nowrap select-none"
+            aria-hidden={i >= stackMarks.length}
+          >
+            {mark}
+          </span>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export default function Explore() {
-  const [iframeLoaded, setIframeLoaded] = useState(false);
-  const [demoStarted, setDemoStarted] = useState(false);
   const { isSignedIn } = useUser();
+  const [demoStarted, setDemoStarted] = useState(false);
+  const [iframeLoaded, setIframeLoaded] = useState(false);
 
   return (
-    <div className="w-full overflow-hidden bg-transparent selection:bg-primary/30 selection:text-foreground">
+    <div className="relative">
       <Background />
 
       {/* 1. HERO */}
-      <section className="relative min-h-[90dvh] flex flex-col items-center justify-center px-4 pt-20">
-        <ScrollReveal className="text-center max-w-5xl mx-auto flex flex-col items-center z-10">
-          <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-1.5 text-xs font-medium text-foreground uppercase tracking-widest mb-8 backdrop-blur-md">
-            <ShieldCheck className="h-4 w-4 text-primary" />
-            Built on Circle&apos;s Arc Testnet
+      <section className="relative z-10 flex min-h-[92dvh] flex-col items-center justify-center px-4 pt-32 pb-16 text-center">
+        <ScrollReveal className="mx-auto max-w-4xl">
+          <div className="mb-8 inline-flex items-center gap-2.5 rounded-full border border-white/10 bg-white/[0.04] px-4 py-1.5 text-xs text-muted-foreground backdrop-blur-sm">
+            <span className="relative flex h-1.5 w-1.5">
+              <span className="absolute inline-flex h-full w-full rounded-full bg-primary opacity-60 animate-ping" />
+              <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-primary" />
+            </span>
+            New release — Envelo is live on Circle&apos;s Arc Testnet
           </div>
 
-          <h1 className="text-6xl sm:text-7xl md:text-[6.5rem] font-light tracking-tight text-foreground text-balance !leading-[1.05] mb-8">
-            Private paperwork.<br />
-            <span className="text-muted-foreground">Public proof.</span>
+          <h1 className="mb-8 text-5xl font-light tracking-tight text-foreground/90 text-balance !leading-[1.04] sm:text-7xl md:text-[5.6rem]">
+            Private paperwork.
+            <br />
+            <span className="text-primary">Public proof.</span>
           </h1>
 
-          <p className="text-lg sm:text-xl text-muted-foreground/80 leading-relaxed text-balance max-w-2xl mx-auto mb-12">
+          <p className="mx-auto mb-12 max-w-2xl text-balance text-base leading-relaxed text-muted-foreground sm:text-lg">
             Envelo seals sensitive invoice details in your browser, anchors
             proof on Arc, and settles payments in test USDC.
           </p>
@@ -55,7 +95,7 @@ export default function Explore() {
               <Button
                 asChild
                 size="lg"
-                className="h-12 rounded-full bg-primary px-8 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-all shadow-[0_0_20px_rgba(37,99,235,0.3)]"
+                className="h-12 rounded-full border border-white/15 bg-white/[0.05] px-8 text-[11px] font-bold uppercase tracking-[0.18em] text-foreground shadow-[0_14px_50px_-12px_rgba(249,115,22,0.55)] transition-all hover:bg-white/10"
                 data-testid="button-hero-dashboard"
               >
                 <Link
@@ -73,11 +113,11 @@ export default function Explore() {
               </Button>
             </div>
           ) : (
-            <div className="flex flex-col items-center justify-center gap-4 sm:flex-row">
+            <div className="flex flex-col items-center justify-center gap-3 sm:flex-row">
               <Button
                 asChild
                 size="lg"
-                className="h-12 w-full sm:w-auto rounded-full bg-primary px-8 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-all shadow-[0_0_20px_rgba(37,99,235,0.3)] hover:shadow-[0_0_30px_rgba(37,99,235,0.5)]"
+                className="h-12 w-full rounded-full border border-white/15 bg-white/[0.05] px-8 text-[11px] font-bold uppercase tracking-[0.18em] text-foreground shadow-[0_14px_50px_-12px_rgba(249,115,22,0.55)] transition-all hover:bg-white/10 hover:shadow-[0_14px_60px_-10px_rgba(249,115,22,0.7)] sm:w-auto"
                 data-testid="button-hero-signup"
               >
                 <Link
@@ -97,8 +137,8 @@ export default function Explore() {
               <Button
                 asChild
                 size="lg"
-                variant="outline"
-                className="h-12 w-full sm:w-auto rounded-full px-8 text-sm font-medium border-white/10 bg-white/5 hover:bg-white/10 hover:text-foreground transition-all backdrop-blur-md text-foreground"
+                variant="ghost"
+                className="h-12 w-full rounded-full px-6 text-sm font-medium text-muted-foreground transition-all hover:bg-white/5 hover:text-foreground sm:w-auto"
                 data-testid="button-hero-signin"
               >
                 <Link
@@ -118,136 +158,556 @@ export default function Explore() {
         </ScrollReveal>
       </section>
 
-      {/* 2. THE CORE CONCEPT / ENCRYPTION */}
-      <section className="py-24 px-4 relative z-10">
-        <div className="max-w-6xl mx-auto">
-          <div className="grid lg:grid-cols-2 gap-16 items-center">
-            <ScrollReveal direction="right">
-              <div className="space-y-6 max-w-xl">
-                <div className="inline-flex items-center justify-center h-10 w-10 rounded-full bg-white/5 border border-white/10 mb-2">
-                  <Lock className="h-5 w-5 text-primary" />
-                </div>
-                <h2 className="text-4xl sm:text-5xl font-light tracking-tight text-foreground !leading-[1.1]">
-                  Sealed shut in<br />your browser.
-                </h2>
-                <p className="text-lg text-muted-foreground/80 leading-relaxed">
-                  Envelo encrypts locally using <strong className="text-foreground font-medium">browser-side AES-256-GCM sealing</strong>. The sealed invoice body is locked before it ever leaves your device.
-                </p>
-                <div className="h-px w-12 bg-white/10 my-8" />
-                <ul className="space-y-6">
-                  <li className="flex gap-4 items-start">
-                    <Database className="h-5 w-5 text-muted-foreground shrink-0 mt-1" />
-                    <span className="text-muted-foreground text-sm leading-relaxed">
-                      The invoice body reaches our server as ciphertext. Line items, notes, and other sealed details remain unreadable to Envelo.
-                    </span>
-                  </li>
-                  <li className="flex gap-4 items-start">
-                    <KeyRound className="h-5 w-5 text-muted-foreground shrink-0 mt-1" />
-                    <span className="text-muted-foreground text-sm leading-relaxed">
-                      Envelope keys are generated locally and wrapped for each authorized viewer. Limited workflow metadata stays visible so the invoice can be routed and settled.
-                    </span>
-                  </li>
-                </ul>
-              </div>
-            </ScrollReveal>
-
-            <ScrollReveal direction="left" delay={0.2} className="relative">
-              <div className="aspect-square sm:aspect-[4/3] rounded-3xl bg-white/5 border border-white/10 flex items-center justify-center p-8 relative overflow-hidden backdrop-blur-sm group">
-                <div className="absolute inset-0 bg-gradient-to-tr from-primary/10 to-transparent opacity-50" />
-                <div className="absolute inset-0 opacity-[0.03] bg-[linear-gradient(45deg,transparent_25%,rgba(255,255,255,1)_50%,transparent_75%)] bg-[length:4px_4px]" />
-                <div className="relative w-full max-w-sm space-y-4">
-                  <div className="bg-background/80 backdrop-blur p-4 rounded-2xl border border-white/5 shadow-xl flex items-center justify-between transition-transform duration-500 group-hover:-translate-y-1">
-                    <div className="flex items-center gap-3">
-                      <FileKey className="h-5 w-5 text-muted-foreground" />
-                      <div className="h-3 w-20 bg-white/10 rounded-full animate-pulse" />
-                    </div>
-                    <div className="h-3 w-10 bg-white/10 rounded-full animate-pulse" />
-                  </div>
-                  <div className="flex justify-center py-2 relative">
-                     <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-12 h-12 bg-primary/20 rounded-full blur-xl" />
-                     <Lock className="h-6 w-6 text-primary relative z-10" />
-                  </div>
-                  <div className="bg-primary/10 text-primary-foreground p-5 rounded-2xl border border-primary/20 flex flex-col gap-2 transition-transform duration-500 group-hover:translate-y-1 backdrop-blur-md">
-                    <span className="text-[10px] uppercase tracking-widest text-primary/80 font-mono">
-                      Encrypted Payload
-                    </span>
-                    <span className="text-sm font-mono break-all text-primary-foreground/90">
-                      U2FsdGVkX1+v...
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </ScrollReveal>
-          </div>
+      {/* 2. TRUSTED STRIP + MARQUEE */}
+      <section className="relative z-10 px-4 pb-24">
+        <div className="mx-auto max-w-6xl space-y-10">
+          <ScrollReveal className="flex flex-col items-center gap-5 text-center">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-muted-foreground/60">
+              Built on the modern Arc testnet stack
+            </p>
+            <Link
+              href="/how-it-works"
+              className="group inline-flex items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-foreground"
+            >
+              Read how it works
+              <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-1" />
+            </Link>
+          </ScrollReveal>
+          <ScrollReveal delay={0.15}>
+            <LogoMarquee />
+          </ScrollReveal>
         </div>
       </section>
 
-      {/* 3. WAX SEAL / ARC ANCHOR */}
-      <section className="py-24 px-4 relative z-10">
-        <div className="max-w-6xl mx-auto">
-          <div className="grid lg:grid-cols-2 gap-16 items-center">
-            <ScrollReveal direction="right" className="order-2 lg:order-1">
-              <div className="aspect-square sm:aspect-[4/3] rounded-3xl bg-white/5 border border-white/10 flex flex-col items-center justify-center p-8 relative overflow-hidden backdrop-blur-sm group">
-                <div className="absolute inset-0 bg-gradient-to-bl from-seal/10 to-transparent opacity-50" />
-                <div className="relative z-10 flex flex-col items-center">
-                  <div className="h-20 w-20 rounded-full bg-white/5 border border-white/10 flex items-center justify-center shadow-[0_0_30px_rgba(225,29,72,0.15)] mb-8 transition-transform duration-500 group-hover:scale-110">
-                    <Fingerprint className="h-8 w-8 text-seal" />
+      {/* 3. BIG FEATURE CARD — BROWSER-SIDE SEALING */}
+      <section className="relative z-10 px-4 py-12">
+        <div className="mx-auto max-w-6xl">
+          <ScrollReveal>
+            <div className="relative overflow-hidden rounded-[28px] border border-white/10 bg-gradient-to-b from-white/[0.05] to-white/[0.015] p-8 backdrop-blur-sm sm:p-12 lg:p-14">
+              <div className="pointer-events-none absolute -top-40 right-0 h-[420px] w-[420px] rounded-full bg-primary/10 blur-[120px]" />
+              <div className="relative grid items-center gap-12 lg:grid-cols-2">
+                <div className="max-w-xl space-y-6">
+                  <div className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-white/10 bg-white/5">
+                    <Lock className="h-5 w-5 text-primary" />
                   </div>
-                  <div className="font-mono text-xs sm:text-sm text-foreground/80 break-all text-center max-w-sm px-4">
-                    0x8f3a9b2e4c...
+                  <h2 className="text-3xl font-light tracking-tight text-foreground !leading-[1.1] sm:text-5xl">
+                    Sealed shut in
                     <br />
-                    <span className="text-seal/80 opacity-70 mt-2 block tracking-widest uppercase text-[10px]">
-                      SHA-256 FINGERPRINT
+                    your browser.
+                  </h2>
+                  <p className="text-base leading-relaxed text-muted-foreground sm:text-lg">
+                    Envelo encrypts locally using{" "}
+                    <strong className="font-medium text-foreground">
+                      browser-side AES-256-GCM sealing
+                    </strong>
+                    . The sealed invoice body is locked before it ever leaves
+                    your device.
+                  </p>
+                  <div className="h-px w-12 bg-white/10" />
+                  <ul className="space-y-5">
+                    <li className="flex items-start gap-4">
+                      <Database className="mt-1 h-5 w-5 shrink-0 text-muted-foreground" />
+                      <span className="text-sm leading-relaxed text-muted-foreground">
+                        The invoice body reaches our server as ciphertext. Line
+                        items, notes, and other sealed details remain
+                        unreadable to Envelo.
+                      </span>
+                    </li>
+                    <li className="flex items-start gap-4">
+                      <KeyRound className="mt-1 h-5 w-5 shrink-0 text-muted-foreground" />
+                      <span className="text-sm leading-relaxed text-muted-foreground">
+                        Envelope keys are generated locally and wrapped for
+                        each authorized viewer. Limited workflow metadata stays
+                        visible so the invoice can be routed and settled.
+                      </span>
+                    </li>
+                  </ul>
+                </div>
+
+                <div className="relative">
+                  <div className="overflow-hidden rounded-2xl border border-white/10 bg-[#070707] shadow-2xl">
+                    <div className="flex items-center gap-1.5 border-b border-white/5 px-4 py-3">
+                      <span className="h-2.5 w-2.5 rounded-full bg-white/10" />
+                      <span className="h-2.5 w-2.5 rounded-full bg-white/10" />
+                      <span className="h-2.5 w-2.5 rounded-full bg-white/10" />
+                      <span className="ml-3 font-mono text-[10px] uppercase tracking-widest text-muted-foreground/50">
+                        seal.ts
+                      </span>
+                    </div>
+                    <pre className="overflow-x-auto p-5 font-mono text-[11px] leading-[1.9] text-muted-foreground sm:text-xs">
+                      <code>
+                        <span className="text-muted-foreground/40">
+                          {"// seal before it leaves the device"}
+                        </span>
+                        {"\n"}
+                        <span className="text-foreground/80">const</span>
+                        {" { sealed, fingerprint } = "}
+                        <span className="text-foreground/80">await</span>
+                        {" envelo."}
+                        <span className="text-primary">seal</span>
+                        {"({\n  invoice: draft,\n  cipher: "}
+                        <span className="text-emerald-400/80">
+                          &quot;AES-256-GCM&quot;
+                        </span>
+                        {",\n});\n\n"}
+                        <span className="text-foreground/80">await</span>
+                        {" arc."}
+                        <span className="text-primary">anchor</span>
+                        {"(fingerprint); "}
+                        <span className="text-muted-foreground/40">
+                          {"// SHA-256 → Arc"}
+                        </span>
+                        {"\n"}
+                        <span className="text-foreground/80">await</span>
+                        {" envelo."}
+                        <span className="text-primary">send</span>
+                        {"(sealed); "}
+                        <span className="text-muted-foreground/40">
+                          {"// ciphertext only"}
+                        </span>
+                      </code>
+                    </pre>
+                  </div>
+
+                  <div className="mt-4 rounded-2xl border border-white/10 bg-[#0b0b0b]/95 p-4 shadow-2xl backdrop-blur-xl sm:absolute sm:-bottom-8 sm:-right-6 sm:mt-0 sm:w-[290px]">
+                    <p className="mb-3 font-mono text-[9px] font-semibold uppercase tracking-[0.22em] text-muted-foreground/60">
+                      Envelope status
+                    </p>
+                    <div className="space-y-2.5 text-xs">
+                      <div className="flex items-center justify-between gap-3">
+                        <span className="text-muted-foreground">
+                          Sealed body
+                        </span>
+                        <span className="font-mono text-[10px] text-foreground/70">
+                          AES-256-GCM
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between gap-3">
+                        <span className="text-muted-foreground">
+                          Arc anchor
+                        </span>
+                        <span className="font-mono text-[10px] text-foreground/70">
+                          SHA-256 · 14ms
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between gap-3">
+                        <span className="text-muted-foreground">
+                          Settlement
+                        </span>
+                        <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2 py-0.5 text-[10px] font-medium text-emerald-400">
+                          Active
+                        </span>
+                      </div>
+                    </div>
+                    <div className="mt-3 flex items-center gap-2 border-t border-white/5 pt-3 text-[10px] text-muted-foreground/70">
+                      <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-status-pulse" />
+                      All systems sealed
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </ScrollReveal>
+        </div>
+      </section>
+
+      {/* 4. TWO GLASS CARDS — WAX SEAL / SETTLEMENT */}
+      <section className="relative z-10 px-4 py-12">
+        <div className="mx-auto grid max-w-6xl gap-6 lg:grid-cols-2">
+          <ScrollReveal delay={0.05}>
+            <div className="relative flex h-full flex-col overflow-hidden rounded-[28px] border border-white/10 bg-gradient-to-b from-white/[0.05] to-white/[0.015] p-8 backdrop-blur-sm sm:p-10">
+              <div className="relative mb-10 flex h-44 items-center justify-center">
+                <div className="absolute h-40 w-40 rounded-full border border-white/5" />
+                <div className="absolute h-28 w-28 rounded-full border border-white/10" />
+                <div className="absolute h-40 w-40 animate-[spin_24s_linear_infinite]">
+                  <span className="absolute -top-1 left-1/2 h-2 w-2 -translate-x-1/2 rounded-full bg-primary/70" />
+                </div>
+                <div className="flex h-16 w-16 items-center justify-center rounded-full border border-white/10 bg-white/5 shadow-[0_0_40px_rgba(249,115,22,0.18)]">
+                  <Fingerprint className="h-7 w-7 text-seal" />
+                </div>
+              </div>
+              <h3 className="mb-4 text-2xl font-light tracking-tight text-foreground sm:text-3xl">
+                The digital wax seal.
+              </h3>
+              <p className="mb-4 text-sm leading-relaxed text-muted-foreground">
+                How do you prove a private document wasn&apos;t altered? Before
+                encryption, Envelo generates a{" "}
+                <strong className="font-medium text-foreground">
+                  SHA-256 fingerprint
+                </strong>{" "}
+                of the plaintext invoice and anchors it directly on the Arc
+                blockchain.
+              </p>
+              <p className="mb-6 text-sm leading-relaxed text-muted-foreground">
+                Before payment, Envelo checks that Arc holds the same
+                fingerprint as the sealed invoice record. After an authorized
+                viewer opens and decrypts the invoice, the separate Verify
+                action recomputes its fingerprint against both records.
+              </p>
+              <div className="mt-auto">
+                <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1.5 font-mono text-[10px] text-muted-foreground">
+                  0x8f3a9b2e4c…
+                  <span className="uppercase tracking-widest text-seal/80">
+                    SHA-256
+                  </span>
+                </span>
+              </div>
+            </div>
+          </ScrollReveal>
+
+          <ScrollReveal delay={0.15}>
+            <div className="relative flex h-full flex-col overflow-hidden rounded-[28px] border border-white/10 bg-gradient-to-b from-white/[0.05] to-white/[0.015] p-8 backdrop-blur-sm sm:p-10">
+              <div className="relative mb-10 flex h-44 items-center justify-center">
+                <div className="w-full max-w-[280px] space-y-3">
+                  <div className="flex items-center justify-between rounded-xl border border-white/10 bg-[#0b0b0b]/90 px-4 py-3 shadow-xl">
+                    <span className="flex items-center gap-2.5 text-xs text-muted-foreground">
+                      <Coins className="h-4 w-4 text-primary" />
+                      Invoice settled
                     </span>
+                    <span className="font-mono text-xs text-foreground/80">
+                      12.50 tUSDC
+                    </span>
+                  </div>
+                  <div className="ml-8 flex items-center justify-between rounded-xl border border-white/10 bg-[#0b0b0b]/90 px-4 py-3 shadow-xl">
+                    <span className="flex items-center gap-2.5 text-xs text-muted-foreground">
+                      <Anchor className="h-4 w-4 text-primary" />
+                      Anchor gas
+                    </span>
+                    <span className="font-mono text-xs text-foreground/80">
+                      sender pays
+                    </span>
+                  </div>
+                </div>
+              </div>
+              <h3 className="mb-4 text-2xl font-light tracking-tight text-foreground sm:text-3xl">
+                Transparent settlement.
+              </h3>
+              <p className="mb-4 text-sm leading-relaxed text-muted-foreground">
+                Payments settle in{" "}
+                <strong className="font-medium text-foreground">
+                  test USDC
+                </strong>{" "}
+                directly on Arc — no real-world value, but real balances, gas,
+                contract calls, and receipts on Arc Testnet.
+              </p>
+              <p className="mb-6 text-sm leading-relaxed text-muted-foreground">
+                The sender pays the initial anchor gas. The payer pays the
+                invoice amount plus the settlement gas. Clean and predictable —
+                without exposing sealed line items or notes.
+              </p>
+              <div className="mt-auto">
+                <Link
+                  href="/how-it-works"
+                  className="group inline-flex items-center gap-1.5 text-sm font-medium text-primary transition-colors hover:text-primary/80"
+                >
+                  See the gas economics
+                  <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-1" />
+                </Link>
+              </div>
+            </div>
+          </ScrollReveal>
+        </div>
+      </section>
+
+      {/* 5. NUMBERED SHOWCASE — PRIVACY & PROOF */}
+      <section className="relative z-10 px-4 py-28">
+        <div className="mx-auto max-w-6xl">
+          <ScrollReveal>
+            <div className="mb-20 grid gap-10 lg:grid-cols-[1fr_auto] lg:items-end">
+              <div>
+                <p className="mb-8 font-mono text-xs tracking-[0.3em] text-muted-foreground/50">
+                  #2 / 04
+                </p>
+                <h2 className="text-[2.6rem] font-medium uppercase !leading-[0.98] tracking-[-0.02em] sm:text-6xl lg:text-7xl">
+                  <span className="block text-foreground">Offering</span>
+                  <span className="block text-foreground">Unmatched</span>
+                  <span className="block text-muted-foreground/50">
+                    Privacy &amp;
+                  </span>
+                  <span className="block text-primary">Proof.</span>
+                </h2>
+              </div>
+              <p className="max-w-xs text-sm leading-relaxed text-muted-foreground lg:pb-2">
+                Every sealed invoice keeps its details private while its
+                integrity stays publicly checkable on Arc.
+              </p>
+            </div>
+          </ScrollReveal>
+
+          <div className="grid items-start gap-6 lg:grid-cols-[1.05fr_1fr]">
+            {/* phone mockup */}
+            <ScrollReveal delay={0.1}>
+              <div className="mx-auto w-full max-w-[320px] rounded-[44px] border border-white/10 bg-[#0a0a0a] p-3 shadow-[0_40px_120px_-30px_rgba(0,0,0,0.9)]">
+                <div className="rounded-[34px] border border-white/5 bg-[#050505] p-6">
+                  <div className="mb-2 flex items-center justify-between font-mono text-[10px] text-muted-foreground/60">
+                    <span>09:41</span>
+                    <div className="h-4 w-16 rounded-full bg-black ring-1 ring-white/10" />
+                    <span className="tracking-tighter">●●●</span>
+                  </div>
+                  <div className="mb-6 flex items-center justify-between">
+                    <span className="flex h-7 w-7 items-center justify-center rounded-full border border-white/5 bg-white/[0.04]">
+                      <ChevronLeft className="h-3.5 w-3.5 text-muted-foreground" />
+                    </span>
+                    <span className="inline-flex items-center gap-1.5 rounded-full border border-white/5 bg-white/[0.04] px-3 py-1 text-[10px] font-medium text-foreground">
+                      <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
+                      Envelo Core
+                    </span>
+                    <span className="flex h-7 w-7 items-center justify-center rounded-full border border-white/5 bg-white/[0.04]">
+                      <MoreHorizontal className="h-3.5 w-3.5 text-muted-foreground" />
+                    </span>
+                  </div>
+
+                  <p className="mb-1 text-center text-[9px] font-semibold uppercase tracking-[0.24em] text-muted-foreground/60">
+                    Total volume
+                  </p>
+                  <p className="mb-2 text-center text-[2rem] font-semibold tracking-tight text-foreground">
+                    $8,245.32
+                  </p>
+                  <div className="mb-4 flex items-center justify-center gap-2">
+                    <span className="inline-flex items-center rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2 py-0.5 text-[10px] font-semibold text-emerald-400">
+                      +12.4%
+                    </span>
+                    <span className="text-[10px] text-muted-foreground/60">
+                      this week
+                    </span>
+                  </div>
+
+                  <svg
+                    viewBox="0 0 260 84"
+                    className="mb-3 h-20 w-full"
+                    aria-hidden="true"
+                  >
+                    <defs>
+                      <linearGradient id="chartFill" x1="0" y1="0" x2="0" y2="1">
+                        <stop
+                          offset="0%"
+                          stopColor="hsl(24 95% 53%)"
+                          stopOpacity="0.35"
+                        />
+                        <stop
+                          offset="100%"
+                          stopColor="hsl(24 95% 53%)"
+                          stopOpacity="0"
+                        />
+                      </linearGradient>
+                    </defs>
+                    <path
+                      d="M0 64 C 24 58, 36 44, 58 48 S 96 66, 118 56 S 150 26, 175 30 S 214 50, 232 38 L 260 24 L 260 84 L 0 84 Z"
+                      fill="url(#chartFill)"
+                    />
+                    <path
+                      d="M0 64 C 24 58, 36 44, 58 48 S 96 66, 118 56 S 150 26, 175 30 S 214 50, 232 38 L 260 24"
+                      fill="none"
+                      stroke="hsl(24 95% 53%)"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                    />
+                  </svg>
+
+                  <div className="mb-6 flex items-center justify-center gap-1.5">
+                    {["1H", "1D", "1W", "1M", "1Y"].map((t) => (
+                      <span
+                        key={t}
+                        className={
+                          t === "1W"
+                            ? "rounded-md bg-primary px-2.5 py-1 text-[9px] font-bold text-primary-foreground"
+                            : "rounded-md px-2.5 py-1 text-[9px] font-medium text-muted-foreground/50"
+                        }
+                      >
+                        {t}
+                      </span>
+                    ))}
+                  </div>
+
+                  <div className="mb-6 flex items-start justify-center gap-7">
+                    <div className="flex flex-col items-center gap-2">
+                      <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary shadow-[0_8px_24px_-6px_rgba(249,115,22,0.6)]">
+                        <Plus className="h-4.5 w-4.5 text-primary-foreground" />
+                      </span>
+                      <span className="text-[9px] font-medium text-muted-foreground">
+                        New
+                      </span>
+                    </div>
+                    <div className="flex flex-col items-center gap-2">
+                      <span className="flex h-11 w-11 items-center justify-center rounded-xl border border-white/5 bg-white/[0.05]">
+                        <Send className="h-4 w-4 text-foreground/80" />
+                      </span>
+                      <span className="text-[9px] font-medium text-muted-foreground">
+                        Pay
+                      </span>
+                    </div>
+                    <div className="flex flex-col items-center gap-2">
+                      <span className="flex h-11 w-11 items-center justify-center rounded-xl border border-white/5 bg-white/[0.05]">
+                        <BadgeCheck className="h-4 w-4 text-foreground/80" />
+                      </span>
+                      <span className="text-[9px] font-medium text-muted-foreground">
+                        Verify
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="rounded-2xl border border-white/5 bg-white/[0.03] p-4">
+                    <p className="mb-2 text-[9px] font-semibold uppercase tracking-[0.24em] text-muted-foreground/60">
+                      Active anchor
+                    </p>
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-medium text-foreground">
+                        Arc Testnet
+                      </span>
+                      <span className="inline-flex items-center gap-1.5 text-[10px] text-emerald-400">
+                        <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-status-pulse" />
+                        Synced
+                      </span>
+                    </div>
                   </div>
                 </div>
               </div>
             </ScrollReveal>
 
-            <ScrollReveal direction="left" delay={0.2} className="order-1 lg:order-2">
-              <div className="space-y-6 max-w-xl">
-                <div className="inline-flex items-center justify-center h-10 w-10 rounded-full bg-white/5 border border-white/10 mb-2">
-                  <Fingerprint className="h-5 w-5 text-seal" />
+            {/* side cards */}
+            <div className="space-y-6">
+              <ScrollReveal delay={0.15}>
+                <div className="rounded-[24px] border border-white/10 bg-gradient-to-b from-white/[0.05] to-white/[0.015] p-7 backdrop-blur-sm">
+                  <div className="mb-6 flex items-center justify-between">
+                    <div className="flex items-center gap-3.5">
+                      <span className="flex h-11 w-11 items-center justify-center rounded-2xl border border-primary/30 bg-gradient-to-b from-primary/30 to-primary/10 shadow-[0_0_24px_rgba(249,115,22,0.25)]">
+                        <Anchor className="h-5 w-5 text-primary" />
+                      </span>
+                      <div>
+                        <h3 className="text-base font-semibold tracking-tight text-foreground">
+                          Arc Network
+                        </h3>
+                        <p className="text-xs text-muted-foreground/70">
+                          Production · Testnet
+                        </p>
+                      </div>
+                    </div>
+                    <span className="h-2 w-2 rounded-full bg-emerald-400 animate-status-pulse" />
+                  </div>
+                  <div className="mb-4 grid grid-cols-3 gap-2.5">
+                    <div className="rounded-xl border border-white/5 bg-white/[0.04] p-3.5">
+                      <p className="mb-1 text-[9px] font-semibold uppercase tracking-[0.16em] text-muted-foreground/50">
+                        Uptime
+                      </p>
+                      <p className="font-mono text-sm font-semibold text-foreground">
+                        99.99%
+                      </p>
+                    </div>
+                    <div className="rounded-xl border border-white/5 bg-white/[0.04] p-3.5">
+                      <p className="mb-1 text-[9px] font-semibold uppercase tracking-[0.16em] text-muted-foreground/50">
+                        Latency
+                      </p>
+                      <p className="font-mono text-sm font-semibold text-foreground">
+                        14ms
+                      </p>
+                    </div>
+                    <div className="rounded-xl border border-white/5 bg-white/[0.04] p-3.5">
+                      <p className="mb-1 text-[9px] font-semibold uppercase tracking-[0.16em] text-muted-foreground/50">
+                        Anchors
+                      </p>
+                      <p className="font-mono text-sm font-semibold text-foreground">
+                        2.4K
+                      </p>
+                    </div>
+                  </div>
+                  <Link
+                    href="/how-it-works"
+                    className="group mb-6 flex w-full items-center justify-center gap-2 rounded-full border border-white/10 bg-white/[0.04] py-2.5 text-xs font-semibold text-foreground transition-colors hover:bg-white/10"
+                  >
+                    View how anchoring works
+                    <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-1" />
+                  </Link>
+                  <p className="mb-4 text-sm leading-relaxed text-muted-foreground">
+                    Privacy-grade sealing with public integrity checks and
+                    predictable testnet gas built in.
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    {["AES-256-GCM", "SHA-256", "Test USDC", "Chain 5042002"].map(
+                      (chip) => (
+                        <span
+                          key={chip}
+                          className="rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 font-mono text-[10px] text-muted-foreground"
+                        >
+                          {chip}
+                        </span>
+                      ),
+                    )}
+                  </div>
                 </div>
-                <h2 className="text-4xl sm:text-5xl font-light tracking-tight text-foreground !leading-[1.1]">
-                  The digital<br />wax seal.
-                </h2>
-                <p className="text-lg text-muted-foreground/80 leading-relaxed">
-                  How do you prove a private document wasn't altered? Before
-                  encryption, Envelo generates a SHA-256 fingerprint of the
-                  plaintext invoice.
-                </p>
-                <div className="h-px w-12 bg-white/10 my-6" />
-                <p className="text-lg text-muted-foreground/80 leading-relaxed">
-                  This exact fingerprint is anchored directly on the{" "}
-                  <strong className="text-foreground font-medium">Arc blockchain</strong>. Before
-                  payment, Envelo checks that Arc holds the same fingerprint as
-                  the sealed invoice record. After an authorized viewer opens
-                  and decrypts the invoice, the separate Verify action
-                  recomputes its fingerprint against both records.
-                </p>
-              </div>
-            </ScrollReveal>
+              </ScrollReveal>
+
+              <ScrollReveal delay={0.25}>
+                <div className="rounded-[24px] border border-white/10 bg-gradient-to-b from-white/[0.05] to-white/[0.015] p-7 backdrop-blur-sm">
+                  <div className="mb-5 flex items-center justify-between">
+                    <p className="font-mono text-[9px] font-semibold uppercase tracking-[0.24em] text-muted-foreground/60">
+                      Live logs
+                    </p>
+                    <span className="h-1.5 w-1.5 rounded-full bg-primary animate-status-pulse" />
+                  </div>
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-3.5">
+                      <span className="flex h-9 w-9 items-center justify-center rounded-xl border border-cyan-400/20 bg-cyan-400/10">
+                        <FileText className="h-4 w-4 text-cyan-400" />
+                      </span>
+                      <div className="min-w-0">
+                        <p className="text-sm font-medium text-foreground">
+                          Invoice sealed
+                        </p>
+                        <p className="truncate font-mono text-[10px] text-muted-foreground/60">
+                          0x8f3a…42a · just now
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3.5">
+                      <span className="flex h-9 w-9 items-center justify-center rounded-xl border border-violet-400/20 bg-violet-400/10">
+                        <Anchor className="h-4 w-4 text-violet-400" />
+                      </span>
+                      <div className="min-w-0">
+                        <p className="text-sm font-medium text-foreground">
+                          Anchor confirmed
+                        </p>
+                        <p className="truncate font-mono text-[10px] text-muted-foreground/60">
+                          block #18,204 · 12s ago
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3.5">
+                      <span className="flex h-9 w-9 items-center justify-center rounded-xl border border-emerald-400/20 bg-emerald-400/10">
+                        <CheckCircle2 className="h-4 w-4 text-emerald-400" />
+                      </span>
+                      <div className="min-w-0">
+                        <p className="text-sm font-medium text-foreground">
+                          Payment settled
+                        </p>
+                        <p className="truncate font-mono text-[10px] text-muted-foreground/60">
+                          12.50 tUSDC · 2m ago
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </ScrollReveal>
+            </div>
           </div>
         </div>
       </section>
 
-      {/* 4. DEMO IFRAME */}
-      <section className="py-32 px-4 relative z-10">
-        <div className="max-w-5xl mx-auto space-y-12">
-          <ScrollReveal className="text-center max-w-2xl mx-auto space-y-4">
-            <h2 className="text-4xl sm:text-5xl font-light tracking-tight">
+      {/* 6. DEMO IFRAME */}
+      <section className="relative z-10 px-4 py-24">
+        <div className="mx-auto max-w-5xl space-y-12">
+          <ScrollReveal className="mx-auto max-w-2xl space-y-4 text-center">
+            <h2 className="text-4xl font-light tracking-tight sm:text-5xl">
               See Envelo in action
             </h2>
-            <p className="text-muted-foreground/80 text-lg">
+            <p className="text-lg text-muted-foreground">
               Press play for a 60-second walkthrough of the complete invoice
               and payment flow.
             </p>
           </ScrollReveal>
 
           <ScrollReveal delay={0.2}>
-            <div className="rounded-3xl border border-white/10 bg-white/5 p-2 shadow-2xl backdrop-blur-sm group">
-              <div className="rounded-2xl overflow-hidden relative aspect-[16/10] sm:aspect-video w-full bg-background border border-white/5">
+            <div className="group rounded-[28px] border border-white/10 bg-gradient-to-b from-white/[0.05] to-white/[0.015] p-2 shadow-2xl backdrop-blur-sm">
+              <div className="relative aspect-[16/10] w-full overflow-hidden rounded-[22px] border border-white/5 bg-background sm:aspect-video">
                 {!demoStarted ? (
                   <button
                     type="button"
@@ -262,15 +722,18 @@ export default function Explore() {
                     data-testid="button-demo-play"
                     className="absolute inset-0 z-10 flex h-full w-full flex-col items-center justify-center gap-6 bg-transparent"
                   >
-                    <div className="absolute inset-0 bg-gradient-to-t from-background/80 to-transparent pointer-events-none" />
-                    <span className="relative flex h-20 w-20 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-[0_0_30px_rgba(37,99,235,0.4)] transition-transform duration-300 group-hover:scale-110">
-                      <Play className="h-8 w-8 translate-x-1" fill="currentColor" />
+                    <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-background/80 to-transparent" />
+                    <span className="relative flex h-20 w-20 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-[0_0_40px_rgba(249,115,22,0.45)] transition-transform duration-300 group-hover:scale-110">
+                      <Play
+                        className="h-8 w-8 translate-x-1"
+                        fill="currentColor"
+                      />
                     </span>
-                    <div className="relative text-center space-y-2">
+                    <div className="relative space-y-2 text-center">
                       <span className="block text-xl font-light tracking-tight text-foreground">
                         Watch the demo
                       </span>
-                      <span className="block text-sm text-muted-foreground/80">
+                      <span className="block text-sm text-muted-foreground">
                         Seal, anchor, pay, share, and verify — in 60 seconds.
                       </span>
                     </div>
@@ -298,12 +761,12 @@ export default function Explore() {
                 )}
               </div>
             </div>
-            
+
             <div className="mt-8 flex justify-center">
               <Button
                 asChild
                 variant="link"
-                className="text-muted-foreground hover:text-foreground font-normal"
+                className="font-normal text-muted-foreground hover:text-foreground"
               >
                 <a
                   href="/demo-video/"
@@ -325,77 +788,30 @@ export default function Explore() {
         </div>
       </section>
 
-      {/* 5. SETTLEMENT */}
-      <section className="py-24 px-4 relative z-10">
-        <div className="absolute inset-0 bg-white/[0.02] border-y border-white/5 pointer-events-none" />
-        <div className="max-w-6xl mx-auto relative">
-          <div className="grid md:grid-cols-3 gap-12 items-center">
-            <div className="md:col-span-1">
-              <ScrollReveal>
-                <h2 className="text-3xl sm:text-4xl font-light tracking-tight mb-4">
-                  Transparent<br />Settlement.
-                </h2>
-                <p className="text-muted-foreground/80 text-lg">
-                  The math is complex, but the economics are simple. Settle
-                  invoices cleanly without exposing sealed line items or notes.
-                </p>
-              </ScrollReveal>
-            </div>
-
-            <div className="md:col-span-2 grid sm:grid-cols-2 gap-6">
-              <ScrollReveal delay={0.1}>
-                <div className="bg-white/5 p-8 rounded-3xl border border-white/10 h-full space-y-4 backdrop-blur-sm hover:bg-white/[0.07] transition-colors">
-                  <div className="h-10 w-10 rounded-full bg-white/5 border border-white/10 text-primary flex items-center justify-center">
-                    <Coins className="h-5 w-5" />
-                  </div>
-                  <h3 className="text-lg font-medium text-foreground">Test USDC</h3>
-                  <p className="text-sm text-muted-foreground leading-relaxed">
-                    Payments are settled in test USDC directly on Arc. Note:
-                    test USDC has no real-world value. The demo still exercises
-                    real balances, gas, contract calls, and receipts on Arc
-                    Testnet.
-                  </p>
-                </div>
-              </ScrollReveal>
-              <ScrollReveal delay={0.2}>
-                <div className="bg-white/5 p-8 rounded-3xl border border-white/10 h-full space-y-4 backdrop-blur-sm hover:bg-white/[0.07] transition-colors">
-                  <div className="h-10 w-10 rounded-full bg-white/5 border border-white/10 text-seal flex items-center justify-center">
-                    <Database className="h-5 w-5" />
-                  </div>
-                  <h3 className="text-lg font-medium text-foreground">Gas Economics</h3>
-                  <p className="text-sm text-muted-foreground leading-relaxed">
-                    The sender pays the initial anchor gas. The payer pays the
-                    invoice amount plus the settlement gas. Clean and
-                    predictable.
-                  </p>
-                </div>
-              </ScrollReveal>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* 6. TRUST BOUNDARIES & CUSTODY */}
-      <section className="py-32 px-4 relative z-10">
-        <div className="max-w-5xl mx-auto space-y-16">
-          <ScrollReveal className="text-center max-w-2xl mx-auto space-y-4">
-            <h2 className="text-4xl sm:text-5xl font-light tracking-tight">
+      {/* 7. TRUST BOUNDARIES & CUSTODY */}
+      <section className="relative z-10 px-4 py-24">
+        <div className="mx-auto max-w-6xl space-y-16">
+          <ScrollReveal className="mx-auto max-w-2xl space-y-4 text-center">
+            <h2 className="text-4xl font-light tracking-tight sm:text-5xl">
               The Trust Boundary
             </h2>
-            <p className="text-xl text-muted-foreground/80">
+            <p className="text-xl text-muted-foreground">
               No one layer has the full picture. Your privacy relies on strict
               separation of concerns between your device, our servers, and the
               Arc blockchain.
             </p>
           </ScrollReveal>
 
-          <div className="grid lg:grid-cols-3 gap-6">
+          <div className="grid gap-6 lg:grid-cols-3">
             <ScrollReveal delay={0.1}>
-              <div className="bg-background/80 p-8 rounded-3xl border border-white/10 h-full space-y-4 shadow-xl">
-                <div className="flex items-center gap-3 text-foreground font-medium pb-2 border-b border-white/5">
-                  <KeyRound className="h-5 w-5 text-primary" /> 1. Your Browser
+              <div className="h-full rounded-[24px] border border-white/10 bg-gradient-to-b from-white/[0.05] to-white/[0.015] p-8 backdrop-blur-sm">
+                <p className="mb-6 font-mono text-xs tracking-[0.3em] text-primary/80">
+                  01
+                </p>
+                <div className="mb-4 flex items-center gap-3 font-medium text-foreground">
+                  <KeyRound className="h-5 w-5 text-primary" /> Your Browser
                 </div>
-                <p className="text-sm text-muted-foreground/80 leading-relaxed">
+                <p className="text-sm leading-relaxed text-muted-foreground">
                   Authorized browsers are where the sealed document is opened
                   and private envelope keys live. We provide a
                   passphrase-locked, browser-generated download for backup. If
@@ -406,11 +822,14 @@ export default function Explore() {
               </div>
             </ScrollReveal>
             <ScrollReveal delay={0.2}>
-              <div className="bg-background/80 p-8 rounded-3xl border border-white/10 h-full space-y-4 shadow-xl">
-                <div className="flex items-center gap-3 text-foreground font-medium pb-2 border-b border-white/5">
-                  <Database className="h-5 w-5 text-primary" /> 2. Our Server
+              <div className="h-full rounded-[24px] border border-white/10 bg-gradient-to-b from-white/[0.05] to-white/[0.015] p-8 backdrop-blur-sm">
+                <p className="mb-6 font-mono text-xs tracking-[0.3em] text-primary/80">
+                  02
+                </p>
+                <div className="mb-4 flex items-center gap-3 font-medium text-foreground">
+                  <Database className="h-5 w-5 text-primary" /> Our Server
                 </div>
-                <p className="text-sm text-muted-foreground/80 leading-relaxed">
+                <p className="text-sm leading-relaxed text-muted-foreground">
                   Stores the encrypted invoice body and wrapped keys, plus the
                   invoice number, amount, due date, parties, status, and
                   fingerprint needed to run the workflow. It cannot read sealed
@@ -420,12 +839,14 @@ export default function Explore() {
               </div>
             </ScrollReveal>
             <ScrollReveal delay={0.3}>
-              <div className="bg-background/80 p-8 rounded-3xl border border-white/10 h-full space-y-4 shadow-xl">
-                <div className="flex items-center gap-3 text-foreground font-medium pb-2 border-b border-white/5">
-                  <Fingerprint className="h-5 w-5 text-primary" /> 3. Arc
-                  Testnet
+              <div className="h-full rounded-[24px] border border-white/10 bg-gradient-to-b from-white/[0.05] to-white/[0.015] p-8 backdrop-blur-sm">
+                <p className="mb-6 font-mono text-xs tracking-[0.3em] text-primary/80">
+                  03
+                </p>
+                <div className="mb-4 flex items-center gap-3 font-medium text-foreground">
+                  <Fingerprint className="h-5 w-5 text-primary" /> Arc Testnet
                 </div>
-                <p className="text-sm text-muted-foreground/80 leading-relaxed">
+                <p className="text-sm leading-relaxed text-muted-foreground">
                   Records the fingerprint and anchor time, then wallet
                   addresses, payment status, and amount when settled (Chain ID
                   5042002). The first funded sender activates the shared
@@ -439,38 +860,38 @@ export default function Explore() {
         </div>
       </section>
 
-      {/* 7. SHIELDED USDC */}
-      <section className="py-24 px-4 relative z-10 overflow-hidden">
+      {/* 8. SHIELDED USDC */}
+      <section className="relative z-10 overflow-hidden px-4 py-16">
         <ScrollReveal>
-          <div className="max-w-6xl mx-auto bg-primary/5 border border-primary/20 rounded-3xl p-8 sm:p-16 relative overflow-hidden backdrop-blur-sm">
-            <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-primary/20 rounded-full blur-[100px] pointer-events-none -translate-y-1/2 translate-x-1/3" />
-            
+          <div className="relative mx-auto max-w-6xl overflow-hidden rounded-[28px] border border-primary/20 bg-primary/5 p-8 backdrop-blur-sm sm:p-16">
+            <div className="pointer-events-none absolute right-0 top-0 h-[600px] w-[600px] -translate-y-1/2 translate-x-1/3 rounded-full bg-primary/20 blur-[100px]" />
+
             <div className="relative z-10 max-w-2xl space-y-6">
               <div className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest text-primary">
                 <EyeOff className="h-3.5 w-3.5" />
                 Coming Soon
               </div>
-              <h2 className="text-4xl sm:text-5xl font-light tracking-tight text-foreground">
+              <h2 className="text-4xl font-light tracking-tight text-foreground sm:text-5xl">
                 Shielded USDC.
               </h2>
-              <p className="text-lg text-muted-foreground/80 leading-relaxed">
+              <p className="text-lg leading-relaxed text-muted-foreground">
                 Sealed invoice-body details such as line items and notes remain
-                private to authorized viewers, while the settlement stays visible
-                on ArcScan. Shielded USDC is coming soon—pending Arc&apos;s
-                official support for confidential transfers.
+                private to authorized viewers, while the settlement stays
+                visible on ArcScan. Shielded USDC is coming soon—pending
+                Arc&apos;s official support for confidential transfers.
               </p>
             </div>
           </div>
         </ScrollReveal>
       </section>
 
-      {/* 8. FINAL CTA */}
-      <section className="py-32 px-4 text-center relative z-10">
-        <ScrollReveal className="max-w-2xl mx-auto space-y-8">
-          <h2 className="text-4xl sm:text-6xl font-light tracking-tight text-foreground">
+      {/* 9. FINAL CTA */}
+      <section className="relative z-10 px-4 py-32 text-center">
+        <ScrollReveal className="mx-auto max-w-2xl space-y-8">
+          <h2 className="text-4xl font-light tracking-tight text-foreground sm:text-6xl">
             Ready to seal your first invoice?
           </h2>
-          <p className="text-xl text-muted-foreground/80">
+          <p className="text-xl text-muted-foreground">
             Join the testnet and experience privacy-first professional billing.
           </p>
           {isSignedIn ? (
@@ -478,7 +899,7 @@ export default function Explore() {
               <Button
                 asChild
                 size="lg"
-                className="h-14 rounded-full bg-primary px-10 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-all shadow-[0_0_20px_rgba(37,99,235,0.3)]"
+                className="h-14 rounded-full border border-white/15 bg-white/[0.05] px-10 text-[11px] font-bold uppercase tracking-[0.18em] text-foreground shadow-[0_14px_50px_-12px_rgba(249,115,22,0.55)] transition-all hover:bg-white/10"
                 data-testid="button-cta-dashboard"
               >
                 <Link
@@ -495,11 +916,11 @@ export default function Explore() {
               </Button>
             </div>
           ) : (
-            <div className="flex flex-col items-center justify-center gap-4 pt-4 sm:flex-row">
+            <div className="flex flex-col items-center justify-center gap-3 pt-4 sm:flex-row">
               <Button
                 asChild
                 size="lg"
-                className="h-14 w-full sm:w-auto rounded-full bg-primary px-10 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-all shadow-[0_0_20px_rgba(37,99,235,0.3)] hover:shadow-[0_0_30px_rgba(37,99,235,0.5)]"
+                className="h-14 w-full rounded-full border border-white/15 bg-white/[0.05] px-10 text-[11px] font-bold uppercase tracking-[0.18em] text-foreground shadow-[0_14px_50px_-12px_rgba(249,115,22,0.55)] transition-all hover:bg-white/10 hover:shadow-[0_14px_60px_-10px_rgba(249,115,22,0.7)] sm:w-auto"
                 data-testid="button-cta-signup"
               >
                 <Link
@@ -518,8 +939,8 @@ export default function Explore() {
               <Button
                 asChild
                 size="lg"
-                variant="outline"
-                className="h-14 w-full sm:w-auto rounded-full px-10 text-sm font-medium border-white/10 bg-white/5 hover:bg-white/10 hover:text-foreground transition-all backdrop-blur-md text-foreground"
+                variant="ghost"
+                className="h-14 w-full rounded-full px-8 text-sm font-medium text-muted-foreground transition-all hover:bg-white/5 hover:text-foreground sm:w-auto"
                 data-testid="button-cta-signin"
               >
                 <Link

@@ -63,7 +63,7 @@ if (!clerkPubKey) {
   throw new Error('Missing VITE_CLERK_PUBLISHABLE_KEY in .env file');
 }
 
-// Matches the app theme in index.css: Plus Jakarta Sans, dark mode.
+// Matches the app theme in index.css: Inter, dark mode.
 const clerkAppearance = {
   theme: shadcn,
   cssLayerName: 'clerk',
@@ -73,7 +73,7 @@ const clerkAppearance = {
     logoImageUrl: `${window.location.origin}${basePath}/logo.svg`,
   },
   variables: {
-    colorPrimary: 'hsl(221 83% 53%)',
+    colorPrimary: 'hsl(24 95% 53%)',
     colorForeground: 'hsl(0 0% 98%)',
     colorMutedForeground: 'hsl(0 0% 60%)',
     colorDanger: 'hsl(0 84% 60%)',
@@ -81,7 +81,7 @@ const clerkAppearance = {
     colorInput: 'hsl(0 0% 5%)',
     colorInputForeground: 'hsl(0 0% 98%)',
     colorNeutral: 'hsl(0 0% 60%)',
-    fontFamily: "'Plus Jakarta Sans', sans-serif",
+    fontFamily: "'Inter', sans-serif",
     borderRadius: '0.75rem',
   },
   elements: {
@@ -104,7 +104,7 @@ const clerkAppearance = {
     logoImage: 'h-12 w-12 rounded-xl border border-white/10 shadow-lg',
     socialButtonsBlockButton: 'border border-white/10 bg-white/5 hover:bg-white/10 transition-colors',
     formButtonPrimary:
-      'bg-primary text-primary-foreground hover:bg-primary/90 shadow-[0_0_20px_rgba(37,99,235,0.3)] transition-all font-medium rounded-full h-11',
+      'bg-primary text-primary-foreground hover:bg-primary/90 shadow-[0_0_20px_rgba(249,115,22,0.3)] transition-all font-medium rounded-full h-11',
     formFieldInput: 'bg-black/40 border border-white/10 text-foreground focus:border-primary/50 transition-colors rounded-xl h-11',
     footerAction: 'justify-center',
     dividerLine: 'bg-white/10',

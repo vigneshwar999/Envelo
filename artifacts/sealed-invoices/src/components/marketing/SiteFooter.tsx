@@ -199,9 +199,15 @@ export function SiteFooter() {
           ))}
         </div>
 
-        <div className="mt-14 flex flex-col gap-3 border-t border-white/5 pt-6 text-xs leading-relaxed text-muted-foreground/60 sm:flex-row sm:items-center sm:justify-between">
-          <p>© {new Date().getFullYear()} Envelo. All rights reserved.</p>
-          <p className="max-w-2xl sm:text-right">
+        <div className="mt-14 flex flex-col gap-4 border-t border-white/5 pt-6 text-xs leading-relaxed text-muted-foreground/60">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <p>© {new Date().getFullYear()} Envelo. All rights reserved.</p>
+            <span className="inline-flex w-fit items-center gap-2 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-3 py-1.5 text-[10px] font-semibold text-emerald-400">
+              <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-status-pulse" />
+              All systems operational
+            </span>
+          </div>
+          <p className="max-w-2xl">
             Arc Testnet demonstration only. Test USDC has no real-world value,
             and current settlement records remain public onchain.
           </p>

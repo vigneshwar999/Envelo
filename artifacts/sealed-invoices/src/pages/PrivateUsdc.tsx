@@ -64,7 +64,7 @@ export default function PrivateUsdc() {
           </CardContent>
         </Card>
 
-        <Card className="border-primary/20 bg-primary/5 backdrop-blur-sm shadow-[0_0_30px_rgba(37,99,235,0.1)] rounded-3xl relative overflow-hidden">
+        <Card className="border-primary/20 bg-primary/5 backdrop-blur-sm shadow-[0_0_30px_rgba(249,115,22,0.1)] rounded-3xl relative overflow-hidden">
           <div className="absolute top-0 right-0 w-32 h-32 bg-primary/20 rounded-full blur-[40px] pointer-events-none -translate-y-1/2 translate-x-1/2" />
           <CardHeader className="pb-4 relative z-10">
             <CardTitle className="text-base font-medium flex items-center gap-2 text-primary">

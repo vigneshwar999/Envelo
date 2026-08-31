@@ -670,7 +670,7 @@ export function InvoiceDetail() {
                   <Button
                     onClick={() => setPayApprovalOpen(true)}
                     disabled={payMutation.isPending}
-                    className="w-full bg-primary hover:bg-primary/90 text-primary-foreground shadow-[0_0_15px_rgba(37,99,235,0.3)]"
+                    className="w-full bg-primary hover:bg-primary/90 text-primary-foreground shadow-[0_0_15px_rgba(249,115,22,0.3)]"
                     data-testid="button-pay"
                   >
                     {payMutation.isPending ? "Processing..." : "Review & Pay with Test USDC"}

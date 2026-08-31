@@ -73,7 +73,7 @@ export function Dashboard() {
         <SummaryCard 
           title="Active Grants" 
           value={summary ? summary.activeGrants.toString() : null} 
-          icon={<Activity className="h-4 w-4 text-blue-500" />}
+          icon={<Activity className="h-4 w-4 text-primary" />}
         />
       </div>
 
@@ -262,12 +262,12 @@ function InvoiceRow({ invoice, currentUserId }: { invoice: Invoice, currentUserI
 
 function getEventIcon(kind: InvoiceEventKind) {
   switch(kind) {
-    case 'created': return <FileText className="h-4 w-4 text-blue-500" />;
+    case 'created': return <FileText className="h-4 w-4 text-primary" />;
     case 'anchored': return <ShieldCheck className="h-4 w-4 text-primary" />;
     case 'paid': return <CheckCircle2 className="h-4 w-4 text-green-500" />;
     case 'grant_issued': return <Key className="h-4 w-4 text-amber-500" />;
     case 'grant_revoked': return <ShieldAlert className="h-4 w-4 text-destructive" />;
-    case 'envelope_opened': return <Unlock className="h-4 w-4 text-indigo-500" />;
+    case 'envelope_opened': return <Unlock className="h-4 w-4 text-violet-400" />;
     case 'verified': return <BadgeCheck className="h-4 w-4 text-teal-500" />;
     case 'key_reshared': return <Share2 className="h-4 w-4 text-orange-500" />;
     default: return <Activity className="h-4 w-4 text-muted-foreground" />;
