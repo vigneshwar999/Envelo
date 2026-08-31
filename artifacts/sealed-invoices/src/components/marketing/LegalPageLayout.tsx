@@ -25,6 +25,7 @@ export function LegalPageLayout({
   summaryTitle = "The short version",
   summaryItems,
   sections,
+  afterSections,
 }: {
   badgeIcon: LucideIcon;
   badgeLabel: string;
@@ -35,6 +36,7 @@ export function LegalPageLayout({
   summaryTitle?: string;
   summaryItems: ReactNode[];
   sections: LegalSection[];
+  afterSections?: ReactNode;
 }) {
   useEffect(() => {
     const previousTitle = document.title;
@@ -118,6 +120,8 @@ export function LegalPageLayout({
           ))}
         </div>
       </section>
+
+      {afterSections}
 
       <SiteFooter />
     </div>
