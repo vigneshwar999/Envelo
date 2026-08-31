@@ -1,23 +1,11 @@
 import React from 'react';
 
-import { AuraBackground } from './AuraBackground';
-
-/**
- * TEMPORARY EXPERIMENT: aura.build 48BBD67 background trial.
- * Set USE_AURA_EXPERIMENT to false to restore the Nebula background below.
- */
-const USE_AURA_EXPERIMENT = true;
-
 /**
  * Nebula-style ambient background: near-black canvas, faint vertical
  * hairline grid down the center band, and two dotted-matrix patches that
  * drift very slowly. Pure CSS — no images, reduced-motion safe.
  */
 export function Background() {
-  if (USE_AURA_EXPERIMENT) {
-    return <AuraBackground />;
-  }
-
   return (
     <div className="fixed inset-0 z-[-1] pointer-events-none overflow-hidden bg-background">
       {/* vertical hairline grid, strongest near the top */}
