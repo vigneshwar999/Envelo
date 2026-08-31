@@ -9,25 +9,27 @@
   --color-card: var(--slide-card);
   --color-border: var(--slide-border);
   --color-ok: var(--slide-ok);
+  --color-seal: var(--slide-seal);
   --font-display: var(--font-display-family);
   --font-body: var(--font-body-family);
   --font-mono: var(--font-mono-family);
 }
 
 :root {
-  /* Sealed Invoices brand — mirrors artifacts/sealed-invoices/src/index.css */
-  --slide-primary: #0f1729; /* ink navy — hsl(222 47% 11%) */
-  --slide-accent: #b45309; /* amber status accent */
-  --slide-bg: #fafafa; /* paper — hsl(0 0% 98%) */
-  --slide-text: #21262e; /* body ink — hsl(220 15% 15%) */
-  --slide-muted: #67707e; /* hsl(220 10% 45%) */
-  --slide-card: #ffffff;
-  --slide-border: #e4e7ec; /* hsl(220 15% 90%) */
-  --slide-ok: #15803d;
-  --font-display-family: 'Outfit', system-ui, sans-serif;
-  --font-body-family: 'Outfit', system-ui, sans-serif;
+  /* Envelo brand — mirrors artifacts/sealed-invoices/src/index.css (Nebula redesign) */
+  --slide-primary: #f97316; /* orange primary — hsl(24 95% 53%) */
+  --slide-accent: #fb923c; /* lighter orange for fine accents */
+  --slide-bg: #050505; /* near-black — hsl(0 0% 2%) */
+  --slide-text: #fafafa; /* foreground — hsl(0 0% 98%) */
+  --slide-muted: #999999; /* muted foreground — hsl(0 0% 60%) */
+  --slide-card: #0a0a0a; /* card — hsl(0 0% 4%) */
+  --slide-border: #1f1f1f; /* border — hsl(0 0% 12%) */
+  --slide-ok: #34d399; /* emerald-400 status green */
+  --slide-seal: #e23653; /* wax-seal rose — hsl(350 75% 55%) */
+  --font-display-family: 'Inter', system-ui, sans-serif;
+  --font-body-family: 'Inter', system-ui, sans-serif;
   --font-mono-family: 'JetBrains Mono', monospace;
-  color-scheme: light;
+  color-scheme: dark;
 }
 
 html,
@@ -53,4 +55,42 @@ body {
   touch-action: none;
   user-select: none;
   -webkit-user-select: none;
+}
+
+/* Nebula: soft vertical hairline grid, fading toward the bottom */
+.nebula-grid {
+  background-image: repeating-linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.045) 0,
+    rgba(255, 255, 255, 0.045) 1px,
+    transparent 1px,
+    transparent 232px
+  );
+  mask-image: linear-gradient(to bottom, black 0%, black 45%, transparent 100%);
+  -webkit-mask-image: linear-gradient(
+    to bottom,
+    black 0%,
+    black 45%,
+    transparent 100%
+  );
+}
+
+/* Nebula: dotted matrix texture patch with a soft radial falloff */
+.nebula-dots-patch {
+  background-image: radial-gradient(
+    circle,
+    rgba(255, 255, 255, 0.32) 1px,
+    transparent 1.1px
+  );
+  background-size: 7px 7px;
+  mask-image: radial-gradient(
+    ellipse 65% 55% at 60% 40%,
+    black 0%,
+    transparent 70%
+  );
+  -webkit-mask-image: radial-gradient(
+    ellipse 65% 55% at 60% 40%,
+    black 0%,
+    transparent 70%
+  );
 }

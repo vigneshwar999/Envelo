@@ -3,7 +3,7 @@
     "id": "7f2c9a41-3b8e-4d16-9c25-a1e4f8b06d31",
     "position": 1,
     "filepath": "src/pages/slides/TitleSlide.tsx",
-    "title": "Sealed Invoices",
+    "title": "Envelo",
     "description": "Title slide: product one-liner and Arc Testnet facts.",
     "speakerNotes": "Open with the one-liner: invoices are sealed inside the sender's browser so nobody in the middle can read them, proof of the paperwork lives on Arc, and payment settles in test USDC. Mention that this runs today on Arc Testnet - the chain ID and explorer on screen are the real ones. Spend twenty seconds here, then move; the story starts on the next slide."
   },
