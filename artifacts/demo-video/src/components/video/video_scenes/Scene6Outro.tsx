@@ -53,13 +53,13 @@ export function Scene6Outro() {
         
         <div className="overflow-hidden">
           <motion.div
-            className="text-[1.8vw] font-body text-text-secondary flex items-center gap-[1vw]"
+            className="text-[1.8vw] font-body text-text-primary flex items-center gap-[1vw]"
             initial={{ y: '100%' }}
             animate={{ y: phase >= 2 ? '0%' : '100%' }}
             transition={{ duration: 1, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
           >
             <span>Powered by</span>
-            <span className="font-display font-semibold text-primary">Arc</span>
+            <span className="font-display font-semibold text-text-primary">Arc</span>
           </motion.div>
         </div>
       </div>

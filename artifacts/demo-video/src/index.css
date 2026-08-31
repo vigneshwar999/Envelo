@@ -1,26 +1,29 @@
-@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap');
 
 @import 'tailwindcss';
 
 :root {
-  --color-primary: #0F1729; /* Ink Navy */
-  --color-accent: #B45309; /* Amber Accent */
-  --color-bg-light: #FAFAFA; /* Paper */
-  --color-bg-dark: #0F1729; 
-  --color-bg-muted: #E4E7EC; /* Border / Muted background */
+  --color-primary: #f97316;
+  --color-accent: #fb923c;
+  --color-bg-light: #050505; /* Was paper, now near-black */
+  --color-bg-dark: #0a0a0a; /* Was navy, now card bg */
+  --color-bg-muted: #1f1f1f; /* Was border, now border */
 
-  --color-text-primary: #21262E;
-  --color-text-secondary: #67707E;
-  --color-text-muted: #A0AAB6;
-  --color-text-inverse: #FAFAFA;
+  --color-text-primary: #fafafa;
+  --color-text-secondary: #999999;
+  --color-text-muted: #666666;
+  --color-text-inverse: #050505;
 
-  --color-success: #15803D; /* Paid / OK */
-  --color-warning: #B45309;
-  --color-error: #EF4444;
+  --color-success: #34d399;
+  --color-warning: #fb923c;
+  --color-error: #ef4444;
+  
+  --color-seal: #e23653; /* Rose seal */
 
-  --font-display: 'Outfit', system-ui, sans-serif;
-  --font-body: 'Outfit', system-ui, sans-serif;
+  --font-display: 'Inter', system-ui, sans-serif;
+  --font-body: 'Inter', system-ui, sans-serif;
   --font-mono: 'JetBrains Mono', monospace;
+  color-scheme: dark;
 }
 
 @theme inline {
@@ -37,6 +40,7 @@
   --color-success: var(--color-success);
   --color-warning: var(--color-warning);
   --color-error: var(--color-error);
+  --color-seal: var(--color-seal);
   --font-display: var(--font-display);
   --font-body: var(--font-body);
   --font-mono: var(--font-mono);

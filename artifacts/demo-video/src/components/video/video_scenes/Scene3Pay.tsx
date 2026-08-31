@@ -27,7 +27,7 @@ export function Scene3Pay() {
         
         {/* Payer Wallet */}
         <motion.div
-          className="w-[20vw] h-[25vw] bg-white rounded-2xl shadow-xl border border-bg-muted flex flex-col items-center p-[2vw] relative"
+          className="w-[20vw] h-[25vw] bg-bg-dark rounded-2xl shadow-xl border border-bg-muted flex flex-col items-center p-[2vw] relative"
           initial={{ x: '-20vw', opacity: 0, rotate: -10 }}
           animate={{ x: phase >= 1 ? 0 : '-20vw', opacity: phase >= 1 ? 1 : 0, rotate: phase >= 1 ? -5 : -10 }}
           transition={{ duration: 0.8, type: "spring", bounce: 0.4 }}
@@ -36,7 +36,7 @@ export function Scene3Pay() {
             <div className="w-[8vw] h-[1.5vw] bg-primary/20 rounded" />
             <div className="w-[3vw] h-[3vw] bg-primary/10 rounded-full" />
           </div>
-          <div className="text-[3vw] font-mono font-medium text-primary mb-[1vh]">
+          <div className="text-[3vw] font-mono font-medium text-text-primary mb-[1vh]">
             $1,250<span className="text-[1.5vw] text-text-muted">.00</span>
           </div>
           <div className="text-[1.2vw] font-display text-text-muted mb-[4vh]">USDC Balance</div>
@@ -47,7 +47,7 @@ export function Scene3Pay() {
 
           {/* USDC Coin that flies out */}
           <motion.div
-            className="absolute top-[60%] left-1/2 w-[4vw] h-[4vw] bg-[#2775CA] rounded-full flex items-center justify-center shadow-lg border-[0.2vw] border-white z-30 text-white font-display font-bold text-[1.5vw]"
+            className="absolute top-[60%] left-1/2 w-[4vw] h-[4vw] bg-primary rounded-full flex items-center justify-center shadow-lg border-[0.2vw] border-primary/50 z-30 text-white font-display font-bold text-[1.5vw]"
             initial={{ scale: 0, x: '-50%', y: '-50%' }}
             animate={
               phase >= 2 && phase < 3 
@@ -64,20 +64,20 @@ export function Scene3Pay() {
 
         {/* Invoice */}
         <motion.div
-          className="w-[24vw] h-[32vw] bg-white rounded-xl shadow-2xl border border-bg-muted p-[2vw] relative overflow-hidden flex flex-col"
+          className="w-[24vw] h-[32vw] bg-bg-dark rounded-xl shadow-2xl border border-bg-muted p-[2vw] relative overflow-hidden flex flex-col"
           initial={{ x: '20vw', opacity: 0, rotate: 10 }}
           animate={{ x: phase >= 1 ? 0 : '20vw', opacity: phase >= 1 ? 1 : 0, rotate: phase >= 1 ? 5 : 10 }}
           transition={{ duration: 0.8, type: "spring", bounce: 0.4, delay: 0.2 }}
         >
-          <div className="w-[8vw] h-[1.5vw] bg-primary/20 rounded mb-[2vh]" />
+          <div className="w-[8vw] h-[1.5vw] bg-text-secondary/20 rounded mb-[2vh]" />
           <div className="flex flex-col gap-[1vw] flex-grow">
             <div className="w-full h-[1vw] bg-bg-muted rounded" />
             <div className="w-3/4 h-[1vw] bg-bg-muted rounded" />
             <div className="w-5/6 h-[1vw] bg-bg-muted rounded" />
           </div>
           <div className="mt-auto flex justify-between border-t border-bg-muted pt-[1vw]">
-            <div className="w-[4vw] h-[1.5vw] bg-primary/20 rounded" />
-            <div className="w-[6vw] h-[2vw] bg-primary rounded" />
+            <div className="w-[4vw] h-[1.5vw] bg-text-secondary/20 rounded" />
+            <div className="w-[6vw] h-[2vw] bg-primary/80 rounded" />
           </div>
 
           {/* PAID Stamp */}
@@ -109,7 +109,7 @@ export function Scene3Pay() {
       <div className="text-center">
         <div className="overflow-hidden mb-[1vh]">
           <motion.h2
-            className="text-[4vw] font-display font-semibold text-primary leading-tight"
+            className="text-[4vw] font-display font-semibold text-text-primary leading-tight"
             initial={{ y: '100%' }}
             animate={{ y: phase >= 4 ? '0%' : '100%' }}
             transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}

@@ -27,9 +27,9 @@ export function Scene4Share() {
         
         {/* Background UI (Invoice blurry in back) */}
         <motion.div
-          className="absolute w-[26vw] h-[32vw] bg-white rounded-xl shadow-sm border border-bg-muted p-[2vw] flex flex-col blur-sm opacity-60"
+          className="absolute w-[26vw] h-[32vw] bg-bg-dark rounded-xl shadow-sm border border-bg-muted p-[2vw] flex flex-col blur-sm opacity-60"
         >
-          <div className="w-[8vw] h-[1.5vw] bg-primary/20 rounded mb-[2vh]" />
+          <div className="w-[8vw] h-[1.5vw] bg-text-secondary/20 rounded mb-[2vh]" />
           <div className="flex flex-col gap-[1vw] flex-grow">
             <div className="w-full h-[1vw] bg-bg-muted rounded" />
             <div className="w-3/4 h-[1vw] bg-bg-muted rounded" />
@@ -38,13 +38,13 @@ export function Scene4Share() {
 
         {/* Share Modal */}
         <motion.div
-          className="z-10 w-[30vw] bg-white rounded-2xl shadow-2xl border border-primary/10 overflow-hidden flex flex-col"
+          className="z-10 w-[30vw] bg-bg-dark rounded-2xl shadow-2xl border border-primary/20 overflow-hidden flex flex-col"
           initial={{ y: '20vh', opacity: 0, scale: 0.9 }}
           animate={{ y: phase >= 1 ? 0 : '20vh', opacity: phase >= 1 ? 1 : 0, scale: phase >= 1 ? 1 : 0.9 }}
           transition={{ duration: 0.6, type: "spring", bounce: 0.3 }}
         >
-          <div className="p-[1.5vw] border-b border-bg-muted bg-bg-light/50 flex justify-between items-center">
-            <div className="font-display font-medium text-primary text-[1.2vw]">Share Access</div>
+          <div className="p-[1.5vw] border-b border-bg-muted bg-bg-light/10 flex justify-between items-center">
+            <div className="font-display font-medium text-text-primary text-[1.2vw]">Share Access</div>
             <div className="w-[1.5vw] h-[1.5vw] rounded-full bg-bg-muted" />
           </div>
           
@@ -57,19 +57,19 @@ export function Scene4Share() {
                 </svg>
               </div>
               <div className="flex flex-col">
-                <div className="text-[1.2vw] font-display text-primary">Accountant</div>
+                <div className="text-[1.2vw] font-display text-text-primary">Accountant</div>
                 <div className="text-[1vw] font-body text-text-secondary">View-only, expires automatically</div>
               </div>
             </div>
 
             <motion.div
-              className="w-full h-[4vw] bg-bg-muted/50 rounded-lg border border-bg-muted flex items-center justify-between px-[1vw]"
+              className="w-full h-[4vw] bg-bg-muted/30 rounded-lg border border-bg-muted flex items-center justify-between px-[1vw]"
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: phase >= 2 ? 1 : 0, height: phase >= 2 ? '4vw' : 0 }}
               transition={{ duration: 0.4 }}
             >
               <div className="font-mono text-text-secondary text-[0.9vw]">arc.link/grant/a7x...</div>
-              <div className="bg-white border border-bg-muted px-[1vw] py-[0.5vw] rounded text-[0.9vw] font-display shadow-sm">Copy</div>
+              <div className="bg-bg-dark border border-bg-muted px-[1vw] py-[0.5vw] rounded text-[0.9vw] font-display shadow-sm text-text-primary">Copy</div>
             </motion.div>
           </div>
 
@@ -92,7 +92,7 @@ export function Scene4Share() {
                 <circle cx="12" cy="12" r="10" />
                 <path d="M12 6v6l4 2" />
               </motion.svg>
-              <div className={`text-[1vw] font-display ${phase >= 3 ? 'text-white' : 'text-accent'}`}>
+              <div className={`text-[1vw] font-display ${phase >= 3 ? 'text-bg-light' : 'text-accent'}`}>
                 {phase >= 3 ? 'Access expires in 7 days' : 'Setting expiration...'}
               </div>
             </div>
@@ -103,7 +103,7 @@ export function Scene4Share() {
       <div className="flex flex-col items-start w-[35vw]">
         <div className="overflow-hidden mb-[1vh]">
           <motion.h2
-            className="text-[3.5vw] font-display font-semibold text-primary leading-tight"
+            className="text-[3.5vw] font-display font-semibold text-text-primary leading-tight"
             initial={{ y: '100%' }}
             animate={{ y: phase >= 4 ? '0%' : '100%' }}
             transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}

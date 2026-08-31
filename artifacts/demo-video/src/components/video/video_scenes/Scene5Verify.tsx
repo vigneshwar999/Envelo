@@ -27,21 +27,21 @@ export function Scene5Verify() {
         
         {/* Verification Terminal / Box */}
         <motion.div
-          className="absolute z-10 w-[32vw] h-[24vw] bg-white rounded-2xl shadow-xl border border-bg-muted flex flex-col overflow-hidden"
+          className="absolute z-10 w-[32vw] h-[24vw] bg-bg-dark rounded-2xl shadow-xl border border-bg-muted flex flex-col overflow-hidden"
           initial={{ x: '10vw', opacity: 0 }}
           animate={{ x: 0, opacity: phase >= 1 ? 1 : 0 }}
           transition={{ duration: 0.8, type: "spring", bounce: 0.2 }}
         >
           <div className="h-[4vw] bg-primary flex items-center px-[2vw] gap-[1vw]">
             <div className="w-[1vw] h-[1vw] rounded-full bg-accent/80" />
-            <div className="text-white font-display text-[1.2vw]">Public Verification</div>
+            <div className="text-bg-light font-display text-[1.2vw]">Public Verification</div>
           </div>
           
           <div className="flex-grow relative flex flex-col items-center justify-center p-[2vw]">
             
             {/* The Document that slides in */}
             <motion.div
-              className="absolute z-0 w-[18vw] h-[12vw] bg-[#E2E8F0] rounded-xl border border-white/50 flex flex-col justify-between p-[1vw] shadow-md"
+              className="absolute z-0 w-[18vw] h-[12vw] bg-[#1a1a1a] rounded-xl border border-white/10 flex flex-col justify-between p-[1vw] shadow-md"
               initial={{ x: '-40vw', y: '2vw', opacity: 0, rotate: -15 }}
               animate={
                 phase >= 2 
@@ -59,7 +59,7 @@ export function Scene5Verify() {
 
             {/* Scanning Light */}
             <motion.div
-              className="absolute left-0 w-full h-[0.5vw] bg-accent/50 shadow-[0_0_2vw_var(--color-accent)] z-20 pointer-events-none"
+              className="absolute left-0 w-full h-[0.5vw] bg-primary/80 shadow-[0_0_2vw_var(--color-primary)] z-20 pointer-events-none"
               initial={{ top: '20%', opacity: 0 }}
               animate={
                 phase >= 2 && phase < 3 
@@ -83,7 +83,7 @@ export function Scene5Verify() {
                 <span className="text-success font-display font-bold text-[1.2vw]">Verified Match</span>
               </div>
               
-              <div className="bg-black/80 px-[1.5vw] py-[0.5vw] rounded font-mono text-accent text-[1vw] shadow-lg">
+              <div className="bg-bg-dark border border-bg-muted px-[1.5vw] py-[0.5vw] rounded font-mono text-primary text-[1vw] shadow-lg">
                 0x8f3c...9a12b4e7
               </div>
             </motion.div>
@@ -94,7 +94,7 @@ export function Scene5Verify() {
       <div className="text-center z-20">
         <div className="overflow-hidden mb-[1vh]">
           <motion.h2
-            className="text-[3.5vw] font-display font-semibold text-primary leading-tight"
+            className="text-[3.5vw] font-display font-semibold text-text-primary leading-tight"
             initial={{ y: '100%' }}
             animate={{ y: phase >= 4 ? '0%' : '100%' }}
             transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
