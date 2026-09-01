@@ -1,0 +1,20 @@
+diff --git a/index.js b/index.js
+index 2a93386..0480611 100644
+--- a/index.js
++++ b/index.js
+@@ -27,6 +27,15 @@ function decode(input) {
+ 		return decodeURIComponent(input);
+ 	} catch (err) {
+ 		var tokens = input.match(singleMatcher) || [];
++
++		// Security guard (CVE-2026-45822 / GHSA-vcc3-ghjq-m6fr): the
++		// recursive recovery algorithm becomes exponentially expensive as
++		// malformed percent-encoded token counts grow. Bound that legacy
++		// recovery path and preserve the original input for larger malformed
++		// values, as decode-uri-component does for undecodable fragments.
++		if (tokens.length > 32) {
++			return input;
++		}
+ 
+ 		for (var i = 1; i < tokens.length; i++) {
+ 			input = decodeComponents(tokens, i).join('');
