@@ -146,7 +146,7 @@ export function SiteFooter() {
         aria-hidden="true"
       />
 
-      <div className="mx-auto max-w-6xl relative z-10">
+      <div className="mx-auto max-w-7xl relative z-10">
         <div className="grid gap-12 md:grid-cols-2 lg:grid-cols-[1.45fr_repeat(4,minmax(0,1fr))] lg:gap-8">
           <div>
             <Link

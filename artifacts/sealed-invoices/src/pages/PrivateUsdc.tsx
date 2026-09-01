@@ -18,7 +18,7 @@ export default function PrivateUsdc() {
   }, []);
 
   return (
-    <div className="max-w-3xl mx-auto space-y-10 animate-in fade-in duration-500 pt-6">
+    <div className="max-w-4xl mx-auto space-y-10 animate-in fade-in duration-500 pt-6">
       <div className="space-y-6">
         <div
           className="inline-flex items-center rounded-full border border-primary/30 bg-primary/10 px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest text-primary mb-2"

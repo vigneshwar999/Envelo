@@ -167,7 +167,7 @@ function PageLoading() {
 function AppLoading() {
   return (
     <div className="min-h-screen bg-background font-sans">
-      <main className="container mx-auto max-w-5xl px-4 py-8">
+      <main className="container mx-auto max-w-7xl px-4 py-8">
         <PageLoading />
       </main>
     </div>

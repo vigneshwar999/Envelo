@@ -10,7 +10,7 @@ export function Background() {
     <div className="fixed inset-0 z-[-1] pointer-events-none overflow-hidden bg-background">
       {/* vertical hairline grid, strongest near the top */}
       <div
-        className="absolute inset-x-0 top-0 h-[130vh] mx-auto max-w-5xl nebula-grid"
+        className="absolute inset-x-0 top-0 h-[130vh] mx-auto max-w-7xl nebula-grid"
         style={{
           maskImage:
             'linear-gradient(to bottom, black 0%, black 45%, transparent 100%)',

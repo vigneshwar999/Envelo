@@ -51,7 +51,7 @@ export function LegalPageLayout({
       <Background />
       {/* HERO */}
       <section className="relative overflow-hidden px-4 pb-16 pt-20 sm:pb-20 sm:pt-24 z-10">
-        <ScrollReveal className="mx-auto max-w-3xl space-y-8 text-center">
+        <ScrollReveal className="mx-auto max-w-4xl space-y-8 text-center">
           <div className="mx-auto inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-1.5 text-xs font-medium uppercase tracking-widest text-foreground backdrop-blur-md">
             <BadgeIcon className="h-4 w-4 text-primary" />
             {badgeLabel}
@@ -73,7 +73,7 @@ export function LegalPageLayout({
 
       {/* SUMMARY CARD */}
       <section className="px-4 relative z-10">
-        <ScrollReveal className="mx-auto max-w-3xl">
+        <ScrollReveal className="mx-auto max-w-4xl">
           <div className="rounded-3xl border border-white/10 bg-white/5 p-6 sm:p-8 backdrop-blur-sm">
             <h2 className="text-xs font-bold uppercase tracking-[0.15em] text-primary mb-6">
               {summaryTitle}
@@ -100,7 +100,7 @@ export function LegalPageLayout({
 
       {/* SECTIONS */}
       <section className="px-4 pb-24 pt-20 sm:pb-32 sm:pt-24 relative z-10">
-        <div className="mx-auto max-w-3xl space-y-16">
+        <div className="mx-auto max-w-4xl space-y-16">
           {sections.map((section, index) => (
             <ScrollReveal key={section.heading}>
               <article className="space-y-6">

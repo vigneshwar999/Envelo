@@ -320,7 +320,7 @@ export function InvoiceDetail() {
   const downloadBlockedByChain = invoice.anchorStatus === 'anchored' && !chainIdentityReady;
 
   return (
-    <div className="space-y-8 max-w-5xl mx-auto pb-20 relative z-10 animate-in fade-in slide-in-from-bottom-4 duration-700">
+    <div className="space-y-8 max-w-7xl mx-auto pb-20 relative z-10 animate-in fade-in slide-in-from-bottom-4 duration-700">
       <Background />
       <div className="flex items-center gap-4">
         <Link href="/dashboard" className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground transition-colors">

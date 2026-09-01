@@ -70,7 +70,7 @@ export default function Explore() {
 
       {/* 1. HERO */}
       <section className="relative z-10 flex min-h-[92dvh] flex-col items-center justify-center px-4 pt-32 pb-16 text-center">
-        <ScrollReveal className="mx-auto max-w-4xl">
+        <ScrollReveal className="mx-auto max-w-5xl">
           <div className="mb-8 inline-flex items-center gap-2.5 rounded-full border border-white/10 bg-white/[0.04] px-4 py-1.5 text-xs text-muted-foreground backdrop-blur-sm">
             <span className="relative flex h-1.5 w-1.5">
               <span className="absolute inline-flex h-full w-full rounded-full bg-primary opacity-60 animate-ping" />
@@ -160,7 +160,7 @@ export default function Explore() {
 
       {/* 2. TRUSTED STRIP + MARQUEE */}
       <section className="relative z-10 px-4 pb-24">
-        <div className="mx-auto max-w-6xl space-y-10">
+        <div className="mx-auto max-w-7xl space-y-10">
           <ScrollReveal className="flex flex-col items-center gap-5 text-center">
             <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-muted-foreground/60">
               Built on the modern Arc testnet stack
@@ -181,7 +181,7 @@ export default function Explore() {
 
       {/* 3. BIG FEATURE CARD — BROWSER-SIDE SEALING */}
       <section className="relative z-10 px-4 py-12">
-        <div className="mx-auto max-w-6xl">
+        <div className="mx-auto max-w-7xl">
           <ScrollReveal>
             <div className="relative overflow-hidden rounded-[28px] border border-white/10 bg-gradient-to-b from-white/[0.05] to-white/[0.015] p-8 backdrop-blur-sm sm:p-12 lg:p-14">
               <div className="pointer-events-none absolute -top-40 right-0 h-[420px] w-[420px] rounded-full bg-primary/10 blur-[120px]" />
@@ -313,7 +313,7 @@ export default function Explore() {
 
       {/* 4. TWO GLASS CARDS — WAX SEAL / SETTLEMENT */}
       <section className="relative z-10 px-4 py-12">
-        <div className="mx-auto grid max-w-6xl gap-6 lg:grid-cols-2">
+        <div className="mx-auto grid max-w-7xl gap-6 lg:grid-cols-2">
           <ScrollReveal delay={0.05}>
             <div className="relative flex h-full flex-col overflow-hidden rounded-[28px] border border-white/10 bg-gradient-to-b from-white/[0.05] to-white/[0.015] p-8 backdrop-blur-sm sm:p-10">
               <div className="relative mb-10 flex h-44 items-center justify-center">
@@ -411,7 +411,7 @@ export default function Explore() {
 
       {/* 5. NUMBERED SHOWCASE — PRIVACY & PROOF */}
       <section className="relative z-10 px-4 py-28">
-        <div className="mx-auto max-w-6xl">
+        <div className="mx-auto max-w-7xl">
           <ScrollReveal>
             <div className="mb-20 grid gap-10 lg:grid-cols-[1fr_auto] lg:items-end">
               <div>
@@ -694,7 +694,7 @@ export default function Explore() {
 
       {/* 6. DEMO IFRAME */}
       <section className="relative z-10 px-4 py-24">
-        <div className="mx-auto max-w-5xl space-y-12">
+        <div className="mx-auto max-w-7xl space-y-12">
           <ScrollReveal className="mx-auto max-w-2xl space-y-4 text-center">
             <h2 className="text-4xl font-light tracking-tight sm:text-5xl">
               See Envelo in action
@@ -790,7 +790,7 @@ export default function Explore() {
 
       {/* 7. TRUST BOUNDARIES & CUSTODY */}
       <section className="relative z-10 px-4 py-24">
-        <div className="mx-auto max-w-6xl space-y-16">
+        <div className="mx-auto max-w-7xl space-y-16">
           <ScrollReveal className="mx-auto max-w-2xl space-y-4 text-center">
             <h2 className="text-4xl font-light tracking-tight sm:text-5xl">
               The Trust Boundary
@@ -863,7 +863,7 @@ export default function Explore() {
       {/* 8. SHIELDED USDC */}
       <section className="relative z-10 overflow-hidden px-4 py-16">
         <ScrollReveal>
-          <div className="relative mx-auto max-w-6xl overflow-hidden rounded-[28px] border border-primary/20 bg-primary/5 p-8 backdrop-blur-sm sm:p-16">
+          <div className="relative mx-auto max-w-7xl overflow-hidden rounded-[28px] border border-primary/20 bg-primary/5 p-8 backdrop-blur-sm sm:p-16">
             <div className="pointer-events-none absolute right-0 top-0 h-[600px] w-[600px] -translate-y-1/2 translate-x-1/3 rounded-full bg-primary/20 blur-[100px]" />
 
             <div className="relative z-10 max-w-2xl space-y-6">

@@ -254,7 +254,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
         className={cn(
           isMarketingRoute
             ? "w-full"
-            : "container mx-auto px-4 pt-28 pb-10 max-w-5xl relative z-10 flex-1 flex flex-col",
+            : "container mx-auto px-4 pt-28 pb-10 max-w-7xl relative z-10 flex-1 flex flex-col",
         )}
       >
         {children}
