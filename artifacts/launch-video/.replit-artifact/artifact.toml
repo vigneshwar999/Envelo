@@ -1,0 +1,29 @@
+kind = "video"
+videoAspectRatio = "16:9"
+previewPath = "/launch-video/"
+title = "Envelo Launch Video"
+description = "A 39-second information-forward launch video for Envelo, made for the first post on X. Five beats: the problem with public on-chain invoices, the Envelo reveal, the public-vs-private split, the four-step Seal/Anchor/Settle/Verify flow over real product UI, and the brand end card with envelo.online."
+version = "1.0.0"
+id = "artifacts/launch-video"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/launch-video/" ]
+localPort = 19679
+
+[services.development]
+run = "pnpm --filter @workspace/launch-video run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/launch-video", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/launch-video/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "19679"
+BASE_PATH = "/launch-video/"
