@@ -1,0 +1,28 @@
+kind = "video"
+previewPath = "/envelo-proof-system/"
+title = "Envelo Launch Variation 2: Proof System"
+description = "A precise 16:9 Envelo launch video for X, using animated system diagrams and real product UI to explain Seal, Anchor, Settle, and Verify and why private invoicing with public proof matters."
+version = "1.0.0"
+id = "artifacts/envelo-proof-system"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/envelo-proof-system/" ]
+localPort = 25340
+
+[services.development]
+run = "pnpm --filter @workspace/envelo-proof-system run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/envelo-proof-system", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/envelo-proof-system/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "25340"
+BASE_PATH = "/envelo-proof-system/"

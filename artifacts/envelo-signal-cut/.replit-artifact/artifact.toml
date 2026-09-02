@@ -1,0 +1,29 @@
+videoAspectRatio = "16:9"
+kind = "video"
+previewPath = "/envelo-signal-cut/"
+title = "Envelo Launch Variation 1: Signal Cut"
+description = "A high-impact 16:9 launch video for Envelo's first X post, combining kinetic animation, real product UI, and a concise explanation of why private invoicing with public proof matters."
+version = "1.0.0"
+id = "artifacts/envelo-signal-cut"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/envelo-signal-cut/" ]
+localPort = 19105
+
+[services.development]
+run = "pnpm --filter @workspace/envelo-signal-cut run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/envelo-signal-cut", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/envelo-signal-cut/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "19105"
+BASE_PATH = "/envelo-signal-cut/"
