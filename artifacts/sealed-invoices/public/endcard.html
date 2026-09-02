@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Envelo Launch End Card</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { width: 1920px; height: 1080px; overflow: hidden; }
+  body {
+    position: relative;
+    background: #050505;
+    font-family: 'Inter', sans-serif;
+    color: #fafafa;
+  }
+
+  /* vertical hairline grid, fading toward the bottom */
+  .grid {
+    position: absolute;
+    left: 50%; top: 0;
+    transform: translateX(-50%);
+    width: 1600px; height: 100%;
+    background-image: repeating-linear-gradient(
+      90deg,
+      rgba(255, 255, 255, 0.045) 0,
+      rgba(255, 255, 255, 0.045) 1px,
+      transparent 1px,
+      transparent 160px
+    );
+    -webkit-mask-image: linear-gradient(to bottom, black 0%, black 55%, transparent 100%);
+    mask-image: linear-gradient(to bottom, black 0%, black 55%, transparent 100%);
+  }
+
+  /* dotted matrix patches */
+  .dots {
+    position: absolute;
+    background-image: radial-gradient(circle, rgba(255, 255, 255, 0.32) 1px, transparent 1.1px);
+    background-size: 7px 7px;
+  }
+  .dots-right {
+    top: -10%; right: -6%;
+    width: 860px; height: 620px;
+    opacity: 0.15;
+    -webkit-mask-image: radial-gradient(ellipse 62% 55% at 60% 40%, black 0%, transparent 70%);
+    mask-image: radial-gradient(ellipse 62% 55% at 60% 40%, black 0%, transparent 70%);
+  }
+  .dots-left {
+    bottom: -14%; left: -6%;
+    width: 760px; height: 560px;
+    opacity: 0.10;
+    -webkit-mask-image: radial-gradient(ellipse 60% 50% at 40% 55%, black 0%, transparent 70%);
+    mask-image: radial-gradient(ellipse 60% 50% at 40% 55%, black 0%, transparent 70%);
+  }
+
+  /* soft silver glow behind the headline */
+  .glow {
+    position: absolute;
+    left: 50%; top: 46%;
+    transform: translate(-50%, -50%);
+    width: 1500px; height: 820px;
+    background: radial-gradient(ellipse 50% 50% at 50% 50%, rgba(201, 206, 212, 0.08) 0%, transparent 70%);
+  }
+
+  /* gentle vignette so the card sits like a film frame */
+  .vignette {
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse 75% 70% at 50% 48%, transparent 55%, rgba(0, 0, 0, 0.55) 100%);
+  }
+
+  .content {
+    position: relative;
+    z-index: 2;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding-bottom: 14px;
+  }
+
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    margin-bottom: 52px;
+  }
+  .brand img { width: 66px; height: 66px; }
+  .brand .name {
+    font-size: 56px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+  }
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 11px;
+    margin-left: 14px;
+    padding: 10px 22px;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.045);
+    font-size: 17px;
+    font-weight: 700;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.62);
+  }
+  .badge .dot {
+    width: 9px; height: 9px;
+    border-radius: 50%;
+    background: #c9ced4;
+    box-shadow: 0 0 14px rgba(201, 206, 212, 0.9);
+  }
+
+  h1 {
+    font-size: 118px;
+    line-height: 1.06;
+    font-weight: 300;
+    letter-spacing: -0.035em;
+  }
+  h1 .private { color: #f4f5f6; }
+  h1 .public { color: #83888e; }
+
+  .sub {
+    margin-top: 46px;
+    font-size: 30px;
+    font-weight: 400;
+    letter-spacing: 0.01em;
+    color: rgba(255, 255, 255, 0.5);
+  }
+  .sub .sep { margin: 0 20px; color: rgba(255, 255, 255, 0.25); }
+  .sub .url { color: rgba(255, 255, 255, 0.82); font-weight: 500; }
+</style>
+</head>
+<body>
+  <div class="grid"></div>
+  <div class="dots dots-right"></div>
+  <div class="dots dots-left"></div>
+  <div class="glow"></div>
+  <div class="vignette"></div>
+
+  <div class="content">
+    <div class="brand">
+      <img src="logo.svg" alt="Envelo logo" />
+      <span class="name">Envelo</span>
+      <span class="badge"><span class="dot"></span>Arc Testnet</span>
+    </div>
+    <h1>
+      <span class="private">Private paperwork.</span><br />
+      <span class="public">Public proof.</span>
+    </h1>
+    <div class="sub">
+      Live on Arc Testnet<span class="sep">&middot;</span><span class="url">envelo.online</span>
+    </div>
+  </div>
+</body>
+</html>
