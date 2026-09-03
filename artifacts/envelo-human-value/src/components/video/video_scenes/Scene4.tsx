@@ -3,85 +3,79 @@ import { motion } from 'framer-motion';
 export default function Scene4() {
   return (
     <motion.div 
-      className="absolute inset-0 flex flex-col items-center justify-center text-white overflow-hidden"
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0, scale: 1.05 }}
-      transition={{ duration: 1 }}
+      className="absolute inset-0 flex flex-col items-center justify-center text-white overflow-hidden bg-bg"
+      initial={{ opacity: 0, filter: 'blur(20px)' }}
+      animate={{ opacity: 1, filter: 'blur(0px)' }}
+      exit={{ opacity: 0, scale: 1.05, filter: 'blur(15px)' }}
+      transition={{ duration: 1.2, ease: [0.76, 0, 0.24, 1] }}
     >
-      <div 
-        className="absolute inset-0 w-full h-full opacity-10 pointer-events-none"
-        style={{
-          backgroundImage: `linear-gradient(to right, #ffffff 1px, transparent 1px), linear-gradient(to bottom, #ffffff 1px, transparent 1px)`,
-          backgroundSize: '4vw 4vw'
-        }}
-      />
-
-      <div className="absolute top-[12vw] w-full text-center z-20">
+      <div className="absolute top-[15vw] w-full text-center z-30">
         <motion.h2 
-          className="font-serif text-[4vw] text-gray-200 leading-tight"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 1, delay: 0.5 }}
+          className="font-display text-[6vw] text-silver-glow leading-tight"
+          initial={{ opacity: 0, y: 30, filter: 'blur(10px)' }}
+          animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+          transition={{ duration: 1.5, delay: 0.5, ease: [0.16, 1, 0.3, 1] }}
         >
-          Leaving only verifiable<br/>proof on Arc.
+          Leaving only verifiable<br/>
+          <span className="italic text-[6vw] text-silver-dark">proof on Arc.</span>
         </motion.h2>
       </div>
 
-      {/* Proof visualization */}
-      <div className="mt-[15vw] relative w-[70vw] h-[20vw] flex items-center justify-center z-20">
+      {/* Proof visualization - Macro style */}
+      <div className="mt-[20vw] relative w-[80vw] h-[25vw] flex items-center justify-center z-20">
         
-        {/* Left side: The Hash */}
+        {/* Left side: The Hash - Large, out of focus to in focus */}
         <motion.div
-          className="absolute left-[2vw] glass-panel bg-[#121212]/90 border border-white/10 p-[2.5vw] rounded-2xl flex flex-col gap-3 shadow-2xl z-10"
-          initial={{ opacity: 0, x: -60, scale: 0.9 }}
-          animate={{ opacity: 1, x: 0, scale: 1 }}
-          transition={{ duration: 1.2, delay: 1.5, type: "spring", stiffness: 80, damping: 20 }}
+          className="absolute left-[5vw] glow-box bg-bg-panel/40 border border-white/5 p-[3vw] rounded-2xl flex flex-col gap-4 shadow-2xl z-10 backdrop-blur-xl"
+          initial={{ opacity: 0, x: -60, filter: 'blur(30px)' }}
+          animate={{ opacity: 1, x: 0, filter: 'blur(0px)' }}
+          transition={{ duration: 1.8, delay: 1.2, ease: [0.16, 1, 0.3, 1] }}
         >
-          <div className="flex items-center gap-3">
-             <div className="w-[2vw] h-[2vw] rounded-full bg-red-500/20 flex items-center justify-center">
-               <div className="w-[1vw] h-[1vw] rounded-full bg-red-500" />
+          <div className="flex items-center gap-3 mb-2">
+             <div className="w-[1vw] h-[1vw] rounded-full bg-primary/20 flex items-center justify-center">
+               <div className="w-[0.5vw] h-[0.5vw] rounded-full bg-primary" />
              </div>
-             <span className="font-sans text-[1.1vw] text-red-400 uppercase tracking-[0.15em] font-semibold">Sealed Proof</span>
+             <span className="font-mono text-[1.2vw] text-primary uppercase tracking-[0.2em] font-semibold">Sealed Proof</span>
           </div>
-          <span className="font-sans text-[1.3vw] text-gray-300 font-mono tracking-tight mt-2 border-t border-white/10 pt-3">
+          <span className="font-mono text-[1.6vw] text-silver font-medium tracking-tight">
             e3b0c44298fc1c149afb...
           </span>
         </motion.div>
 
-        {/* Connection line */}
+        {/* Connection line - Glowing silver/red */}
         <motion.div 
-          className="absolute left-[30vw] w-[18vw] h-[2px] bg-gradient-to-r from-red-500/0 via-red-500/50 to-gray-400/0 z-0"
+          className="absolute left-[38vw] w-[14vw] h-[1px] bg-gradient-to-r from-primary/0 via-primary/60 to-silver/0 z-0"
           initial={{ scaleX: 0, opacity: 0 }}
           animate={{ scaleX: 1, opacity: 1 }}
-          transition={{ duration: 1.5, delay: 2.5 }}
+          transition={{ duration: 1.5, delay: 2.2, ease: "easeOut" }}
           style={{ originX: 0 }}
         >
           {/* Moving particle */}
           <motion.div 
-            className="absolute top-1/2 -translate-y-1/2 w-[6px] h-[6px] bg-red-400 rounded-full shadow-[0_0_15px_3px_rgba(248,113,113,0.8)]"
-            animate={{ left: ["0%", "100%"] }}
-            transition={{ duration: 2, delay: 3, repeat: Infinity, ease: "linear" }}
+            className="absolute top-1/2 -translate-y-1/2 w-[4px] h-[4px] bg-white rounded-full shadow-[0_0_20px_4px_rgba(238,28,37,0.8)]"
+            initial={{ left: "0%", opacity: 0 }}
+            animate={{ left: "100%", opacity: [0, 1, 0] }}
+            transition={{ duration: 2, delay: 2.5, repeat: Infinity, ease: "linear" }}
           />
         </motion.div>
 
         {/* Right side: Arc Testnet */}
         <motion.div
-          className="absolute right-[2vw] glass-panel bg-[#121212]/90 border border-white/10 p-[3vw] rounded-2xl flex flex-col gap-4 items-center shadow-2xl z-10"
-          initial={{ opacity: 0, x: 60, scale: 0.9 }}
-          animate={{ opacity: 1, x: 0, scale: 1 }}
-          transition={{ duration: 1.2, delay: 2.2, type: "spring", stiffness: 80, damping: 20 }}
+          className="absolute right-[5vw] glow-box bg-bg-panel/40 border border-white/5 p-[3vw] rounded-2xl flex flex-col gap-4 items-center shadow-2xl z-10 backdrop-blur-xl"
+          initial={{ opacity: 0, x: 60, filter: 'blur(30px)' }}
+          animate={{ opacity: 1, x: 0, filter: 'blur(0px)' }}
+          transition={{ duration: 1.8, delay: 1.6, ease: [0.16, 1, 0.3, 1] }}
         >
           <motion.div 
-            className="w-[5vw] h-[5vw] rounded-full border-[2px] border-gray-600 flex items-center justify-center bg-gray-900"
-            animate={{ borderColor: ["#4B5563", "#E2E1E1", "#4B5563"] }}
-            transition={{ duration: 3, delay: 3.5, repeat: Infinity }}
+            className="w-[4vw] h-[4vw] rounded-full border-[1px] border-silver-dark/40 flex items-center justify-center bg-bg"
+            animate={{ borderColor: ["rgba(158,162,163,0.4)", "rgba(226,225,225,0.8)", "rgba(158,162,163,0.4)"], boxShadow: ["0 0 0px rgba(226,225,225,0)", "0 0 30px rgba(226,225,225,0.3)", "0 0 0px rgba(226,225,225,0)"] }}
+            transition={{ duration: 3, delay: 3, repeat: Infinity }}
           >
-             <div className="w-[2.5vw] h-[2.5vw] bg-gray-200 rounded-full" />
+             <div className="w-[1.5vw] h-[1.5vw] bg-silver-light rounded-full" />
           </motion.div>
-          <div className="flex flex-col items-center gap-1 text-center">
-            <span className="font-sans text-[1.4vw] text-gray-100 font-semibold tracking-wide">Arc Testnet</span>
-            <span className="font-sans text-[1vw] text-gray-400">Anchored permanently</span>
+          <div className="flex flex-col items-center gap-2 text-center">
+            <span className="font-sans text-[1.4vw] text-silver-light font-medium tracking-wide">Arc Testnet</span>
+            <span className="font-mono text-[1vw] text-silver-dark tracking-widest uppercase">Anchored</span>
           </div>
         </motion.div>
 

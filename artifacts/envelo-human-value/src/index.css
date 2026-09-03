@@ -1,50 +1,31 @@
+@import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');
 @import 'tailwindcss';
 
-/* REPLACE THESE -- define your own palette and fonts for each video */
-:root {
-  --color-primary: #000000;
-  --color-secondary: #6b7280;
-  --color-accent: #3b82f6;
+@theme inline {
+  --color-primary: #EE1C25;
+  --color-silver-light: #E2E1E1;
+  --color-silver: #B3B6B7;
+  --color-silver-dark: #9EA2A3;
 
-  --color-bg-light: #ffffff;
-  --color-bg-dark: #0f172a;
-  --color-bg-muted: #f8fafc;
+  --color-bg: #050505;
+  --color-bg-panel: #0d0d0d;
 
-  --color-text-primary: #111827;
-  --color-text-secondary: #6b7280;
-  --color-text-muted: #9ca3af;
-  --color-text-inverse: #ffffff;
+  --color-text-main: #E2E1E1;
+  --color-text-muted: #9EA2A3;
 
-  --color-success: #10b981;
-  --color-warning: #f59e0b;
-  --color-error: #ef4444;
-
-  --font-display: 'Space Grotesk', sans-serif;
-  --font-body: 'DM Sans', sans-serif;
+  --font-display: 'Instrument Serif', serif;
+  --font-sans: 'Inter', sans-serif;
   --font-mono: 'JetBrains Mono', monospace;
 }
 
-@theme inline {
-  --color-primary: var(--color-primary);
-  --color-secondary: var(--color-secondary);
-  --color-accent: var(--color-accent);
-  --color-bg-light: var(--color-bg-light);
-  --color-bg-dark: var(--color-bg-dark);
-  --color-bg-muted: var(--color-bg-muted);
-  --color-text-primary: var(--color-text-primary);
-  --color-text-secondary: var(--color-text-secondary);
-  --color-text-muted: var(--color-text-muted);
-  --color-text-inverse: var(--color-text-inverse);
-  --color-success: var(--color-success);
-  --color-warning: var(--color-warning);
-  --color-error: var(--color-error);
-  --font-display: var(--font-display);
-  --font-body: var(--font-body);
-  --font-mono: var(--font-mono);
+:root {
+  --color-primary: #EE1C25;
+  --color-bg: #050505;
 }
 
 body {
-  font-family: var(--font-body);
+  font-family: var(--font-sans);
+  background-color: var(--color-bg);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -66,22 +47,18 @@ body {
   width: 100%;
 }
 
-.video-media-frame[data-media-fit='contain'] > :is(img, video) {
-  object-fit: contain;
+/* Luminous Silver text effect */
+.text-silver-glow {
+  color: #E2E1E1;
+  text-shadow: 0 0 20px rgba(226, 225, 225, 0.4), 0 0 40px rgba(179, 182, 183, 0.2);
 }
 
-.video-media-frame[data-media-position='top'] > :is(img, video) {
-  object-position: top;
+/* Subtle blue-white/silver glow for UI fragments */
+.glow-box {
+  box-shadow: 0 0 30px rgba(226, 225, 225, 0.05), inset 0 0 20px rgba(226, 225, 225, 0.02);
 }
 
-.video-media-frame[data-media-position='right'] > :is(img, video) {
-  object-position: right;
-}
-
-.video-media-frame[data-media-position='bottom'] > :is(img, video) {
-  object-position: bottom;
-}
-
-.video-media-frame[data-media-position='left'] > :is(img, video) {
-  object-position: left;
+.blur-overlay {
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
 }
