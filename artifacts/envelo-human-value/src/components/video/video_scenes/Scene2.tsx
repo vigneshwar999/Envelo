@@ -61,8 +61,8 @@ export default function Scene2() {
       <motion.div
         className="absolute w-[250vw] h-[250vw] rounded-full bg-[#050505] z-50 pointer-events-none"
         initial={{ scale: 0, opacity: 1 }}
-        animate={{ scale: [0, 0, 1.5] }}
-        transition={{ duration: 2.5, times: [0, 0.7, 1], ease: [0.76, 0, 0.24, 1] }}
+        animate={{ scale: 1.5 }}
+        transition={{ duration: 1.5, delay: 5.5, ease: [0.76, 0, 0.24, 1] }}
       />
     </motion.div>
   );
