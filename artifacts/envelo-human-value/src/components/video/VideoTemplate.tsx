@@ -87,9 +87,6 @@ export default function VideoTemplate({
     audio.play().catch(() => {});
   }, [currentSceneKey, baseSceneKey, muted, paused]);
 
-  // Determine if we are in the "light" phase or "dark" phase
-  const isLightPhase = baseSceneKey === 'scene1' || baseSceneKey === 'scene2';
-
   return (
     <VideoPausedContext.Provider value={paused}>
       <VideoCanvas aspectRatio={VIDEO_ASPECT_RATIO}>
@@ -98,7 +95,7 @@ export default function VideoTemplate({
         <motion.div 
           className="absolute inset-0 w-full h-full"
           animate={{
-            backgroundColor: isLightPhase ? '#F4F4F5' : '#050505',
+            backgroundColor: '#050505',
           }}
           transition={{ duration: 1.5, ease: [0.22, 1, 0.36, 1] }}
         />
