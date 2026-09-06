@@ -15,11 +15,11 @@ import Scene4 from './video_scenes/Scene4';
 import Scene5 from './video_scenes/Scene5';
 
 export const SCENE_DURATIONS = {
-  scene1: 7000,
-  scene2: 6000,
-  scene3: 9000,
-  scene4: 12000,
-  scene5: 5000,
+  scene1: 5000,
+  scene2: 4500,
+  scene3: 6000,
+  scene4: 10000,
+  scene5: 4000,
 };
 
 const SCENE_COMPONENTS: Record<string, ComponentType> = {

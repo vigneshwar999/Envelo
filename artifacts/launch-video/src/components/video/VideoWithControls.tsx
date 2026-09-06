@@ -15,8 +15,8 @@ import { useSceneControls } from './useSceneControls';
 const PROGRESS_TICK_MS = 60;
 
 const SCENE_DETAILS: Record<string, { title: string; filePath: string }> = {
-  scene1: { title: 'The Problem', filePath: 'src/components/video/video_scenes/Scene1.tsx' },
-  scene2: { title: 'Envelo Reveal', filePath: 'src/components/video/video_scenes/Scene2.tsx' },
+  scene1: { title: 'Introduction', filePath: 'src/components/video/video_scenes/Scene1.tsx' },
+  scene2: { title: 'The Concept', filePath: 'src/components/video/video_scenes/Scene2.tsx' },
   scene3: { title: 'Public vs Private', filePath: 'src/components/video/video_scenes/Scene3.tsx' },
   scene4: { title: 'How It Works', filePath: 'src/components/video/video_scenes/Scene4.tsx' },
   scene5: { title: 'End Card', filePath: 'src/components/video/video_scenes/Scene5.tsx' },

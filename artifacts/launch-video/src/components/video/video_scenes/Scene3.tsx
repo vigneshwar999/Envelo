@@ -32,19 +32,23 @@ export default function Scene3() {
             className="space-y-[1.5vw]"
             initial="hidden"
             animate="visible"
-            transition={{ staggerChildren: 0.2, delayChildren: 0.8 }}
+            transition={{ staggerChildren: 0.15, delayChildren: 0.8 }}
           >
-            <motion.li variants={itemVariants} className="text-[2.5vw] font-medium text-brand-300 flex items-center gap-[1vw]">
-              <div className="w-[1vw] h-[1vw] border border-brand-500/50 rotate-45"></div>
-              SHA-256 Fingerprint
+            <motion.li variants={itemVariants} className="text-[2.2vw] font-medium text-brand-300 flex items-center gap-[1vw]">
+              <div className="w-[0.8vw] h-[0.8vw] border border-brand-500/50 rotate-45"></div>
+              Test USDC Amounts
             </motion.li>
-            <motion.li variants={itemVariants} className="text-[2.5vw] font-medium text-brand-300 flex items-center gap-[1vw]">
-              <div className="w-[1vw] h-[1vw] border border-brand-500/50 rotate-45"></div>
-              Timestamp
+            <motion.li variants={itemVariants} className="text-[2.2vw] font-medium text-brand-300 flex items-center gap-[1vw]">
+              <div className="w-[0.8vw] h-[0.8vw] border border-brand-500/50 rotate-45"></div>
+              Wallet Addresses
             </motion.li>
-            <motion.li variants={itemVariants} className="text-[2.5vw] font-medium text-brand-300 flex items-center gap-[1vw]">
-              <div className="w-[1vw] h-[1vw] border border-brand-500/50 rotate-45"></div>
+            <motion.li variants={itemVariants} className="text-[2.2vw] font-medium text-brand-300 flex items-center gap-[1vw]">
+              <div className="w-[0.8vw] h-[0.8vw] border border-brand-500/50 rotate-45"></div>
               Settlement Tx
+            </motion.li>
+            <motion.li variants={itemVariants} className="text-[2.2vw] font-medium text-brand-300 flex items-center gap-[1vw]">
+              <div className="w-[0.8vw] h-[0.8vw] border border-brand-500/50 rotate-45"></div>
+              SHA-256 Proof
             </motion.li>
           </motion.ul>
         </div>
@@ -64,23 +68,19 @@ export default function Scene3() {
             className="space-y-[1.5vw]"
             initial="hidden"
             animate="visible"
-            transition={{ staggerChildren: 0.2, delayChildren: 1.6 }}
+            transition={{ staggerChildren: 0.15, delayChildren: 1.6 }}
           >
-            <motion.li variants={rightItemVariants} className="text-[2.5vw] font-medium text-white flex items-center gap-[1vw]">
-              <div className="w-[1vw] h-[1vw] bg-white rounded-full"></div>
-              Client Names
-            </motion.li>
-            <motion.li variants={rightItemVariants} className="text-[2.5vw] font-medium text-white flex items-center gap-[1vw]">
-              <div className="w-[1vw] h-[1vw] bg-white rounded-full"></div>
+            <motion.li variants={rightItemVariants} className="text-[2.2vw] font-medium text-white flex items-center gap-[1vw]">
+              <div className="w-[0.8vw] h-[0.8vw] bg-white rounded-full"></div>
               Line Items
             </motion.li>
-            <motion.li variants={rightItemVariants} className="text-[2.5vw] font-medium text-white flex items-center gap-[1vw]">
-              <div className="w-[1vw] h-[1vw] bg-white rounded-full"></div>
-              Exact Amounts
+            <motion.li variants={rightItemVariants} className="text-[2.2vw] font-medium text-white flex items-center gap-[1vw]">
+              <div className="w-[0.8vw] h-[0.8vw] bg-white rounded-full"></div>
+              Descriptions
             </motion.li>
-            <motion.li variants={rightItemVariants} className="text-[2.5vw] font-medium text-white flex items-center gap-[1vw]">
-              <div className="w-[1vw] h-[1vw] bg-white rounded-full"></div>
-              Terms & Notes
+            <motion.li variants={rightItemVariants} className="text-[2.2vw] font-medium text-white flex items-center gap-[1vw]">
+              <div className="w-[0.8vw] h-[0.8vw] bg-white rounded-full"></div>
+              Notes & Terms
             </motion.li>
           </motion.ul>
         </div>
