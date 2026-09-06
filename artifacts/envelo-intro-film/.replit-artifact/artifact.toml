@@ -1,0 +1,29 @@
+kind = "video"
+videoAspectRatio = "16:9"
+previewPath = "/envelo-intro-film/"
+title = "Envelo Introduction Film"
+description = "A 30-40 second premium cinematic 16:9 introduction film for Envelo, made for the first post on X. Silver-on-black motion graphics modeled on the pacing and glow language of the user's reference video: a light in darkness, luminous typography, an abstract infrastructure interface, Privacy / Security / Control beats, the ENVELO reveal, and a final logo shine with 'Building what comes next.'"
+version = "1.0.0"
+id = "artifacts/envelo-intro-film"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/envelo-intro-film/" ]
+localPort = 26147
+
+[services.development]
+run = "pnpm --filter @workspace/envelo-intro-film run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/envelo-intro-film", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/envelo-intro-film/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "26147"
+BASE_PATH = "/envelo-intro-film/"
