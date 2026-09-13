@@ -1,0 +1,28 @@
+kind = "video"
+previewPath = "/envelo-hype/"
+title = "Envelo Hype Intro"
+description = "A 28-second, 16:9 hype introduction film for Envelo (private invoicing on Arc Testnet) built for the launch tweet: kinetic silver-on-black typography, beat-locked cuts, stylized glimpses of the real product (sealed envelope, on-chain registry, paid flag, verification), music and sound design, no voiceover."
+version = "1.0.0"
+id = "artifacts/envelo-hype"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/envelo-hype/" ]
+localPort = 20866
+
+[services.development]
+run = "pnpm --filter @workspace/envelo-hype run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/envelo-hype", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/envelo-hype/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "20866"
+BASE_PATH = "/envelo-hype/"
