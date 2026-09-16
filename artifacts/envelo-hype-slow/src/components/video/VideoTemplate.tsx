@@ -21,7 +21,7 @@ import { Scene9_End } from './video_scenes/Scene9_End';
 // Scene lengths are the fast cut's values stretched by PACE (see pace.ts);
 // the beats inside each scene stretch the same way through useBeats. The
 // music in public/audio is cut so its drop lands exactly on `reveal`
-// (7.80 s at PACE 1.3).
+// (9.00 s at PACE 1.5).
 export const SCENE_DURATIONS = {
   open: paced(3240),
   encrypt: paced(2760),
@@ -95,8 +95,9 @@ const SYNC_GAIN = 0.7;
 
 /** Final fade to black, timed from the end scene's mount. */
 function EndFade() {
-  // Fully black 300 ms before the last scene ends, so neither the export stop
-  // nor the preview loop ever catches the end card mid-fade.
+  // The beat is paced but the 600 ms fade is not, so the picture is fully
+  // black 750 ms before the last scene ends and neither the export stop nor
+  // the preview loop ever catches the end card mid-fade.
   const beat = useBeats([2900]);
   return (
     <motion.div
