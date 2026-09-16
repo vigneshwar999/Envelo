@@ -1,0 +1,28 @@
+kind = "video"
+previewPath = "/envelo-hype-slow/"
+title = "Envelo Hype Intro (Slow)"
+description = "A slower-paced (~35-second, 16:9) cut of the Envelo hype introduction film for private invoicing on Arc Testnet: the same silver-on-black kinetic typography, stylized product glimpses (sealed envelope, on-chain registry, paid flag, verification) and sound design, retimed with longer holds and a calmer cinematic music bed, no voiceover."
+version = "1.0.0"
+id = "artifacts/envelo-hype-slow"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/envelo-hype-slow/" ]
+localPort = 19039
+
+[services.development]
+run = "pnpm --filter @workspace/envelo-hype-slow run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/envelo-hype-slow", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/envelo-hype-slow/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "19039"
+BASE_PATH = "/envelo-hype-slow/"
