@@ -44,7 +44,7 @@ export default function WhyArcSlide() {
             <div>
               <h3 className="text-[2.2vw] font-medium tracking-tight text-text">Receipts anyone can open</h3>
               <p className="mt-[0.8vh] text-[2vw] leading-normal text-muted text-pretty">
-                Each anchor and payment is a public transaction, so "paid" is checkable rather than claimed.
+                Each anchor and payment is a public transaction with its amount, so "paid" is checked on the explorer, not claimed.
               </p>
             </div>
           </div>
@@ -52,31 +52,39 @@ export default function WhyArcSlide() {
 
         <div className="flex-1 flex items-center">
           <div className="w-full rounded-[1.3vw] border border-white/10 bg-gradient-to-b from-white/[0.05] to-white/[0.015] p-[1.8vw]">
-            <div className="flex items-center justify-between pb-[1.8vh] border-b border-white/10">
+            <div className="flex items-center justify-between pb-[1.6vh] border-b border-white/10">
               <span className="text-[1.9vw] font-medium tracking-tight text-text">Network status</span>
               <span className="inline-flex items-center gap-[0.5vw] rounded-full border border-ok/25 bg-ok/10 px-[1vw] py-[0.4vh] font-mono text-[1.5vw] uppercase tracking-[0.14em] text-ok">
-                Testnet
+                Mainnet live
               </span>
             </div>
-            <div className="flex items-center justify-between py-[1.7vh] border-b border-white/5">
-              <span className="font-mono text-[1.5vw] text-muted">Network</span>
+            <div className="pt-[1.6vh] flex items-center justify-between">
+              <span className="font-mono text-[1.5vw] uppercase tracking-[0.16em] text-primary">Envelo today</span>
               <span className="font-mono text-[1.5vw] text-text/85">Arc Testnet</span>
             </div>
-            <div className="flex items-center justify-between py-[1.7vh] border-b border-white/5">
-              <span className="font-mono text-[1.5vw] text-muted">Chain ID</span>
-              <span className="font-mono text-[1.5vw] text-text/85">5042002</span>
+            <div className="flex items-center justify-between py-[1.2vh] border-b border-white/5">
+              <span className="font-mono text-[1.5vw] text-muted">Chain ID · gas</span>
+              <span className="font-mono text-[1.5vw] text-text/85">5042002 · test USDC</span>
             </div>
-            <div className="flex items-center justify-between py-[1.7vh] border-b border-white/5">
-              <span className="font-mono text-[1.5vw] text-muted">Native gas</span>
-              <span className="font-mono text-[1.5vw] text-text/85">test USDC</span>
-            </div>
-            <div className="flex items-center justify-between py-[1.7vh] border-b border-white/5">
+            <div className="flex items-center justify-between py-[1.2vh] border-b border-white/10">
               <span className="font-mono text-[1.5vw] text-muted">Explorer</span>
               <span className="font-mono text-[1.5vw] text-text/85">testnet.arcscan.app</span>
             </div>
-            <div className="flex items-center justify-between pt-[1.7vh]">
-              <span className="font-mono text-[1.5vw] text-muted">Faucet</span>
-              <span className="font-mono text-[1.5vw] text-text/85">faucet.circle.com</span>
+            <div className="pt-[1.6vh] flex items-center justify-between">
+              <span className="font-mono text-[1.5vw] uppercase tracking-[0.16em] text-primary">Envelo next</span>
+              <span className="font-mono text-[1.5vw] text-text/85">Arc mainnet</span>
+            </div>
+            <div className="flex items-center justify-between py-[1.2vh] border-b border-white/5">
+              <span className="font-mono text-[1.5vw] text-muted">Chain ID · gas</span>
+              <span className="font-mono text-[1.5vw] text-text/85">5042 · USDC</span>
+            </div>
+            <div className="flex items-center justify-between py-[1.2vh] border-b border-white/5">
+              <span className="font-mono text-[1.5vw] text-muted">Explorer</span>
+              <span className="font-mono text-[1.5vw] text-text/85">explorer.arc.io</span>
+            </div>
+            <div className="flex items-center justify-between pt-[1.2vh]">
+              <span className="font-mono text-[1.5vw] text-muted">Launched</span>
+              <span className="font-mono text-[1.5vw] text-text/85">17 Sep 2026</span>
             </div>
           </div>
         </div>
@@ -87,7 +95,7 @@ export default function WhyArcSlide() {
           <span className="font-mono text-[1.5vw] uppercase tracking-[0.18em] text-muted">
             Envelo · Arc Testnet
           </span>
-          <span className="font-mono text-[1.5vw] text-muted">06 / 08</span>
+          <span className="font-mono text-[1.5vw] text-muted">06 / 12</span>
         </div>
       </footer>
     </div>

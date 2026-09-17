@@ -27,10 +27,10 @@ export default function TitleSlide() {
           </h1>
           <p className="mt-[3.5vh] text-[2.2vw] leading-snug text-muted max-w-[40vw] text-pretty">
             Envelo seals invoices in the sender's browser, anchors proof on
-            Arc, and settles payments in test USDC.
+            Arc, and settles payments in USDC.
           </p>
           <p className="mt-[5vh] font-mono text-[1.5vw] tracking-wide text-muted">
-            Arc Testnet · Chain ID 5042002 · testnet.arcscan.app
+            Live on Arc Testnet (5042002) · Arc mainnet next
           </p>
         </div>
 
@@ -59,7 +59,7 @@ export default function TitleSlide() {
           <span className="font-mono text-[1.5vw] uppercase tracking-[0.18em] text-muted">
             Envelo · Arc Testnet
           </span>
-          <span className="font-mono text-[1.5vw] text-muted">01 / 08</span>
+          <span className="font-mono text-[1.5vw] text-muted">01 / 12</span>
         </div>
       </footer>
     </div>

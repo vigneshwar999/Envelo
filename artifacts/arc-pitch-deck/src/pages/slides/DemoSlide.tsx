@@ -72,7 +72,7 @@ export default function DemoSlide() {
           <span className="font-mono text-[1.5vw] uppercase tracking-[0.18em] text-muted">
             Envelo · Arc Testnet
           </span>
-          <span className="font-mono text-[1.5vw] text-muted">07 / 08</span>
+          <span className="font-mono text-[1.5vw] text-muted">07 / 12</span>
         </div>
       </footer>
     </div>

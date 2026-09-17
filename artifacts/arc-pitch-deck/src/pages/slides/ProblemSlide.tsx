@@ -61,7 +61,7 @@ export default function ProblemSlide() {
           <span className="font-mono text-[1.5vw] uppercase tracking-[0.18em] text-muted">
             Envelo · Arc Testnet
           </span>
-          <span className="font-mono text-[1.5vw] text-muted">02 / 08</span>
+          <span className="font-mono text-[1.5vw] text-muted">02 / 12</span>
         </div>
       </footer>
     </div>

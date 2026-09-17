@@ -19,11 +19,11 @@ export default function OnchainSlide() {
         <h2 className="font-display text-[3.8vw] font-light tracking-tight text-text/90">
           What touches the chain
         </h2>
-        <p className="mt-[2vh] text-[2vw] text-muted max-w-[58vw] text-pretty">
+        <p className="mt-[1.5vh] text-[2vw] text-muted max-w-[70vw] text-pretty">
           Each layer holds only what it needs. Data minimalism is the design.
         </p>
 
-        <div className="mt-[5vh] grid grid-cols-3 gap-[2vw]">
+        <div className="mt-[4vh] grid grid-cols-3 gap-[2vw]">
           <div className="rounded-[1.3vw] border border-white/10 bg-gradient-to-b from-white/[0.05] to-white/[0.015] p-[1.8vw]">
             <span className="font-mono text-[1.5vw] uppercase tracking-[0.18em] text-muted">Your browser</span>
             <p className="mt-[2vh] text-[2vw] leading-normal text-text/90 text-pretty">
@@ -35,9 +35,9 @@ export default function OnchainSlide() {
           <div className="rounded-[1.3vw] border border-white/10 bg-gradient-to-b from-white/[0.05] to-white/[0.015] p-[1.8vw]">
             <span className="font-mono text-[1.5vw] uppercase tracking-[0.18em] text-muted">The server</span>
             <p className="mt-[2vh] text-[2vw] leading-normal text-text/90 text-pretty">
-              Sealed envelopes it cannot read a word of.
+              Sealed envelopes it cannot open, plus run-time metadata.
             </p>
-            <p className="mt-[2vh] font-mono text-[1.5vw] text-muted">ciphertext · wrapped keys</p>
+            <p className="mt-[2vh] font-mono text-[1.5vw] text-muted">ciphertext · wrapped keys · amount · parties</p>
           </div>
 
           <div className="rounded-[1.3vw] border border-primary/25 bg-primary/10 p-[1.8vw] shadow-[0_0_6vh_rgba(249,115,22,0.15)]">
@@ -49,7 +49,7 @@ export default function OnchainSlide() {
           </div>
         </div>
 
-        <p className="mt-[5vh] text-[2.4vw] font-light tracking-tight text-text/90 max-w-[70vw] text-balance">
+        <p className="mt-[4vh] text-[2.4vw] font-light tracking-tight text-text/90 max-w-[80vw] text-balance">
           No names, no amounts, no addresses in the wax stamp.{" "}
           <span className="text-primary">Verify without revealing.</span>
         </p>
@@ -60,7 +60,7 @@ export default function OnchainSlide() {
           <span className="font-mono text-[1.5vw] uppercase tracking-[0.18em] text-muted">
             Envelo · Arc Testnet
           </span>
-          <span className="font-mono text-[1.5vw] text-muted">05 / 08</span>
+          <span className="font-mono text-[1.5vw] text-muted">05 / 12</span>
         </div>
       </footer>
     </div>
