@@ -57,12 +57,12 @@ export function Dashboard() {
       <div className="grid gap-6 md:grid-cols-4 animate-in fade-in slide-in-from-bottom-4 duration-700 delay-100 fill-mode-both">
         <SummaryCard 
           title="Total Outstanding" 
-          value={summary ? `$${summary.totalOutstandingUsdc}` : null} 
+          value={summary ? `${summary.totalOutstandingUsdc} USDC` : null} 
           icon={<Clock className="h-4 w-4 text-amber-500" />}
         />
         <SummaryCard 
           title="Total Paid" 
-          value={summary ? `$${summary.totalPaidUsdc}` : null} 
+          value={summary ? `${summary.totalPaidUsdc} USDC` : null} 
           icon={<CheckCircle2 className="h-4 w-4 text-green-500" />}
         />
         <SummaryCard 
@@ -226,6 +226,17 @@ function InvoiceRow({ invoice, currentUserId }: { invoice: Invoice, currentUserI
               {format(new Date(invoice.createdAt), 'MMM d, yyyy')}
               <span>•</span>
               <span className="font-mono">${invoice.amountUsdc} USDC</span>
+              <Badge
+                variant="outline"
+                className={cn(
+                  "text-[9px] uppercase",
+                  invoice.networkMode === "live"
+                    ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-400"
+                    : "border-white/10 bg-white/5 text-muted-foreground",
+                )}
+              >
+                {invoice.networkMode === "live" ? "Mainnet" : "Testnet"}
+              </Badge>
             </div>
           </div>
         </div>

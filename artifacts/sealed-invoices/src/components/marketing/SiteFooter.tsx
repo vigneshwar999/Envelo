@@ -208,8 +208,11 @@ export function SiteFooter() {
             </span>
           </div>
           <p className="max-w-2xl">
-            Arc Testnet demonstration only. Test USDC has no real-world value,
-            and current settlement records remain public onchain.
+            Sandbox uses free test USDC and built-in wallets on Arc Testnet.
+            Live invoices use real USDC on Arc Mainnet, paid from the
+            client&apos;s own wallet to the sender&apos;s own wallet. Envelo
+            pays the small live anchor fee and never holds real funds. Payment
+            records are public onchain.
           </p>
         </div>
       </div>

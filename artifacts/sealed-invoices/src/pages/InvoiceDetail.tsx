@@ -22,7 +22,7 @@ import { RestoreKeyDialog } from '@/components/keys/RestoreKeyDialog';
 import { BackupReminderBanner } from '@/components/keys/BackupReminderBanner';
 import { PayApprovalDialog } from '@/components/invoices/PayApprovalDialog';
 import { useToast } from '@/hooks/use-toast';
-import { ArrowLeft, Download, Lock, Unlock, ShieldAlert, ShieldCheck, CreditCard, Activity, CheckCircle2, Copy, Key, EyeOff, KeyRound } from 'lucide-react';
+import { ArrowLeft, Download, Lock, Unlock, ShieldAlert, ShieldCheck, CreditCard, Activity, CheckCircle2, Copy, Key, EyeOff, KeyRound, Globe, FlaskConical, Wallet } from 'lucide-react';
 import { useQueryClient } from '@tanstack/react-query';
 
 export function InvoiceDetail() {
@@ -36,10 +36,18 @@ export function InvoiceDetail() {
     query: {
       enabled: !!id,
       queryKey: getGetInvoiceQueryKey(id),
-      refetchInterval: (query) =>
-        (query.state.data as { anchorStatus?: string } | undefined)?.anchorStatus === 'anchored'
-          ? false
-          : 3000,
+      // Poll while something is still happening on-chain that this page did
+      // not start itself: the anchor confirming, or a wallet payment landing
+      // (the server re-checks the registry on each read, throttled).
+      refetchInterval: (query) => {
+        const inv = query.state.data as
+          | { anchorStatus?: string; status?: string; paymentMode?: string }
+          | undefined;
+        if (!inv) return false;
+        if (inv.anchorStatus !== 'anchored') return 3000;
+        if (inv.status === 'awaiting_payment' && inv.paymentMode === 'external') return 10000;
+        return false;
+      },
     },
   });
   const { data: events } = useListInvoiceEvents(id, { query: { enabled: !!id, queryKey: getListInvoiceEventsQueryKey(id) } });
@@ -50,6 +58,11 @@ export function InvoiceDetail() {
   });
   const chainStatusQ = useGetChainStatus();
   const chainStatus = chainStatusQ.data;
+  // Every invoice carries its own network (chain id, explorer, live vs
+  // sandbox); the global status only adds whether that network is reachable.
+  const invoiceChain = chainStatus?.chains.find((c) => c.chainId === invoice?.chainId);
+  const live = invoice?.networkMode === 'live';
+  const explorerBaseUrl = invoice?.explorerBaseUrl;
 
   const isOwner = !!me && !!invoice && invoice.freelancerId === me.id;
   const isClient = !!me && !!invoice && invoice.clientId === me.id;
@@ -130,8 +143,9 @@ export function InvoiceDetail() {
         fingerprintOnRecord: invoice.fingerprint,
         anchorStatus: invoice.anchorStatus,
         anchorTxHash: invoice.anchorTxHash,
-        chainId: chainStatus?.chainId,
-        explorerBaseUrl: chainStatus?.explorerBaseUrl,
+        chainId: invoice.chainId,
+        explorerBaseUrl: invoice.explorerBaseUrl,
+        networkName: invoice.networkName,
       });
       const blob = new Blob([JSON.stringify(file, null, 2)], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
@@ -155,15 +169,19 @@ export function InvoiceDetail() {
     }
   };
 
+  const refreshAfterPayment = () => {
+    queryClient.invalidateQueries({ queryKey: getGetInvoiceQueryKey(id) });
+    queryClient.invalidateQueries({ queryKey: getListInvoiceEventsQueryKey(id) });
+    queryClient.invalidateQueries({ queryKey: getListInvoicesQueryKey() });
+    queryClient.invalidateQueries({ queryKey: getGetDashboardSummaryQueryKey() });
+  };
+
   const handlePay = () => {
     payMutation.mutate({ invoiceId: id }, {
       onSuccess: () => {
         setPayApprovalOpen(false);
-        toast({ title: "Payment Complete", description: "The USDC moved on Arc testnet." });
-        queryClient.invalidateQueries({ queryKey: getGetInvoiceQueryKey(id) });
-        queryClient.invalidateQueries({ queryKey: getListInvoiceEventsQueryKey(id) });
-        queryClient.invalidateQueries({ queryKey: getListInvoicesQueryKey() });
-        queryClient.invalidateQueries({ queryKey: getGetDashboardSummaryQueryKey() });
+        toast({ title: "Payment Complete", description: `The USDC moved on ${invoice?.networkName ?? 'Arc'}.` });
+        refreshAfterPayment();
       },
       onError: (err: any) => {
         // customFetch throws ApiError: status + parsed body live directly on the error.
@@ -311,13 +329,10 @@ export function InvoiceDetail() {
     return <div className="p-8 text-center text-muted-foreground" data-testid="text-invoice-not-found">Invoice not found.</div>;
   }
 
-  // An anchored invoice's copy must embed real chain pointers (tx, chain id,
-  // explorer), and those come from /chain/status. While that data is missing
-  // - query still loading OR failed - the download stays blocked instead of
-  // shipping a proof file with holes. buildInvoiceCopyFile refuses such a
-  // file too; this gate just surfaces the wait/retry in the UI.
-  const chainIdentityReady = chainStatus?.chainId != null && !!chainStatus?.explorerBaseUrl;
-  const downloadBlockedByChain = invoice.anchorStatus === 'anchored' && !chainIdentityReady;
+  // An anchored invoice's copy embeds real chain pointers (tx, chain id,
+  // explorer). They travel with the invoice itself, so the download only
+  // waits when the anchor transaction hash has not arrived yet.
+  const downloadBlockedByChain = invoice.anchorStatus === 'anchored' && !invoice.anchorTxHash;
 
   return (
     <div className="space-y-8 max-w-7xl mx-auto pb-20 relative z-10 animate-in fade-in slide-in-from-bottom-4 duration-700">
@@ -342,6 +357,19 @@ export function InvoiceDetail() {
             <span>Created {format(new Date(invoice.createdAt), 'MMM d, yyyy')}</span>
             <span>•</span>
             <span className="font-mono text-foreground">${invoice.amountUsdc} USDC</span>
+            <span>•</span>
+            <span
+              className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs ${
+                live
+                  ? 'border-emerald-400/40 bg-emerald-500/10 text-emerald-300'
+                  : 'border-white/10 bg-white/5 text-muted-foreground'
+              }`}
+              data-testid="badge-invoice-network"
+            >
+              {live ? <Globe className="h-3 w-3" /> : <FlaskConical className="h-3 w-3" />}
+              {invoice.networkName}
+              {live ? ' · live' : ' · sandbox'}
+            </span>
           </div>
         </div>
         <div className="flex items-center gap-3">
@@ -377,21 +405,9 @@ export function InvoiceDetail() {
               )}
               {document && (
                 <div className="flex items-center gap-3">
-                  {downloadBlockedByChain && !chainStatusQ.isFetching && (
-                    <button
-                      type="button"
-                      onClick={() => chainStatusQ.refetch()}
-                      className="text-xs text-muted-foreground underline hover:text-foreground"
-                      data-testid="button-retry-chain-status"
-                    >
-                      Retry chain check
-                    </button>
-                  )}
                   <Button onClick={handleDownloadCopy} disabled={downloadBlockedByChain} size="sm" variant="outline" data-testid="button-download-copy">
                     <Download className="h-4 w-4 mr-2" />
-                    {downloadBlockedByChain
-                      ? chainStatusQ.isFetching ? 'Checking chain…' : 'Chain check needed'
-                      : 'Download a copy'}
+                    {downloadBlockedByChain ? 'Waiting for anchor details…' : 'Download a copy'}
                   </Button>
                 </div>
               )}
@@ -574,7 +590,7 @@ export function InvoiceDetail() {
                         </p>
                         {verificationResult.anchorTxHash && (
                           <a 
-                            href={`${chainStatus?.explorerBaseUrl}/tx/${verificationResult.anchorTxHash}`}
+                            href={`${explorerBaseUrl}/tx/${verificationResult.anchorTxHash}`}
                             target="_blank" rel="noopener noreferrer"
                             className="text-xs text-primary hover:underline mt-2 inline-block"
                           >
@@ -654,16 +670,21 @@ export function InvoiceDetail() {
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="text-4xl font-light text-center py-2">${invoice.amountUsdc}</div>
-                  <p className="text-sm text-muted-foreground/80 text-center">
-                    Paid from your built-in wallet in test USDC on Arc.
+                  <p className="text-sm text-muted-foreground/80 text-center" data-testid="text-pay-mode">
+                    {live
+                      ? `Real USDC on ${invoice.networkName}, paid from your own wallet straight to ${invoice.freelancerName}'s wallet.`
+                      : `Paid from your built-in wallet in test USDC on ${invoice.networkName}.`}
                   </p>
 
-                  {!chainStatusQ.isLoading && !chainStatus?.readyForPayments && (
+                  {!chainStatusQ.isLoading && invoiceChain && !(invoiceChain.rpcConnected && invoiceChain.contractAddress) && (
                     <div
                       className="text-sm p-3 rounded-lg border border-amber-500/30 bg-amber-500/10 text-amber-200 leading-relaxed"
                       data-testid="notice-chain-not-ready"
                     >
-                      {chainStatus?.statusMessage ?? 'The Arc payment rails are not ready right now.'}
+                      {invoiceChain.disabledReason ??
+                        (!invoiceChain.rpcConnected
+                          ? `${invoiceChain.name} cannot be reached right now. Try again in a moment.`
+                          : `The registry contract is not configured for ${invoiceChain.name}.`)}
                     </div>
                   )}
 
@@ -673,7 +694,15 @@ export function InvoiceDetail() {
                     className="w-full bg-primary hover:bg-primary/90 text-primary-foreground shadow-[0_0_15px_rgba(201,206,212,0.3)]"
                     data-testid="button-pay"
                   >
-                    {payMutation.isPending ? "Processing..." : "Review & Pay with Test USDC"}
+                    {payMutation.isPending ? (
+                      "Processing..."
+                    ) : live ? (
+                      <>
+                        <Wallet className="mr-2 h-4 w-4" /> Review & Pay from your wallet
+                      </>
+                    ) : (
+                      "Review & Pay with Test USDC"
+                    )}
                   </Button>
 
                   {payMutation.isError && (
@@ -690,6 +719,11 @@ export function InvoiceDetail() {
                 invoiceId={id}
                 onConfirm={handlePay}
                 confirmPending={payMutation.isPending}
+                onExternalPaid={(result) => {
+                  setPayApprovalOpen(false);
+                  toast({ title: 'Payment Complete', description: result.message });
+                  refreshAfterPayment();
+                }}
               />
             </>
           )}
@@ -767,7 +801,7 @@ export function InvoiceDetail() {
                     <p className="text-sm font-medium leading-relaxed text-foreground/90 mb-0.5">{event.detail}</p>
                     <p className="text-xs font-mono text-muted-foreground/60">{format(new Date(event.createdAt), 'MMM d, yyyy h:mm a')}</p>
                     {event.txHash && (
-                      <a href={`${chainStatus?.explorerBaseUrl}/tx/${event.txHash}`} target="_blank" rel="noopener noreferrer" className="text-[10px] text-primary hover:underline font-mono mt-1 inline-block truncate max-w-full">
+                      <a href={`${explorerBaseUrl}/tx/${event.txHash}`} target="_blank" rel="noopener noreferrer" className="text-[10px] text-primary hover:underline font-mono mt-1 inline-block truncate max-w-full">
                         tx: {event.txHash}
                       </a>
                     )}

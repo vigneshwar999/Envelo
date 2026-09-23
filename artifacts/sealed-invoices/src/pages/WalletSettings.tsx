@@ -8,6 +8,7 @@ import {
   useTransferMyBalance,
   useListMyTransfers,
   getListMyTransfersQueryKey,
+  useGetChainStatus,
 } from '@workspace/api-client-react';
 import { useMe } from '@/context/UserContext';
 import { Button } from '@/components/ui/button';
@@ -31,14 +32,7 @@ import {
   ExternalLink,
   ReceiptText,
 } from 'lucide-react';
-
-declare global {
-  interface Window {
-    ethereum?: {
-      request: (args: { method: string }) => Promise<string[]>;
-    };
-  }
-}
+import { connectWallet, hasBrowserWallet } from '@/lib/wallet';
 
 const ADDRESS_SHAPE = /^0x[0-9a-fA-F]{40}$/;
 
@@ -54,12 +48,13 @@ export default function WalletSettings() {
   const walletQuery = useGetMyWallet();
   const transfer = useTransferMyBalance();
   const transfersQuery = useListMyTransfers();
+  const { data: chainStatus } = useGetChainStatus();
   const [draft, setDraft] = useState('');
   const [connecting, setConnecting] = useState(false);
 
   const linked = me?.payoutAddress ?? null;
   const draftValid = ADDRESS_SHAPE.test(draft.trim());
-  const hasExtension = typeof window !== 'undefined' && !!window.ethereum;
+  const hasExtension = hasBrowserWallet();
 
   const save = (address: string | null) => {
     setPayout.mutate(
@@ -79,8 +74,8 @@ export default function WalletSettings() {
           toast({
             title: address ? 'Wallet linked' : 'Back to the app-managed wallet',
             description: address
-              ? 'From now on, payments to you land directly in your own wallet.'
-              : 'Payments to you will collect in your app-managed wallet again.',
+              ? 'Sandbox payouts can now land in your own wallet. Live payments also use it when live invoicing is on.'
+              : 'Sandbox payments will collect in your built-in wallet again. A linked wallet is required for live invoices.',
           });
         },
       },
@@ -88,13 +83,10 @@ export default function WalletSettings() {
   };
 
   const connectExtension = async () => {
-    if (!window.ethereum) return;
+    if (!hasBrowserWallet()) return;
     setConnecting(true);
     try {
-      const accounts = await window.ethereum.request({
-        method: 'eth_requestAccounts',
-      });
-      if (accounts?.[0]) setDraft(accounts[0]);
+      setDraft(await connectWallet());
     } catch {
       toast({
         title: 'Could not read the wallet',
@@ -169,10 +161,10 @@ export default function WalletSettings() {
 
       <Card className="bg-white/5 border-white/10 backdrop-blur-md shadow-xl animate-in fade-in slide-in-from-bottom-4 duration-700 delay-100 fill-mode-both" data-testid="card-managed-wallet">
         <CardHeader>
-          <CardTitle className="text-lg font-medium">App-managed wallet</CardTitle>
+            <CardTitle className="text-lg font-medium">Built-in sandbox wallet</CardTitle>
           <CardDescription className="text-muted-foreground/80">
-            Created for you automatically when you signed up. Zero setup, but
-            the app holds its keys for you.
+            Your built-in sandbox wallet, created automatically at sign-up.
+            It holds test USDC on Arc Testnet, and the app holds its keys.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
@@ -214,7 +206,7 @@ export default function WalletSettings() {
                     <ArrowRight className="h-4 w-4 mr-1.5" />
                     {transfer.isPending
                       ? 'Moving\u2026'
-                      : `Move ${wallet.transferableUsdc} USDC to your wallet`}
+                      : `Move ${wallet.transferableUsdc} test USDC to your wallet`}
                   </Button>
                   <p className="text-xs text-muted-foreground">
                     Money that arrived before you linked your wallet stays here
@@ -229,7 +221,7 @@ export default function WalletSettings() {
                     className="text-sm text-muted-foreground"
                     data-testid="text-nothing-to-move"
                   >
-                    Nothing to move right now &mdash; new payments already land
+                    Nothing to move right now - new sandbox payments already land
                     in your own linked wallet.
                   </p>
                 )
@@ -251,7 +243,7 @@ export default function WalletSettings() {
                     className="text-primary hover:underline font-mono text-xs inline-flex items-center gap-1"
                     data-testid="link-transfer-tx"
                   >
-                    See the transaction on ArcScan
+                    See the transaction on Arc Testnet
                     <ExternalLink className="h-3 w-3" />
                   </a>
                 </div>
@@ -282,9 +274,10 @@ export default function WalletSettings() {
         <CardHeader>
           <CardTitle className="text-lg font-medium">Your own wallet</CardTitle>
           <CardDescription className="text-muted-foreground/80">
-            Optional. Link a wallet only you control, and every future payment
-            to you skips the app and lands straight there. Sign-in stays
-            exactly the same.
+              Link a wallet only you control. Sandbox payouts can land there
+              directly.
+              {chainStatus?.mainnetEnabled &&
+                ' Live payments on Arc Mainnet also land here, and a payout wallet is required before you create a live invoice.'}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -313,8 +306,10 @@ export default function WalletSettings() {
                 </Button>
               </div>
               <p className="text-sm text-muted-foreground">
-                Payments to you now go straight to this address. To use a
-                different wallet, unlink first.
+                Sandbox payouts now go straight to this address.
+                {chainStatus?.mainnetEnabled &&
+                  ' Live payments on Arc Mainnet also land here.'}{' '}
+                To use a different wallet, unlink first.
               </p>
             </>
           ) : (
@@ -362,10 +357,12 @@ export default function WalletSettings() {
             </p>
           )}
           <p className="text-xs text-muted-foreground border-t pt-3">
-            Arc is a test network and payments are in test USDC, not real
-            money. Double-check the address before linking &mdash; money sent
-            to a wrong address cannot be recovered. After an invoice is paid,
-            the explorer link on its timeline shows the money arriving.
+            Your built-in wallet uses test USDC on Arc Testnet. Double-check
+            the address before linking - funds sent to a wrong address cannot
+            be recovered. After an invoice is paid, the explorer link on its
+            timeline shows the payment.
+            {chainStatus?.mainnetEnabled &&
+              ' Live invoices use real USDC on Arc Mainnet. Clients pay from their own wallet straight to this linked payout wallet. Envelo never holds those funds.'}
           </p>
         </CardContent>
       </Card>
@@ -380,7 +377,7 @@ export default function WalletSettings() {
             <CardDescription className="text-muted-foreground/80">
               Your receipts. Every time you moved money out of the app is
               listed here, each with a link to the real transaction on
-              ArcScan.
+              the Arc Testnet explorer.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -415,7 +412,7 @@ export default function WalletSettings() {
                     className="text-primary hover:underline text-xs inline-flex items-center gap-1 shrink-0"
                     data-testid={`link-transfer-receipt-${receipt.id}`}
                   >
-                    See it on ArcScan
+                    See it on Arc Testnet
                     <ExternalLink className="h-3 w-3" />
                   </a>
                 </li>

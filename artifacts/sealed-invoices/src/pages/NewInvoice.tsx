@@ -4,7 +4,14 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { useMe } from '@/context/UserContext';
-import { useCreateInvoice, useLookupUser, getListInvoicesQueryKey, getGetDashboardSummaryQueryKey } from '@workspace/api-client-react';
+import {
+  useCreateInvoice,
+  useGetChainStatus,
+  useLookupUser,
+  getListInvoicesQueryKey,
+  getGetDashboardSummaryQueryKey,
+  type InvoiceInputNetwork,
+} from '@workspace/api-client-react';
 import { useQueryClient } from '@tanstack/react-query';
 import { sealInvoice, getStoredPublicKeyJwk } from '@/lib/crypto';
 import { Background } from '@/components/marketing/Background';
@@ -14,7 +21,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { useToast } from '@/hooks/use-toast';
-import { AlertCircle, ArrowLeft, CheckCircle2, Lock, Loader2, FileText, Search, X } from 'lucide-react';
+import { AlertCircle, ArrowLeft, CheckCircle2, FlaskConical, Globe, Lock, Loader2, FileText, Search, X } from 'lucide-react';
 import { AnchorApprovalDialog } from '@/components/invoices/AnchorApprovalDialog';
 import { Link } from 'wouter';
 
@@ -65,6 +72,16 @@ export function NewInvoice() {
   // starts when the user confirms there. The validated values wait here.
   const [approvalOpen, setApprovalOpen] = useState(false);
   const [pendingValues, setPendingValues] = useState<InvoiceFormValues | null>(null);
+
+  // Which Arc network the invoice lives on, forever. The sandbox (Arc
+  // Testnet) is always there; live (Arc Mainnet) appears only when the
+  // server says it is switched on, and the server re-checks on submit.
+  const chainStatus = useGetChainStatus();
+  const mainnetEnabled = chainStatus.data?.mainnetEnabled === true;
+  const liveChain = chainStatus.data?.chains.find((c) => c.key === 'mainnet');
+  const [network, setNetwork] = useState<InvoiceInputNetwork>('testnet');
+  const liveSelected = network === 'mainnet' && mainnetEnabled;
+  const payoutMissing = liveSelected && !me?.payoutAddress;
 
   const form = useForm<InvoiceFormValues>({
     resolver: zodResolver(invoiceSchema),
@@ -186,6 +203,7 @@ export function NewInvoice() {
           fingerprint: sealed.fingerprint,
           ciphertext: sealed.ciphertext,
           wrappedKeys: sealed.wrappedKeys,
+          network: liveSelected ? 'mainnet' : 'testnet',
           // Echo the exact keys the two copies were wrapped for. If either
           // key changed since this page loaded (a rotation or reset in
           // another tab), the server refuses instead of storing a copy
@@ -237,6 +255,71 @@ export function NewInvoice() {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-6 pt-6">
+              {mainnetEnabled && (
+                <div className="space-y-2" data-testid="network-selector">
+                  <p className="text-sm font-medium">Network</p>
+                  <div className="grid grid-cols-2 gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setNetwork('testnet')}
+                      aria-pressed={!liveSelected}
+                      className={`rounded-lg border p-3 text-left transition-colors ${
+                        !liveSelected
+                          ? 'border-primary/60 bg-primary/10'
+                          : 'border-white/10 bg-white/[0.02] hover:bg-white/[0.05]'
+                      }`}
+                      data-testid="button-network-testnet"
+                    >
+                      <span className="flex items-center gap-2 text-sm font-medium">
+                        <FlaskConical className="h-4 w-4 text-primary" /> Sandbox
+                      </span>
+                      <span className="mt-1 block text-xs leading-relaxed text-muted-foreground">
+                        Arc Testnet, free test USDC. Your built-in wallet pays the anchor fee.
+                      </span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setNetwork('mainnet')}
+                      aria-pressed={liveSelected}
+                      className={`rounded-lg border p-3 text-left transition-colors ${
+                        liveSelected
+                          ? 'border-emerald-400/60 bg-emerald-500/10'
+                          : 'border-white/10 bg-white/[0.02] hover:bg-white/[0.05]'
+                      }`}
+                      data-testid="button-network-mainnet"
+                    >
+                      <span className="flex items-center gap-2 text-sm font-medium">
+                        <Globe className="h-4 w-4 text-emerald-400" /> Live
+                      </span>
+                      <span className="mt-1 block text-xs leading-relaxed text-muted-foreground">
+                        Arc Mainnet, real USDC. Your client pays from their own wallet straight to your payout wallet.
+                      </span>
+                    </button>
+                  </div>
+                  {liveSelected && (
+                    <p
+                      className={`text-xs leading-relaxed ${payoutMissing ? 'text-amber-300' : 'text-muted-foreground'}`}
+                      data-testid="text-network-live-note"
+                    >
+                      {payoutMissing ? (
+                        <>
+                          Live invoices are paid straight to your own wallet, so{' '}
+                          <Link href="/wallet" className="underline">
+                            link a payout wallet
+                          </Link>{' '}
+                          before creating one.
+                        </>
+                      ) : (
+                        <>
+                          Payments land in your payout wallet{' '}
+                          <span className="font-mono">{me?.payoutAddress}</span>. Envelo pays the small
+                          anchor fee on {liveChain?.name ?? 'Arc Mainnet'}.
+                        </>
+                      )}
+                    </p>
+                  )}
+                </div>
+              )}
               <div className="grid grid-cols-2 gap-4">
                 <FormField
                   control={form.control}
@@ -397,9 +480,13 @@ export function NewInvoice() {
               <p className="flex max-w-[300px] items-start text-xs leading-5 text-muted-foreground/80">
                 <Lock className="mr-2 mt-0.5 h-3.5 w-3.5 shrink-0 text-primary" />
                 Invoice body encrypted. The server receives ciphertext plus required payment
-                metadata. You approve the Arc fee.
+                metadata. {liveSelected ? 'Envelo pays the Arc anchor fee.' : 'You approve the Arc fee.'}
               </p>
-              <Button type="submit" disabled={isSealing || createInvoiceMutation.isPending || !me}>
+              <Button
+                type="submit"
+                disabled={isSealing || createInvoiceMutation.isPending || !me || payoutMissing}
+                data-testid="button-seal-send"
+              >
                 {(isSealing || createInvoiceMutation.isPending) ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -417,6 +504,7 @@ export function NewInvoice() {
         <AnchorApprovalDialog
           open={approvalOpen}
           onOpenChange={setApprovalOpen}
+          network={liveSelected ? 'mainnet' : 'testnet'}
           onConfirm={() => {
             setApprovalOpen(false);
             if (pendingValues) void sealAndCreate(pendingValues);

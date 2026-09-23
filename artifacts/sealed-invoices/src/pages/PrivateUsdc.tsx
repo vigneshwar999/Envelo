@@ -11,7 +11,7 @@ export default function PrivateUsdc() {
 
   useEffect(() => {
     const previousTitle = document.title;
-    document.title = 'Shielded USDC — Coming Soon | Envelo';
+    document.title = 'Shielded USDC - Coming Soon | Envelo';
     return () => {
       document.title = previousTitle;
     };
@@ -58,7 +58,7 @@ export default function PrivateUsdc() {
               <Skeleton className="h-8 w-32 bg-white/10" />
             ) : (
               <p className="font-mono text-3xl font-light text-foreground" data-testid="text-public-balance">
-                {wallet?.balanceUsdc != null ? `${wallet.balanceUsdc} USDC` : 'Unavailable'}
+                {wallet?.balanceUsdc != null ? `${wallet.balanceUsdc} test USDC` : 'Unavailable'}
               </p>
             )}
           </CardContent>
@@ -87,11 +87,13 @@ export default function PrivateUsdc() {
 
       <div className="space-y-8 pt-8 border-t border-white/5">
         <div className="space-y-3">
-          <h2 className="text-2xl font-light tracking-tight">Shield Funds</h2>
+          <h2 className="text-2xl font-light tracking-tight">Shield test USDC</h2>
           <p className="text-sm text-muted-foreground/80 leading-relaxed max-w-2xl">
             The planned flow will let you move public test USDC into a protected
-            balance after Arc releases official confidential-transfer support.
-            Privacy guarantees will follow Arc's published implementation.
+            balance from your built-in sandbox wallet on Arc Testnet after Arc
+            releases official confidential-transfer support. Live invoices on
+            Arc Mainnet are paid from your own wallet. Privacy guarantees will
+            follow Arc's published implementation.
           </p>
         </div>
         

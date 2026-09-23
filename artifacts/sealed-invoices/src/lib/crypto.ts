@@ -691,6 +691,8 @@ export interface InvoiceCopyFile {
     status: string;
     txHash: string | null;
     chainId: number | null;
+    /** The network's name, e.g. "Arc Testnet" or "Arc Mainnet"; null until anchored. */
+    network: string | null;
     explorerTxUrl: string | null;
   };
   howToVerify: string;
@@ -720,6 +722,8 @@ export async function buildInvoiceCopyFile(
     anchorTxHash?: string | null;
     chainId?: number | null;
     explorerBaseUrl?: string | null;
+    /** Human name of the network the anchor lives on, e.g. "Arc Testnet". */
+    networkName?: string | null;
   },
 ): Promise<InvoiceCopyFile> {
   const fingerprint = await computeFingerprint(document);
@@ -738,7 +742,7 @@ export async function buildInvoiceCopyFile(
     throw new Error(
       "This invoice is anchored onchain, but the chain pointers (transaction, chain id, explorer) " +
         "aren't loaded in this browser right now, so an incomplete copy wasn't saved. " +
-        "Retry the chain check or reload the page, then download again.",
+        "Reload the page, then download again.",
     );
   }
   const explorerTxUrl = anchored ? `${info.explorerBaseUrl}/tx/${txHash}` : null;
@@ -748,8 +752,9 @@ export async function buildInvoiceCopyFile(
     "UTF-16 code units at every level, arrays kept in order, no whitespace between tokens, " +
     "strings escaped and numbers formatted exactly as ECMAScript JSON.stringify does. The " +
     "SHA-256 of that string's UTF-8 bytes, hex-encoded, must equal `fingerprint`.";
+  const networkName = info.networkName?.trim() || "Arc";
   const chainClaim = anchored
-    ? " The same value is embedded in the Arc testnet anchor transaction named in `anchor.txHash` " +
+    ? ` The same value is embedded in the ${networkName} anchor transaction named in \`anchor.txHash\` ` +
       "(open `anchor.explorerTxUrl` to see it), so this copy stays checkable against the chain " +
       "even if the Envelo server no longer exists."
     : " When this copy was exported, the fingerprint had NOT yet been anchored onchain " +
@@ -770,6 +775,7 @@ export async function buildInvoiceCopyFile(
       status: info.anchorStatus,
       txHash,
       chainId: info.chainId ?? null,
+      network: anchored ? networkName : null,
       explorerTxUrl,
     },
     howToVerify: verifyRule + chainClaim,

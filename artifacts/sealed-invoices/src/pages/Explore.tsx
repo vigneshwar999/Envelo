@@ -76,7 +76,7 @@ export default function Explore() {
               <span className="absolute inline-flex h-full w-full rounded-full bg-primary opacity-60 animate-ping" />
               <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-primary" />
             </span>
-            New release: Envelo is live on Circle&apos;s Arc Testnet
+            Sandbox on Arc Testnet. Live invoicing on Arc Mainnet.
           </div>
 
           <h1 className="mb-8 text-5xl font-light tracking-tight text-foreground/90 text-balance !leading-[1.04] sm:text-7xl md:text-[5.6rem]">
@@ -87,7 +87,7 @@ export default function Explore() {
 
           <p className="mx-auto mb-12 max-w-2xl text-balance text-base leading-relaxed text-muted-foreground sm:text-lg">
             Envelo seals sensitive invoice details in your browser, anchors
-            proof on Arc, and settles payments in test USDC.
+            proof on Arc, and supports test USDC in sandbox or USDC on mainnet.
           </p>
 
           {isSignedIn ? (
@@ -163,7 +163,7 @@ export default function Explore() {
         <div className="mx-auto max-w-7xl space-y-10">
           <ScrollReveal className="flex flex-col items-center gap-5 text-center">
             <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-muted-foreground/60">
-              Built on the modern Arc testnet stack
+              Built for Arc Testnet and Arc Mainnet
             </p>
             <Link
               href="/how-it-works"
@@ -383,17 +383,19 @@ export default function Explore() {
                 Transparent settlement.
               </h3>
               <p className="mb-4 text-sm leading-relaxed text-muted-foreground">
-                Payments settle in{" "}
+                Sandbox payments settle in{" "}
                 <strong className="font-medium text-foreground">
                   test USDC
                 </strong>{" "}
-                directly on Arc — no real-world value, but real balances, gas,
-                contract calls, and receipts on Arc Testnet.
+                on Arc Testnet. Live payments use real USDC on Arc Mainnet,
+                sent from the client&apos;s own wallet straight to the
+                sender&apos;s linked payout wallet.
               </p>
               <p className="mb-6 text-sm leading-relaxed text-muted-foreground">
-                The sender pays the initial anchor gas. The payer pays the
-                invoice amount plus the settlement gas. Clean and predictable —
-                without exposing sealed line items or notes.
+                In sandbox, the sender pays the anchor fee and the client pays
+                from their built-in wallet. For live invoices, Envelo pays the
+                small anchor fee and never holds the payment funds. The client
+                pays from their own wallet.
               </p>
               <div className="mt-auto">
                 <Link
@@ -552,7 +554,7 @@ export default function Explore() {
                     </p>
                     <div className="flex items-center justify-between">
                       <span className="text-xs font-medium text-foreground">
-                        Arc Testnet
+                        Arc Testnet + Mainnet
                       </span>
                       <span className="inline-flex items-center gap-1.5 text-[10px] text-emerald-400">
                         <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-status-pulse" />
@@ -578,7 +580,7 @@ export default function Explore() {
                           Arc Network
                         </h3>
                         <p className="text-xs text-muted-foreground/70">
-                          Production · Testnet
+                          Mainnet + Testnet
                         </p>
                       </div>
                     </div>
@@ -619,10 +621,10 @@ export default function Explore() {
                   </Link>
                   <p className="mb-4 text-sm leading-relaxed text-muted-foreground">
                     Privacy-grade sealing with public integrity checks and
-                    predictable testnet gas built in.
+                    clear settlement records across Arc Testnet and Arc Mainnet.
                   </p>
                   <div className="flex flex-wrap gap-2">
-                    {["AES-256-GCM", "SHA-256", "Test USDC", "Chain 5042002"].map(
+                    {["AES-256-GCM", "SHA-256", "Test USDC", "USDC", "Chain 5042002", "Chain 5042"].map(
                       (chip) => (
                         <span
                           key={chip}
@@ -734,7 +736,7 @@ export default function Explore() {
                         Watch the demo
                       </span>
                       <span className="block text-sm text-muted-foreground">
-                        Seal, anchor, pay, share, and verify — in 60 seconds.
+                        Seal, anchor, pay, share, and verify - in 60 seconds.
                       </span>
                     </div>
                   </button>
@@ -844,15 +846,15 @@ export default function Explore() {
                   03
                 </p>
                 <div className="mb-4 flex items-center gap-3 font-medium text-foreground">
-                  <Fingerprint className="h-5 w-5 text-primary" /> Arc Testnet
+                  <Fingerprint className="h-5 w-5 text-primary" /> Arc networks
                 </div>
                 <p className="text-sm leading-relaxed text-muted-foreground">
                   Records the fingerprint and anchor time, then wallet
-                  addresses, payment status, and amount when settled (Chain ID
-                  5042002). The first funded sender activates the shared
-                  registry with the first anchor. Users approve fees from their
-                  built-in custodial demo wallets; the estimate fallback is 0.1
-                  test USDC when Arc cannot return a live fee.
+                  addresses, payment status, and amount when settled. Sandbox
+                  uses Arc Testnet, Chain ID 5042002, with built-in wallets and
+                  test USDC. Live uses Arc Mainnet, Chain ID 5042. Envelo pays
+                  the small live anchor fee, and clients pay USDC from their own
+                  wallet straight to the sender&apos;s linked payout wallet.
                 </p>
               </div>
             </ScrollReveal>
@@ -877,7 +879,8 @@ export default function Explore() {
               <p className="text-lg leading-relaxed text-muted-foreground">
                 Sealed invoice-body details such as line items and notes remain
                 private to authorized viewers, while the settlement stays
-                visible on ArcScan. Shielded USDC is coming soon—pending
+                visible on the invoice&apos;s block explorer. Shielded USDC is
+                coming soon, pending
                 Arc&apos;s official support for confidential transfers.
               </p>
             </div>
@@ -892,7 +895,7 @@ export default function Explore() {
             Ready to seal your first invoice?
           </h2>
           <p className="text-xl text-muted-foreground">
-            Join the testnet and experience privacy-first professional billing.
+            Try the sandbox or create a live invoice on Arc Mainnet.
           </p>
           {isSignedIn ? (
             <div className="flex justify-center pt-4">

@@ -15,8 +15,8 @@ const sections: LegalSection[] = [
       <p>
         This policy explains what information Envelo handles when you use the
         web app and its API, who can see what, and what stays sealed. Envelo
-        is a demonstration running on Arc Testnet; the same honesty we apply
-        to the product applies here. The{" "}
+        offers a sandbox on Arc Testnet and live invoicing on Arc Mainnet. The
+        same honesty we apply to the product applies here. The{" "}
         <Link href="/how-it-works" className={linkClass}>
           How it works
         </Link>{" "}
@@ -47,9 +47,11 @@ const sections: LegalSection[] = [
             (encrypted) document keys. <strong>We cannot decrypt them.</strong>
           </li>
           <li>
-            <strong>Payout address (optional).</strong> If you link a
-            self-owned wallet address for payouts, we store it. It stays
-            private to your account.
+            <strong>Payout address.</strong> If you link a self-owned wallet
+            address for payouts, we store it with your account and do not list
+            it in the user directory. A linked payout address is required for
+            live invoices. Once used, the address and payment are public
+            onchain.
           </li>
         </ul>
       </>
@@ -61,9 +63,10 @@ const sections: LegalSection[] = [
       <>
         <ul>
           <li>
-            <strong>Testnet wallet records.</strong> Envelo creates a testnet
-            wallet for your account and keeps its address, transaction hashes,
-            and test-USDC movements so the app can show balances and receipts.
+            <strong>Sandbox wallet records.</strong> Envelo creates a built-in
+            Arc Testnet wallet for your account and keeps its address,
+            transaction hashes, and test-USDC movements so the app can show
+            balances and receipts. Live payments do not use this wallet.
           </li>
           <li>
             <strong>Invoice activity.</strong> An audit trail of workflow
@@ -73,7 +76,7 @@ const sections: LegalSection[] = [
             <strong>Usage analytics.</strong> On the published site, our
             hosting platform may collect privacy-friendly, aggregate usage
             events (page views and clicks). These are used to understand what
-            gets used &mdash; not to build advertising profiles.
+            gets used - not to build advertising profiles.
           </li>
           <li>
             <strong>Technical logs.</strong> Standard server logs (such as IP
@@ -91,7 +94,7 @@ const sections: LegalSection[] = [
         <p>Some things are designed to be invisible to us:</p>
         <ul>
           <li>
-            the <strong>plaintext of sealed fields</strong> &mdash; line
+            the <strong>plaintext of sealed fields</strong> - line
             items, descriptions, and notes;
           </li>
           <li>
@@ -99,7 +102,7 @@ const sections: LegalSection[] = [
             browser;
           </li>
           <li>
-            your <strong>backup passphrase</strong> &mdash; key backups are
+            your <strong>backup passphrase</strong> - key backups are
             created and locked entirely on your device.
           </li>
         </ul>
@@ -115,19 +118,19 @@ const sections: LegalSection[] = [
     body: (
       <>
         <p>
-          Arc Testnet is a public blockchain. Anyone, anywhere, can see what
-          is recorded there, and neither you nor we can edit or delete it:
+          Arc Testnet and Arc Mainnet are public blockchains. Anyone can see
+          what is recorded there, and neither you nor we can edit or delete it:
         </p>
         <ul>
           <li>
             the invoice <strong>fingerprint</strong> (a SHA-256 hash) and its
-            paid status &mdash; the fingerprint cannot be reversed into the
+            paid status - the fingerprint cannot be reversed into the
             invoice contents;
           </li>
           <li>
             <strong>payment transactions</strong>, including sending and
-            receiving wallet addresses and test-USDC amounts, visible on the
-            public block explorer.
+            receiving wallet addresses and USDC amounts, visible on the public
+            block explorer. Sandbox uses test USDC; live uses real USDC.
           </li>
         </ul>
         <p>
@@ -150,7 +153,7 @@ const sections: LegalSection[] = [
           addresses, and payout details are never listed there. Someone who
           already knows your exact email or wallet address can use it to look
           up your directory entry, but the lookup only confirms a match
-          &mdash; it never reveals the email or address itself.
+          - it never reveals the email or address itself.
         </p>
         <p>
           Counterparties on an invoice see its workflow details, and people
@@ -166,7 +169,7 @@ const sections: LegalSection[] = [
       <>
         <p>
           We use the information above to run Envelo: delivering invoices,
-          wrapping keys for approved viewers, settling test payments, showing
+          wrapping keys for approved viewers, recording payments, showing
           each participant what they are entitled to see, keeping the service
           secure, and understanding usage in aggregate to improve the product.
         </p>
@@ -187,9 +190,9 @@ const sections: LegalSection[] = [
             <strong>Clerk</strong> handles accounts and sign-in sessions;
           </li>
           <li>
-            <strong>Arc Testnet infrastructure</strong> (public RPC nodes and
-            the ArcScan block explorer) processes the onchain records
-            described above;
+            <strong>Arc network infrastructure</strong> (public RPC nodes and
+            block explorers for Arc Testnet and Arc Mainnet) processes the
+            onchain records described above;
           </li>
           <li>
             <strong>our hosting platform</strong> runs the servers, database,
@@ -207,7 +210,7 @@ const sections: LegalSection[] = [
         <ul>
           <li>
             <strong>Session cookies</strong> from Clerk keep you signed in.
-            They are essential &mdash; there are no advertising cookies.
+            They are essential - there are no advertising cookies.
           </li>
           <li>
             <strong>Local storage</strong> in your browser holds your envelope
@@ -233,8 +236,8 @@ const sections: LegalSection[] = [
         <ul>
           <li>
             <strong>onchain records cannot be deleted</strong> by anyone
-            &mdash; fingerprints and payment transactions stay on Arc Testnet
-            until the testnet itself resets;
+            - mainnet fingerprints and payment transactions remain on Arc
+            Mainnet, while testnet records remain until Arc Testnet resets;
           </li>
           <li>
             invoices you sent to others form part of{" "}
@@ -316,7 +319,7 @@ export default function Privacy() {
       badgeLabel="What Stays Sealed"
       title="Privacy Policy"
       titleTestId="text-privacy-title"
-      intro="Exactly what Envelo can see, what it cannot, and what lands on a public blockchain — in the same plain language as the rest of the product."
+      intro="Exactly what Envelo can see, what it cannot, and what lands on a public blockchain - in the same plain language as the rest of the product."
       lastUpdated="August 30, 2026"
       summaryItems={[
         <>
@@ -326,14 +329,14 @@ export default function Privacy() {
           key or backup passphrase.
         </>,
         <>
-          We <strong>do</strong> see workflow details — invoice numbers,
-          amounts, due dates, parties, and status — because the service needs
+          We <strong>do</strong> see workflow details - invoice numbers,
+          amounts, due dates, parties, and status - because the service needs
           them to work.
         </>,
         <>
-          Fingerprints and test-USDC payments live on{" "}
-          <strong>Arc Testnet, a public blockchain</strong>: amounts and
-          wallet addresses are visible to anyone, permanently.
+          Fingerprints and payments live on public Arc networks. Sandbox uses
+          test USDC on Arc Testnet, and live uses real USDC on Arc Mainnet.
+          Amounts and wallet addresses are visible to anyone.
         </>,
         <>
           We <strong>don&rsquo;t sell your data</strong> and don&rsquo;t run

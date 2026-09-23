@@ -85,7 +85,7 @@ export function WalletMenu() {
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-72 bg-card/90 backdrop-blur-xl border-white/10 shadow-2xl">
           <div className="flex items-baseline justify-between px-3 pt-2.5 pb-1.5">
-            <span className="text-sm text-muted-foreground">Wallet</span>
+            <span className="text-sm text-muted-foreground">Sandbox wallet</span>
             {walletQuery.isLoading ? (
               <Skeleton className="h-4 w-24" />
             ) : (
@@ -127,6 +127,10 @@ export function WalletMenu() {
                 <ArrowDownToLine className="mr-1.5 h-4 w-4" />
                 Deposit
               </Button>
+              <p className="mt-2 text-[11px] leading-relaxed text-muted-foreground">
+                Your built-in wallet holds test USDC on Arc Testnet. Live
+                invoices on Arc Mainnet are paid from your own wallet.
+              </p>
             </div>
           ) : (
             <p className="px-3 pb-2.5 text-xs text-muted-foreground">

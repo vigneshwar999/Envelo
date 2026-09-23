@@ -133,7 +133,8 @@ export function DepositWithdrawDialog({
         <DialogHeader>
           <DialogTitle>Deposit &amp; withdraw</DialogTitle>
           <DialogDescription>
-            Manage your app-managed wallet balance on Arc Testnet
+            Manage test USDC in your built-in sandbox wallet on Arc Testnet.
+            Live invoices use your own wallet.
           </DialogDescription>
         </DialogHeader>
         <Tabs value={tab} onValueChange={(v) => setTab(v as 'deposit' | 'withdraw')}>
@@ -308,8 +309,8 @@ export function DepositWithdrawDialog({
               {withdraw.isPending ? 'Sending…' : 'Withdraw'}
             </Button>
             <p className="text-xs text-muted-foreground">
-              Withdrawals are real transactions on the Arc testnet and cannot be
-              undone once confirmed.
+              Withdrawals are public test USDC transactions on Arc Testnet and
+              cannot be undone once confirmed.
             </p>
           </TabsContent>
         </Tabs>

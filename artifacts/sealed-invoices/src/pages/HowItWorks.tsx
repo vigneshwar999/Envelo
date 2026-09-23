@@ -18,8 +18,8 @@ const sections: LegalSection[] = [
     body: (
       <>
         <p>
-          When you create an invoice, the sensitive fields &mdash; line items,
-          descriptions, and notes &mdash; are encrypted{" "}
+          When you create an invoice, the sensitive fields - line items,
+          descriptions, and notes - are encrypted{" "}
           <strong>inside your browser</strong> with AES-256-GCM before anything
           is sent to us.
         </p>
@@ -28,7 +28,7 @@ const sections: LegalSection[] = [
           details needed to run the invoice: its number, amount, due date,
           parties, status, and fingerprint.{" "}
           <strong>The server cannot read the sealed fields.</strong> Not
-          &ldquo;does not&rdquo; &mdash; cannot.
+          &ldquo;does not&rdquo; - cannot.
         </p>
       </>
     ),
@@ -50,7 +50,7 @@ const sections: LegalSection[] = [
           <strong>
             Envelo never receives your private key or your backup passphrase
           </strong>{" "}
-          &mdash; which also means we cannot recover them for you if both are
+          - which also means we cannot recover them for you if both are
           lost.
         </p>
       </>
@@ -62,40 +62,44 @@ const sections: LegalSection[] = [
       <>
         <p>
           Before sealing, Envelo computes a SHA-256 fingerprint of the invoice
-          &mdash; a digital wax stamp. Change one character in the document and
+          - a digital wax stamp. Change one character in the document and
           the fingerprint changes completely.
         </p>
         <p>
-          That fingerprint is anchored in our registry contract on{" "}
-          <strong>Arc Testnet</strong>, a public blockchain. An approved viewer
+          That fingerprint is anchored in our registry contract on the Arc
+          network selected when the invoice is created. Sandbox uses{" "}
+          <strong>Arc Testnet</strong>, and live invoices use{" "}
+          <strong>Arc Mainnet</strong>. An approved viewer
           can unseal the invoice, recompute the fingerprint locally, and
           compare it with the onchain record. If they match, the document is
-          exactly what was sealed &mdash; no trust in Envelo required.
+          exactly what was sealed - no trust in Envelo required.
         </p>
       </>
     ),
   },
   {
-    heading: "Settle in test USDC",
+    heading: "Settle in USDC",
     body: (
       <>
         <p>
-          Payments are ordinary public transactions in test USDC on Arc
-          Testnet. When an invoice is paid, Envelo records the transaction hash
-          alongside the invoice, so both sides can check the settlement on the
-          block explorer.
+          Sandbox payments use test USDC on Arc Testnet and built-in wallets.
+          Live payments use real USDC on Arc Mainnet. The client pays from
+          their own browser wallet straight to the sender&apos;s linked payout
+          wallet. In sandbox, the sender pays the anchor fee from their
+          built-in wallet. Envelo pays the small live anchor fee and never
+          holds real funds. Both sides can check settlement on the
+          invoice&apos;s block explorer.
         </p>
         <ul>
           <li>
-            <strong>Test USDC has no real-world value.</strong> Never send real
-            funds to any address shown in Envelo.
+            <strong>Test USDC has no real-world value.</strong> Only use it for
+            sandbox invoices on Arc Testnet.
           </li>
           <li>
-            Payment amounts and wallet addresses are visible to anyone on
-            ArcScan.
+            Payment amounts and wallet addresses are public onchain.
           </li>
           <li>
-            Shielded transfers are not available yet &mdash; making the payment
+            Shielded transfers are not available yet - making the payment
             itself confidential requires official network support, and we will
             adopt it when it exists.
           </li>
@@ -110,17 +114,17 @@ const sections: LegalSection[] = [
         <p>One honest picture of where every piece of data sits:</p>
         <ul>
           <li>
-            <strong>Private to key holders:</strong> the sealed fields &mdash;
+            <strong>Private to key holders:</strong> the sealed fields -
             line items, descriptions, and notes. Readable only by you and the
             viewers you approve.
           </li>
           <li>
             <strong>Visible to Envelo and counterparties:</strong> workflow
-            details &mdash; invoice number, amount, due date, parties, and
+            details - invoice number, amount, due date, parties, and
             status. We need these to run the service.
           </li>
           <li>
-            <strong>Visible to everyone:</strong> the onchain records &mdash;
+            <strong>Visible to everyone:</strong> the onchain records -
             fingerprints, paid status, and the payment transactions with
             wallet addresses and amounts.
           </li>
@@ -150,7 +154,7 @@ export default function HowItWorks() {
       badgeLabel="The Mechanics of Trust"
       title="How Envelo Works"
       titleTestId="text-how-it-works-title"
-      intro="Envelo encrypts sensitive invoice details in your browser, then anchors a verifiable fingerprint on Arc Testnet. The document stays sealed; the proof remains public."
+      intro="Envelo encrypts sensitive invoice details in your browser, then anchors a verifiable fingerprint on Arc Testnet or Arc Mainnet. The document stays sealed; the proof remains public."
       lastUpdated="September 1, 2026"
       summaryItems={[
         <>
@@ -159,17 +163,18 @@ export default function HowItWorks() {
         </>,
         <>
           Your envelope key stays with you. Sharing an invoice wraps its key
-          for each approved viewer &mdash;{" "}
+          for each approved viewer -{" "}
           <strong>we never see private keys</strong>.
         </>,
         <>
           A SHA-256 fingerprint of every invoice is{" "}
-          <strong>anchored on Arc Testnet</strong>, so anyone can verify the
+          <strong>anchored on its selected Arc network</strong>, so anyone can verify the
           document never changed.
         </>,
         <>
-          Payments are public test-USDC transactions on Arc &mdash; amounts
-          and addresses are <strong>visible on ArcScan</strong>.
+          Payments are public USDC transactions on Arc. Sandbox uses test USDC;
+          live uses real USDC. Amounts and addresses are{" "}
+          <strong>visible onchain</strong>.
         </>,
       ]}
       sections={sections}

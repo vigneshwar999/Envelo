@@ -17,8 +17,8 @@ const sections: LegalSection[] = [
           Envelo (&ldquo;we&rdquo;, &ldquo;us&rdquo;) is an invoicing
           application that demonstrates private paperwork with public proof.
           Sensitive invoice fields are encrypted in your browser, a digital
-          fingerprint of the invoice is anchored on Arc Testnet (a public test
-          blockchain), and payments settle in test USDC. The{" "}
+          fingerprint of the invoice is anchored on Arc Testnet or Arc Mainnet,
+          and payments settle in USDC on that network. The{" "}
           <Link href="/how-it-works" className={linkClass}>
             How it works
           </Link>{" "}
@@ -36,26 +36,28 @@ const sections: LegalSection[] = [
     ),
   },
   {
-    heading: "A demonstration, not a financial service",
+    heading: "Networks and payments",
     body: (
       <>
         <p>
-          Envelo currently runs entirely on <strong>Arc Testnet</strong>.{" "}
-          <strong>Test USDC has no real-world value.</strong> It cannot be
-          bought, sold, or exchanged for real money, and moving it is not a
-          real payment. Envelo is not a bank, money transmitter, payment
-          processor, or custodian of anything valuable, and nothing in the app
-          is financial, legal, accounting, or tax advice.
+          Sandbox invoices use built-in wallets and test USDC on{" "}
+          <strong>Arc Testnet</strong>. Test USDC has no real-world value. Live
+          invoices use real USDC on <strong>Arc Mainnet</strong>. The client
+          pays from their own browser wallet straight to the sender&apos;s
+          linked payout wallet. Envelo pays the small live anchor fee and never
+          holds real funds. Envelo is not a bank, money transmitter, payment
+          processor, or custodian, and nothing in the app is financial, legal,
+          accounting, or tax advice.
         </p>
         <p>
-          All settlement on Arc Testnet is public today. Envelo offers no
+          All settlement on Arc Testnet and Arc Mainnet is public. Envelo offers no
           confidential or shielded transfer capability: payment amounts and
           wallet addresses are visible to anyone on the public block explorer.
         </p>
         <p>
-          <strong>Never send real funds</strong> to any address shown in
-          Envelo. Anything sent to a testnet address outside the demonstration
-          is lost.
+          Only send test USDC to a built-in Arc Testnet wallet. For live
+          invoices, check the network, amount, and payout address in your own
+          wallet before approving the payment.
         </p>
       </>
     ),
@@ -89,12 +91,12 @@ const sections: LegalSection[] = [
             Envelo never receives your private key or your backup passphrase
           </strong>
           , which is the point: it means we cannot read your sealed documents
-          &mdash; and it also means we cannot recover them for you.
+          - and it also means we cannot recover them for you.
         </p>
         <p>
           You are responsible for downloading a passphrase-protected backup of
           your key from the Dashboard and keeping it safe. If you lose both
-          the key and the backup, no one &mdash; including us &mdash; can
+          the key and the backup, no one - including us - can
           unseal your existing envelopes. A key reset lets you continue with a
           fresh key, and counterparties can re-share invoices they sent you,
           but the reset itself does not restore anything.
@@ -107,7 +109,7 @@ const sections: LegalSection[] = [
     body: (
       <>
         <p>
-          Privacy in Envelo applies to the sealed fields of an invoice &mdash;
+          Privacy in Envelo applies to the sealed fields of an invoice -
           line items, descriptions, and notes. It does not apply to
           everything:
         </p>
@@ -125,7 +127,7 @@ const sections: LegalSection[] = [
           <li>
             <strong>Anyone at all</strong> can see the onchain records: the
             invoice fingerprint, its paid status, and the payment transactions
-            with wallet addresses and test-USDC amounts.
+             with wallet addresses and USDC amounts.
           </li>
         </ul>
         <p>
@@ -136,22 +138,21 @@ const sections: LegalSection[] = [
     ),
   },
   {
-    heading: "Testnet wallets",
+    heading: "Sandbox and live wallets",
     body: (
       <>
         <p>
-          So the demonstration works without wallet software, Envelo creates a
-          testnet wallet for each account and holds its private key on our
-          servers. This custodial setup is acceptable only because these
-          wallets hold worthless test USDC &mdash; it would be a terrible
-          arrangement for real funds, and we say so openly.
+          For sandbox use, Envelo creates a built-in Arc Testnet wallet for each
+          account and holds its private key on our servers. These wallets hold
+          only test USDC. They are not used for live invoices.
         </p>
         <p>
           Test balances exist to power the demonstration. We may top up,
           adjust, or reset them at any time. Do not treat any balance shown in
-          Envelo as a store of value. You may optionally link a self-owned
-          address to receive payouts directly; managing that wallet is
-          entirely your responsibility.
+          Envelo as a store of value. Live invoices require a linked,
+          self-owned payout wallet. Live payments go straight from the
+          client&apos;s own wallet to that payout wallet. Managing a self-owned
+          wallet is entirely your responsibility.
         </p>
       </>
     ),
@@ -190,7 +191,7 @@ const sections: LegalSection[] = [
           Envelo is an evolving demonstration provided free of charge. We may
           change, suspend, or discontinue any part of it at any time. Arc
           Testnet is operated by others and may be slow, unavailable, or reset
-          entirely &mdash; and a testnet reset can erase wallets, balances,
+          entirely - and a testnet reset can erase wallets, balances,
           and anchored records. Keep your own copies of anything you care
           about.
         </p>
@@ -216,12 +217,12 @@ const sections: LegalSection[] = [
       <>
         <p>
           Envelo is provided <strong>&ldquo;as is&rdquo;</strong>, without
-          warranties of any kind &mdash; including fitness for a particular
+          warranties of any kind - including fitness for a particular
           purpose or uninterrupted availability. To the maximum extent
           permitted by law, we are not liable for indirect, incidental, or
           consequential damages, lost data, lost profits, or anything arising
           from testnet behaviour beyond our control. Our total liability is
-          capped at the amount you paid us to use Envelo &mdash; which is
+          capped at the amount you paid us to use Envelo - which is
           zero.
         </p>
       </>
@@ -267,17 +268,17 @@ export default function Terms() {
       badgeLabel="The Ground Rules"
       title="Terms of Service"
       titleTestId="text-terms-title"
-      intro="The plain-language agreement for using Envelo — an invoicing demonstration on Arc Testnet where the paperwork is private and the proof is public."
+      intro="The plain-language agreement for using Envelo on Arc Testnet and Arc Mainnet, where the paperwork is sealed and the proof is public."
       lastUpdated="August 30, 2026"
       summaryItems={[
         <>
-          Envelo is a <strong>demonstration on Arc Testnet</strong>. Payments
-          use test USDC, which has no real-world value. Never send real funds
-          anywhere in this app.
+          Sandbox uses <strong>test USDC on Arc Testnet</strong>. Live invoices
+          use real USDC on Arc Mainnet, paid wallet to wallet. Envelo never
+          holds real funds.
         </>,
         <>
           Sensitive invoice fields are sealed in your browser.{" "}
-          <strong>We cannot read them — and we cannot recover them</strong> if
+          <strong>We cannot read them - and we cannot recover them</strong> if
           you lose your key and its backup.
         </>,
         <>

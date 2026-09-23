@@ -2,6 +2,7 @@ import { lazy, Suspense } from "react";
 import { Link, useLocation } from "wouter";
 import { useUser } from "@clerk/react";
 import { ArrowRight, Menu } from "lucide-react";
+import { useGetChainStatus } from "@workspace/api-client-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import {
@@ -25,6 +26,7 @@ const desktopNavLinkClass = (active: boolean) =>
 
 export function Shell({ children }: { children: React.ReactNode }) {
   const { isLoaded, isSignedIn } = useUser();
+  const { data: chainStatus } = useGetChainStatus();
   const [location] = useLocation();
   const dashboardActive =
     location === "/dashboard" || location.startsWith("/invoices/");
@@ -55,7 +57,9 @@ export function Shell({ children }: { children: React.ReactNode }) {
               Envelo
             </span>
             <span className="ml-0.5 hidden items-center rounded-full border border-white/10 bg-white/5 px-2 py-0.5 text-[8px] font-bold uppercase tracking-wide text-muted-foreground lg:inline-flex">
-              Arc Testnet
+              {chainStatus?.mainnetEnabled
+                ? "Arc Testnet + Mainnet"
+                : "Arc Testnet"}
             </span>
           </Link>
 
