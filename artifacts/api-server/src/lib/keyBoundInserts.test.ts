@@ -45,6 +45,10 @@ function invoiceInput(overrides: Partial<Parameters<typeof insertSealedInvoice>[
       { userId: KA, wrappedKey: "WRAP_A" },
       { userId: KB, wrappedKey: "WRAP_B" },
     ],
+    chainId: 5042002,
+    networkName: "Arc Testnet",
+    payeeAddress: "0x000000000000000000000000000000000000dEaD",
+    paymentSalt: `0x${"11".repeat(32)}`,
     ...overrides,
   };
 }

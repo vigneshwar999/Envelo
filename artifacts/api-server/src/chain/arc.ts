@@ -1,20 +1,21 @@
-// All Arc testnet interaction lives here.
-// Facts (from docs.arc.io): chain id 5042002, RPC https://rpc.testnet.arc.io,
-// explorer https://testnet.arcscan.app, native currency USDC with 18 decimals.
+// All Arc interaction lives here. Network facts (chain ids, RPCs, explorers)
+// are in ./networks; this file holds the wallets, the transaction queue, and
+// the anchor / payment logic that runs against whichever network an invoice
+// was created on. Custodial wallets, sweeps and the faucet are sandbox-only
+// (Arc Testnet); live invoices (Arc Mainnet) never touch a custodial key.
 import {
-  createPublicClient,
   createWalletClient,
-  defineChain,
-  encodeDeployData,
-  encodeFunctionData,
   formatUnits,
-  getContractAddress as getCreateContractAddress,
   http,
   keccak256,
+  parseTransaction,
   parseUnits,
+  recoverTransactionAddress,
   toBytes,
   type Address,
   type Hex,
+  type PrivateKeyAccount,
+  type TransactionSerialized,
 } from "viem";
 import { TransactionReceiptNotFoundError } from "viem";
 import { generatePrivateKey, privateKeyToAccount } from "viem/accounts";
@@ -27,39 +28,73 @@ import {
   invoicesTable,
   usersTable,
   walletTransfersTable,
+  type InvoiceRow,
 } from "@workspace/db";
 import { logger } from "../lib/logger";
-import { REGISTRY_ABI, REGISTRY_BYTECODE } from "./registryArtifact";
+import { fmt2 } from "../lib/serializers";
+import { REGISTRY_ABI } from "./registryArtifact";
+import {
+  ARC_MAINNET,
+  ARC_TESTNET,
+  REGISTRY_VERSION,
+  mainnetAvailability,
+  mainnetOperatorAccount,
+  mainnetOperatorMinBalanceUsdc,
+  networkForChainId,
+  type ArcNetwork,
+} from "./networks";
+import {
+  encodeAnchorCall,
+  encodePayCall,
+  encodePayCallV3,
+  findInvoicePaidLog,
+  invoiceKey,
+  isBytes32Hex,
+  newPaymentSalt,
+  paymentCommitment,
+  paymentSettlesInvoice,
+  type InvoicePaidEvent,
+} from "./registry";
 
-export const ARC_RPC_URL = "https://rpc.testnet.arc.io";
-export const ARC_CHAIN_ID = 5042002;
-export const FAUCET_URL = "https://faucet.circle.com";
-export const EXPLORER_BASE_URL = "https://testnet.arcscan.app";
-export const NETWORK_NAME = "Arc Testnet";
+export { invoiceKey, newPaymentSalt } from "./registry";
+export {
+  ARC_MAINNET,
+  ARC_TESTNET,
+  ARC_NETWORKS,
+  REGISTRY_VERSION,
+  creatableNetworks,
+  isMainnetEnabled,
+  mainnetAvailability,
+  mainnetOperatorMinBalanceUsdc,
+  mainnetSwitchedOn,
+  networkByKey,
+  networkForChainId,
+  isArcNetworkKey,
+  type ArcNetwork,
+  type ArcNetworkKey,
+  type ArcNetworkMode,
+} from "./networks";
 
-export const arcTestnet = defineChain({
-  id: ARC_CHAIN_ID,
-  name: NETWORK_NAME,
-  nativeCurrency: { name: "USDC", symbol: "USDC", decimals: 18 },
-  rpcUrls: { default: { http: [ARC_RPC_URL] } },
-  blockExplorers: { default: { name: "ArcScan", url: EXPLORER_BASE_URL } },
-});
-
-const transport = http(ARC_RPC_URL, { timeout: 8_000 });
-export const publicClient = createPublicClient({ chain: arcTestnet, transport });
+// Sandbox constants, kept under their old names: custodial wallets, sweeps,
+// deposits and the faucet only exist on Arc Testnet.
+export const ARC_CHAIN_ID = ARC_TESTNET.chainId;
+export const FAUCET_URL = ARC_TESTNET.faucetUrl!;
+export const EXPLORER_BASE_URL = ARC_TESTNET.explorerBaseUrl;
+export const NETWORK_NAME = ARC_TESTNET.name;
+export const publicClient = ARC_TESTNET.publicClient;
 
 /**
- * Version of the compiled registry the app expects. Bump when the Solidity
- * changes: setup then pins already-anchored invoices to the old contract
- * address and deploys the new version alongside it.
- * v2: anyone may anchor (the invoice sender's wallet pays its own gas).
- * v3: the first sender deploys the registry and anchors in one transaction.
+ * How an invoice gets paid. "custodial": the server pays from the client's
+ * sandbox wallet. "external": the client pays from their own wallet in the
+ * browser and the server only verifies the resulting transaction. Live
+ * invoices are external only; sandbox invoices default to custodial but
+ * accept an external payment too (v4 anchors carry the same commitment on
+ * both networks), which is how the wallet flow gets exercised for free.
  */
-const REGISTRY_VERSION = "3";
+export type PaymentMode = "custodial" | "external";
 
-/** The onchain key for an invoice: keccak256 of its UUID string. */
-export function invoiceKey(invoiceId: string): `0x${string}` {
-  return keccak256(toBytes(invoiceId));
+export function defaultPaymentMode(network: ArcNetwork): PaymentMode {
+  return network.mode === "live" ? "external" : "custodial";
 }
 
 /** Format a native-USDC wei amount (18 decimals) as a "12.34" string. */
@@ -84,15 +119,23 @@ export function formatFeeUsdc(wei: bigint): string {
 }
 
 // ---------------------------------------------------- fee affordability
-// Every onchain action is paid by the person acting: senders pay their own
-// anchor gas, payers pay the invoice amount plus gas. No subsidies.
+// Sandbox: every onchain action is paid by the person acting - senders pay
+// their own anchor gas, payers pay the invoice amount plus gas. Live: Envelo's
+// operator wallet pays the anchor gas; the client pays amount plus gas from
+// their own wallet. Nobody's transaction is ever sponsored beyond that.
 
 /**
- * Permanent fee estimate used whenever Arc cannot return a live estimate.
- * It is deliberately denominated in Arc's native test USDC rather than gas
- * units so every approval surface shows the same predictable fallback.
+ * Permanent fee estimate used whenever the SANDBOX cannot return a live
+ * estimate. It is deliberately denominated in Arc's native test USDC rather
+ * than gas units so every approval surface shows the same predictable
+ * fallback. Live never falls back: an unreadable mainnet fee is reported as
+ * unavailable and blocks the action instead of guessing with real money.
  */
 export const FEE_ESTIMATE_FALLBACK_WEI = parseUnits("0.1", 18);
+
+function feeFallbackFor(network: ArcNetwork): bigint | null {
+  return network.mode === "sandbox" ? FEE_ESTIMATE_FALLBACK_WEI : null;
+}
 
 /**
  * THE affordability rule, in one place: can this balance cover this cost?
@@ -109,6 +152,11 @@ export function decideAffordability(
 }
 
 // ---------------------------------------------------------------- wallets
+
+// Custodial wallets exist for the SANDBOX only. They hold valueless test USDC
+// so the demo can anchor and pay without asking anyone to install a wallet.
+// Live invoices are anchored by the operator key from the environment and
+// paid from the client's own wallet; no custodial key ever signs on mainnet.
 
 /**
  * Create a custodial testnet wallet for an owner id ("operator" or a user id)
@@ -176,16 +224,8 @@ async function deleteChainState(key: string): Promise<void> {
 type PendingSignedTransaction = {
   hash: Hex;
   serialized: Hex;
-  expectedContractAddress?: Address;
   paidToLinkedWallet?: boolean;
 };
-
-type PendingRegistryActivation = PendingSignedTransaction & {
-  activatingInvoiceId: string;
-  fingerprint: string;
-};
-
-const REGISTRY_ACTIVATION_KEY = "pending:registry-activation";
 
 function parsePendingSignedTransaction(value: string): PendingSignedTransaction {
   const parsed = JSON.parse(value) as PendingSignedTransaction;
@@ -250,79 +290,78 @@ async function clearPendingSignedTransaction(
   await deleteChainState(pendingTransactionKey(kind, invoiceId));
 }
 
-async function getPendingRegistryActivation(): Promise<PendingRegistryActivation | null> {
-  const value = await getChainState(REGISTRY_ACTIVATION_KEY);
-  if (!value) return null;
-  const transaction = parsePendingSignedTransaction(value);
-  const metadata = JSON.parse(value) as Partial<PendingRegistryActivation>;
-  if (
-    typeof metadata.activatingInvoiceId !== "string" ||
-    !/^[0-9a-f]{64}$/i.test(metadata.fingerprint ?? "") ||
-    !transaction.expectedContractAddress
-  ) {
-    throw new Error("Stored registry activation metadata is invalid");
-  }
-  return {
-    ...transaction,
-    activatingInvoiceId: metadata.activatingInvoiceId,
-    fingerprint: metadata.fingerprint!,
-  };
-}
-
-async function persistRegistryActivation(
-  activation: PendingRegistryActivation,
-): Promise<void> {
-  await db.transaction(async (tx) => {
-    await tx
-      .insert(chainStateTable)
-      .values({
-        key: REGISTRY_ACTIVATION_KEY,
-        value: JSON.stringify(activation),
-        updatedAt: new Date(),
-      })
-      .onConflictDoUpdate({
-        target: chainStateTable.key,
-        set: { value: JSON.stringify(activation), updatedAt: new Date() },
-      });
-    await tx
-      .update(invoicesTable)
-      .set({ anchorTxHash: activation.hash })
-      .where(eq(invoicesTable.id, activation.activatingInvoiceId));
-  });
-}
-
-async function clearPendingRegistryActivation(): Promise<void> {
-  await deleteChainState(REGISTRY_ACTIVATION_KEY);
-}
-
-export async function getContractAddress(): Promise<Address | null> {
+/**
+ * The v3 sandbox registry that the first sender deployed (kept in chain_state
+ * by the old bootstrap code). Only invoices anchored before v4 point at it,
+ * and each of those rows carries its own pinned address, so this is just a
+ * fallback for reading a legacy row that somehow lost its pin.
+ */
+export async function getLegacyContractAddress(): Promise<Address | null> {
   return (await getChainState("contractAddress")) as Address | null;
 }
 
-export async function isRpcConnected(): Promise<boolean> {
+/**
+ * The registry an invoice's anchor lives on: the address pinned at anchor
+ * time when there is one, else the network's current registry (where a
+ * still-pending anchor will land). Null when the network has no registry
+ * configured yet - a setup problem, never something to paper over.
+ */
+export function registryFor(
+  invoice: Pick<InvoiceRow, "chainId" | "contractAddress" | "registryVersion">,
+): { network: ArcNetwork; address: Address | null; version: number } {
+  const network = networkForChainId(invoice.chainId);
+  if (invoice.contractAddress) {
+    return {
+      network,
+      address: invoice.contractAddress as Address,
+      // Rows anchored before the version column existed were all v3.
+      version: invoice.registryVersion ?? 3,
+    };
+  }
+  return { network, address: network.registryAddress, version: REGISTRY_VERSION };
+}
+
+export async function isRpcConnected(
+  network: ArcNetwork = ARC_TESTNET,
+): Promise<boolean> {
   try {
-    await publicClient.getBlockNumber();
+    await network.publicClient.getBlockNumber();
     return true;
   } catch {
     return false;
   }
 }
 
-export async function getBalance(address: string): Promise<bigint | null> {
+export async function getBalance(
+  address: string,
+  network: ArcNetwork = ARC_TESTNET,
+): Promise<bigint | null> {
   try {
-    return await publicClient.getBalance({ address: address as Address });
+    return await network.publicClient.getBalance({ address: address as Address });
   } catch {
     return null;
   }
 }
 
-function walletClientFor(privateKey: string) {
-  const account = privateKeyToAccount(privateKey as `0x${string}`);
-  return createWalletClient({ account, chain: arcTestnet, transport });
+function walletClientFor(privateKey: string, network: ArcNetwork = ARC_TESTNET) {
+  return walletClientForAccount(
+    privateKeyToAccount(privateKey as `0x${string}`),
+    network,
+  );
 }
 
+function walletClientForAccount(account: PrivateKeyAccount, network: ArcNetwork) {
+  return createWalletClient({
+    account,
+    chain: network.chain,
+    transport: http(network.rpcUrl, { timeout: 8_000 }),
+  });
+}
+
+type SigningWallet = ReturnType<typeof walletClientForAccount>;
+
 async function signTransactionBeforeBroadcast(
-  wallet: ReturnType<typeof walletClientFor>,
+  wallet: SigningWallet,
   request: { to?: Address; data: Hex; value?: bigint },
 ): Promise<{ hash: Hex; serialized: Hex; nonce: number }> {
   const prepared = await wallet.prepareTransactionRequest({
@@ -338,14 +377,16 @@ async function signTransactionBeforeBroadcast(
 }
 
 async function submitSignedTransaction(
+  network: ArcNetwork,
   transaction: PendingSignedTransaction,
   what: string,
 ) {
   if (keccak256(transaction.serialized) !== transaction.hash) {
     throw new Error(`${what} signed transaction hash does not match its bytes`);
   }
+  const client = network.publicClient;
   try {
-    const receipt = await publicClient.getTransactionReceipt({
+    const receipt = await client.getTransactionReceipt({
       hash: transaction.hash,
     });
     if (receipt.status !== "success") {
@@ -359,7 +400,7 @@ async function submitSignedTransaction(
   }
 
   try {
-    const broadcastHash = await publicClient.sendRawTransaction({
+    const broadcastHash = await client.sendRawTransaction({
       serializedTransaction: transaction.serialized,
     });
     if (broadcastHash !== transaction.hash) {
@@ -369,38 +410,47 @@ async function submitSignedTransaction(
     // Re-broadcasting the exact same signed bytes is idempotent. Some RPCs
     // answer "already known"; accept that only when the hash is visible.
     try {
-      await publicClient.getTransaction({ hash: transaction.hash });
+      await client.getTransaction({ hash: transaction.hash });
     } catch {
       throw broadcastError;
     }
   }
-  return waitForSuccess(transaction.hash, what);
+  return waitForSuccess(network, transaction.hash, what);
 }
 
 // Every transaction send goes through both a process-local queue and a
-// Postgres advisory lock. The database lock extends serialization across API
-// instances, preventing two servers from deploying registries or spending the
-// same custodial nonce concurrently.
-let txQueue: Promise<unknown> = Promise.resolve();
-function enqueueTx<T>(fn: () => Promise<T>): Promise<T> {
+// Postgres advisory lock, one pair per network. The database lock extends
+// serialization across API instances, preventing two servers from spending
+// the same custodial or operator nonce concurrently. The two networks never
+// share a nonce space, so they queue independently.
+const txQueues = new Map<number, Promise<unknown>>();
+function enqueueTx<T>(network: ArcNetwork, fn: () => Promise<T>): Promise<T> {
   const run = () =>
     db.transaction(async (tx) => {
       await tx.execute(
-        sql`SELECT pg_advisory_xact_lock(${ARC_CHAIN_ID}, ${731_504})`,
+        sql`SELECT pg_advisory_xact_lock(${network.chainId}, ${731_504})`,
       );
       return fn();
     });
-  const next = txQueue.then(run, run);
-  txQueue = next.then(
-    () => undefined,
-    () => undefined,
+  const queue = txQueues.get(network.chainId) ?? Promise.resolve();
+  const next = queue.then(run, run);
+  txQueues.set(
+    network.chainId,
+    next.then(
+      () => undefined,
+      () => undefined,
+    ),
   );
   return next;
 }
 
 /** Wait for a receipt and refuse to treat a mined-but-reverted tx as success. */
-async function waitForSuccess(hash: `0x${string}`, what: string) {
-  const receipt = await publicClient.waitForTransactionReceipt({
+async function waitForSuccess(
+  network: ArcNetwork,
+  hash: `0x${string}`,
+  what: string,
+) {
+  const receipt = await network.publicClient.waitForTransactionReceipt({
     hash,
     timeout: 20_000,
   });
@@ -415,9 +465,9 @@ async function waitForSuccess(hash: `0x${string}`, what: string) {
 let setupInFlight: Promise<void> | null = null;
 
 /**
- * Idempotent and safe to call often. A pending invoice's sender deploys the
- * registry and anchors the first fingerprint in one approved transaction;
- * later senders call the deployed contract normally.
+ * Idempotent and safe to call often: re-drives every anchor that is still
+ * pending on a reachable network (a sandbox sender who has since topped up,
+ * a live invoice whose operator submission timed out).
  */
 export function attemptChainSetup(): Promise<void> {
   if (!setupInFlight) {
@@ -430,7 +480,6 @@ export function attemptChainSetup(): Promise<void> {
 
 async function runChainSetup(): Promise<void> {
   try {
-    if (!(await isRpcConnected())) return;
     await retryPendingAnchors();
   } catch (err) {
     logger.warn(
@@ -606,8 +655,8 @@ export async function sendWalletFunds(
 ): Promise<SweepResult> {
   const row = await getWallet(ownerId);
   if (!row) throw new Error(`No custodial wallet exists for ${ownerId}`);
-  const wallet = walletClientFor(row.privateKey);
-  return enqueueTx<SweepResult>(async () => {
+  const wallet = walletClientFor(row.privateKey, ARC_TESTNET);
+  return enqueueTx<SweepResult>(ARC_TESTNET, async () => {
     const balance = await getBalance(row.address);
     if (balance === null) return { ok: false, reason: "rpc_unreachable" };
     const decision = decideSendAmount(balance, requested);
@@ -678,7 +727,7 @@ export async function sendWalletFunds(
       return { ok: false, reason: "unconfirmed", txHash };
     }
     try {
-      await waitForSuccess(txHash, "Balance sweep");
+      await waitForSuccess(ARC_TESTNET, txHash, "Balance sweep");
     } catch (err) {
       logger.warn(
         { err, ownerId, to, txHash },
@@ -713,40 +762,75 @@ export async function sendWalletFunds(
 
 // ------------------------------------------------------------- anchoring
 
-/** Read the public anchor record for an invoice straight from the contract. */
-export async function readAnchor(
-  invoiceId: string,
-): Promise<
-  | { reachable: false }
-  | { reachable: true; anchored: boolean; fingerprint: string | null; paid: boolean }
-> {
-  // An invoice anchored on an earlier contract version keeps verifying
-  // against THAT contract: its pinned address wins over the current global.
-  const [inv] = await db
-    .select({ pinned: invoicesTable.contractAddress })
+async function loadInvoice(invoiceId: string): Promise<InvoiceRow | null> {
+  const [row] = await db
+    .select()
     .from(invoicesTable)
     .where(eq(invoicesTable.id, invoiceId));
-  const contractAddress =
-    (inv?.pinned as Address | null) ?? (await getContractAddress());
-  if (!contractAddress) {
-    return { reachable: true, anchored: false, fingerprint: null, paid: false };
-  }
+  return row ?? null;
+}
+
+async function resolveInvoice(
+  invoice: string | InvoiceRow,
+): Promise<InvoiceRow | null> {
+  return typeof invoice === "string" ? loadInvoice(invoice) : invoice;
+}
+
+export type AnchorReadResult =
+  | { reachable: false }
+  | {
+      reachable: true;
+      anchored: boolean;
+      fingerprint: string | null;
+      paid: boolean;
+      paidAmountWei: bigint;
+      payer: Address | null;
+      payee: Address | null;
+    };
+
+const NOT_ANCHORED: AnchorReadResult = {
+  reachable: true,
+  anchored: false,
+  fingerprint: null,
+  paid: false,
+  paidAmountWei: 0n,
+  payer: null,
+  payee: null,
+};
+
+/**
+ * Read the public anchor record for an invoice straight from the contract on
+ * the invoice's own network. An invoice anchored on an earlier registry keeps
+ * verifying against THAT contract: its pinned address wins over the current
+ * one. getAnchor has the same shape in v3 and v4, so one reader serves both.
+ */
+export async function readAnchor(
+  invoice: string | InvoiceRow,
+): Promise<AnchorReadResult> {
+  const row = await resolveInvoice(invoice);
+  if (!row) return NOT_ANCHORED;
+  const registry = registryFor(row);
+  const address =
+    registry.address ??
+    (registry.network.mode === "sandbox" ? await getLegacyContractAddress() : null);
+  if (!address) return NOT_ANCHORED;
   try {
-    const result = (await publicClient.readContract({
-      address: contractAddress,
+    const result = (await registry.network.publicClient.readContract({
+      address,
       abi: REGISTRY_ABI,
       functionName: "getAnchor",
-      args: [invoiceKey(invoiceId)],
-    })) as readonly [`0x${string}`, bigint, boolean, bigint, Address, Address];
-    const [fingerprint, anchoredAt, paid] = result;
-    if (anchoredAt === 0n) {
-      return { reachable: true, anchored: false, fingerprint: null, paid: false };
-    }
+      args: [invoiceKey(row.id)],
+    })) as readonly [Hex, bigint, boolean, bigint, Address, Address];
+    const [fingerprint, anchoredAt, paid, paidAmount, payer, payee] = result;
+    if (anchoredAt === 0n) return NOT_ANCHORED;
     return {
       reachable: true,
       anchored: true,
       fingerprint: fingerprint.slice(2),
       paid,
+      paidAmountWei: paidAmount,
+      payer: paid ? payer : null,
+      payee: paid ? payee : null,
     };
   } catch {
     return { reachable: false };
@@ -761,65 +845,180 @@ export function anchorFingerprintMatches(
   return actual !== null && actual.toLowerCase() === expected.toLowerCase();
 }
 
+/** Who signs (and pays for) anchors on a network. */
+export type AnchorPayer = "sender" | "operator";
+
+export function anchorPayerFor(network: ArcNetwork): AnchorPayer {
+  return network.mode === "live" ? "operator" : "sender";
+}
+
 /**
  * Live cost of one anchor transaction (gas x current gas price), estimated
- * against the real contract with a throwaway fingerprint from the acting
- * sender's address. If Arc cannot provide a live estimate, use the permanent
- * 0.1 test-USDC fallback requested by the product.
+ * against the real registry with a throwaway fingerprint from the address
+ * that will actually submit it: the sender's sandbox wallet, or the operator
+ * on mainnet (the mainnet registry rejects anyone else, so estimating from
+ * another address would just revert). Sandbox falls back to the permanent
+ * 0.1 test-USDC figure; live returns null when no honest estimate exists.
  */
 export async function estimateAnchorFeeWei(
-  senderAddress: string,
-): Promise<bigint> {
-  const contractAddress = await getContractAddress();
+  network: ArcNetwork,
+  fromAddress: string,
+): Promise<bigint | null> {
+  const registry = network.registryAddress;
+  if (!registry) return feeFallbackFor(network);
   try {
     const probe = keccak256(
       toBytes(`anchor-fee-probe:${Date.now()}:${Math.random()}`),
     );
-    const gasPricePromise = publicClient.getGasPrice();
-    if (!contractAddress) {
-      const [gas, gasPrice] = await Promise.all([
-        publicClient.estimateGas({
-          account: senderAddress as Address,
-          data: encodeDeployData({
-            abi: REGISTRY_ABI,
-            bytecode: REGISTRY_BYTECODE as `0x${string}`,
-            args: [probe, probe],
-          }),
-        }),
-        gasPricePromise,
-      ]);
-      return gas * gasPrice;
-    }
     const [gas, gasPrice] = await Promise.all([
-      publicClient.estimateContractGas({
-        address: contractAddress,
+      network.publicClient.estimateContractGas({
+        address: registry,
         abi: REGISTRY_ABI,
         functionName: "anchorInvoice",
-        args: [probe, probe],
-        account: senderAddress as Address,
+        args: [probe, probe, probe],
+        account: fromAddress as Address,
       }),
-      publicClient.getGasPrice(),
+      network.publicClient.getGasPrice(),
     ]);
     return gas * gasPrice;
   } catch {
-    return FEE_ESTIMATE_FALLBACK_WEI;
+    return feeFallbackFor(network);
+  }
+}
+
+/** The mainnet operator wallet: address and live balance, or null when off. */
+export async function mainnetOperatorStatus(): Promise<{
+  address: Address;
+  balanceWei: bigint | null;
+} | null> {
+  const operator = mainnetOperatorAccount();
+  if (!operator) return null;
+  return {
+    address: operator.address,
+    balanceWei: await getBalance(operator.address, ARC_MAINNET),
+  };
+}
+
+/**
+ * The address a payment for this invoice must reach. Live invoices pay the
+ * sender's own linked wallet - there is no custodial fallback with real
+ * money, so a sender without a payout wallet cannot create one. Sandbox
+ * invoices pay the linked wallet when there is one, else the sender's
+ * custodial sandbox wallet.
+ */
+export async function resolvePayeeForNetwork(
+  payeeUserId: string,
+  network: ArcNetwork,
+): Promise<{ address: Address; linked: boolean } | null> {
+  const [payeeRow] = await db
+    .select()
+    .from(usersTable)
+    .where(eq(usersTable.id, payeeUserId));
+  if (payeeRow?.payoutAddress) {
+    return { address: payeeRow.payoutAddress as Address, linked: true };
+  }
+  if (network.mode === "live") return null;
+  const wallet = await getWallet(payeeUserId);
+  return wallet ? { address: wallet.address as Address, linked: false } : null;
+}
+
+/**
+ * Sandbox-only view used by legacy (v3) previews: where a payment to this
+ * payee would land right now. v4 invoices carry their payee on the row.
+ */
+export async function resolvePayeeAddress(
+  payeeUserId: string,
+): Promise<{ address: string; linked: boolean } | null> {
+  return resolvePayeeForNetwork(payeeUserId, ARC_TESTNET);
+}
+
+export interface PaymentTerms {
+  payee: Address;
+  salt: Hex;
+  amountWei: bigint;
+}
+
+export function paymentTermsOf(invoice: InvoiceRow): PaymentTerms | null {
+  if (!invoice.payeeAddress || !isBytes32Hex(invoice.paymentSalt)) return null;
+  return {
+    payee: invoice.payeeAddress as Address,
+    salt: invoice.paymentSalt,
+    amountWei: parseUnits(fmt2(invoice.amountUsdc), 18),
+  };
+}
+
+/**
+ * Fix the payment terms (payee + salt) an anchor commits to. Written once,
+ * first writer wins, never overwritten: the on-chain commitment must keep
+ * matching the row forever. Invoices created before v4 get their terms here
+ * on their first v4 anchor attempt.
+ */
+export async function ensurePaymentTerms(
+  invoice: InvoiceRow,
+): Promise<PaymentTerms | null> {
+  const existing = paymentTermsOf(invoice);
+  if (existing) return existing;
+  const network = networkForChainId(invoice.chainId);
+  const payee = await resolvePayeeForNetwork(invoice.freelancerId, network);
+  if (!payee) return null;
+  const salt = newPaymentSalt();
+  await db
+    .update(invoicesTable)
+    .set({
+      payeeAddress: sql`COALESCE(${invoicesTable.payeeAddress}, ${payee.address})`,
+      paymentSalt: sql`COALESCE(${invoicesTable.paymentSalt}, ${salt})`,
+    })
+    .where(eq(invoicesTable.id, invoice.id));
+  const fresh = await loadInvoice(invoice.id);
+  return fresh ? paymentTermsOf(fresh) : null;
+}
+
+/** The wallet that signs this invoice's anchor, or null when it cannot. */
+async function anchorSignerFor(
+  invoice: InvoiceRow,
+  network: ArcNetwork,
+): Promise<PrivateKeyAccount | null> {
+  if (network.mode === "live") {
+    // The switch is checked on every signature, not just at creation: turning
+    // mainnet off must also stop the background retry from spending.
+    return mainnetAvailability().enabled ? mainnetOperatorAccount() : null;
+  }
+  const sender = await getWallet(invoice.freelancerId);
+  return sender ? privateKeyToAccount(sender.privateKey as Hex) : null;
+}
+
+/** Who signed a persisted transaction and which contract it targets. */
+async function signedTransactionParties(
+  transaction: PendingSignedTransaction,
+): Promise<{ from: Address; to: Address | null }> {
+  const serialized = transaction.serialized as TransactionSerialized;
+  const parsed = parseTransaction(serialized);
+  const from = await recoverTransactionAddress({
+    serializedTransaction: serialized,
+  });
+  return { from, to: parsed.to ?? null };
+}
+
+async function minedReceipt(network: ArcNetwork, hash: Hex) {
+  try {
+    return await network.publicClient.getTransactionReceipt({ hash });
+  } catch (err) {
+    if (err instanceof TransactionReceiptNotFoundError) return null;
+    throw err;
   }
 }
 
 /**
- * Record the invoice fingerprint onchain. When no registry exists, the sender
- * deploys it and anchors this first invoice in the constructor, so bootstrap
- * remains one user-approved, user-funded transaction. Failures leave the
- * invoice pending (or unavailable when RPC is down) - never silently faked.
+ * Record the invoice fingerprint and payment commitment onchain. Sandbox
+ * anchors are signed and paid by the sender's custodial wallet; live anchors
+ * by Envelo's operator key. Failures leave the invoice pending (or
+ * unavailable when the network is down) - never silently faked.
  */
 export async function anchorInvoiceOnChain(invoiceId: string): Promise<boolean> {
-  const [invoice] = await db
-    .select()
-    .from(invoicesTable)
-    .where(eq(invoicesTable.id, invoiceId));
+  const invoice = await loadInvoice(invoiceId);
   if (!invoice) return false;
   if (invoice.anchorStatus === "anchored") {
-    const existing = await readAnchor(invoiceId);
+    const existing = await readAnchor(invoice);
     const matches =
       existing.reachable &&
       existing.anchored &&
@@ -830,105 +1029,57 @@ export async function anchorInvoiceOnChain(invoiceId: string): Promise<boolean> 
     return matches;
   }
 
-  // The SENDER's custodial wallet submits and pays for its own anchor - no
-  // operator sponsorship. The first sender also deploys the shared registry.
-  const sender = await getWallet(invoice.freelancerId);
-  if (!sender) return false;
+  const { network, address: registry } = registryFor(invoice);
+  if (!registry) {
+    logger.error(
+      { invoiceId, network: network.key },
+      "No registry configured for this network; anchor stays pending",
+    );
+    return false;
+  }
+  const signer = await anchorSignerFor(invoice, network);
+  if (!signer) {
+    const live = mainnetAvailability();
+    logger.warn(
+      {
+        invoiceId,
+        network: network.key,
+        reason: network.mode === "live" && !live.enabled ? live.reason : "no_sender_wallet",
+      },
+      network.mode === "live"
+        ? "Mainnet is switched off or has no operator key; anchor stays pending"
+        : "Sender has no sandbox wallet; anchor stays pending",
+    );
+    return false;
+  }
+  const terms = await ensurePaymentTerms(invoice);
+  if (!terms) {
+    logger.warn(
+      { invoiceId, network: network.key },
+      "Invoice has no payee wallet yet (live invoices need a linked payout wallet); anchor stays pending",
+    );
+    return false;
+  }
 
   try {
-    const wallet = walletClientFor(sender.privateKey);
-    const result = await enqueueTx(async (): Promise<
+    const wallet = walletClientForAccount(signer, network);
+    const result = await enqueueTx(network, async (): Promise<
       | { confirmed: false }
       | {
           confirmed: true;
           hash: string | null;
-          contractAddress: Address;
+          block: bigint | null;
+          /** Set when the anchor landed on a registry other than the current one. */
+          contractAddress?: Address;
         }
     > => {
       // Re-check inside the queue: another queued attempt (creation hook,
       // retry pass, pay route) may have anchored this invoice meanwhile, and
       // a second anchor tx would just revert in the contract.
-      const [fresh] = await db
-        .select()
-        .from(invoicesTable)
-        .where(eq(invoicesTable.id, invoiceId));
+      const fresh = await loadInvoice(invoiceId);
       if (!fresh) throw new Error("Invoice disappeared while anchoring");
-      let contractAddress =
-        (fresh.contractAddress as Address | null) ?? (await getContractAddress());
-
-      // Registry bootstrap is ONE global durable intent. While it exists,
-      // every invoice reconciles the same signed CREATE transaction before
-      // any other sender may prepare a contract deployment.
-      const activation = await getPendingRegistryActivation();
-      if (activation) {
-        const receipt = await submitSignedTransaction(
-          activation,
-          "Registry activation and anchor",
-        );
-        if (
-          !receipt.contractAddress ||
-          receipt.contractAddress.toLowerCase() !==
-            activation.expectedContractAddress!.toLowerCase()
-        ) {
-          throw new Error(
-            "Registry activation receipt did not match its precomputed address",
-          );
-        }
-        contractAddress = activation.expectedContractAddress!;
-        await setChainState("contractAddress", contractAddress);
-        await setChainState("contractVersion", REGISTRY_VERSION);
-        const [activatingInvoice] = await db
-          .select({
-            fingerprint: invoicesTable.fingerprint,
-          })
-          .from(invoicesTable)
-          .where(eq(invoicesTable.id, activation.activatingInvoiceId));
-        if (
-          !activatingInvoice ||
-          !anchorFingerprintMatches(
-            activatingInvoice.fingerprint,
-            activation.fingerprint,
-          )
-        ) {
-          throw new Error(
-            "Registry activation intent no longer matches its invoice",
-          );
-        }
-        const activationAnchor = await readAnchor(
-          activation.activatingInvoiceId,
-        );
-        if (
-          !activationAnchor.reachable ||
-          !activationAnchor.anchored ||
-          !anchorFingerprintMatches(
-            activationAnchor.fingerprint,
-            activation.fingerprint,
-          )
-        ) {
-          throw new Error(
-            "Registry activation did not record the expected first fingerprint",
-          );
-        }
-        await markAnchored(
-          activation.activatingInvoiceId,
-          activation.hash,
-          contractAddress,
-        );
-        await clearPendingRegistryActivation();
-        if (activation.activatingInvoiceId === invoiceId) {
-          return {
-            confirmed: true,
-            hash: activation.hash,
-            contractAddress,
-          };
-        }
-      }
-
       if (fresh.anchorStatus === "anchored") {
-        if (!contractAddress) {
-          throw new Error("Anchored invoice is missing its registry address");
-        }
-        const existing = await readAnchor(invoiceId);
+        const existing = await readAnchor(fresh);
         if (
           !existing.reachable ||
           !existing.anchored ||
@@ -936,12 +1087,17 @@ export async function anchorInvoiceOnChain(invoiceId: string): Promise<boolean> 
         ) {
           throw new Error("Stored anchor does not match the invoice fingerprint");
         }
-        return {
-          confirmed: true,
-          hash: fresh.anchorTxHash,
-          contractAddress,
-        };
+        return { confirmed: true, hash: fresh.anchorTxHash, block: fresh.anchorBlock };
       }
+
+      const confirmAnchored = async (): Promise<boolean> => {
+        const confirmed = await readAnchor(fresh);
+        return (
+          confirmed.reachable &&
+          confirmed.anchored &&
+          anchorFingerprintMatches(confirmed.fingerprint, fresh.fingerprint)
+        );
+      };
 
       // Signed bytes are persisted before their first broadcast. Replaying the
       // exact bytes is safe: same sender, nonce, payload, signature, and hash.
@@ -950,39 +1106,52 @@ export async function anchorInvoiceOnChain(invoiceId: string): Promise<boolean> 
         if (fresh.anchorTxHash && fresh.anchorTxHash !== pending.hash) {
           throw new Error("Stored anchor hash does not match its signed intent");
         }
-        const receipt = await submitSignedTransaction(pending, "Anchor");
-        if (pending.expectedContractAddress) {
+        // An intent signed before an operator or registry rotation still
+        // carries the old key and the old contract. Never rebroadcast it as
+        // if nothing changed: a revoked key must not keep spending, and an
+        // anchor on the previous registry must be pinned there, not here.
+        const parties = await signedTransactionParties(pending);
+        const stillCurrent =
+          parties.from.toLowerCase() === signer.address.toLowerCase() &&
+          parties.to?.toLowerCase() === registry.toLowerCase();
+        if (stillCurrent) {
+          const receipt = await submitSignedTransaction(network, pending, "Anchor");
+          if (!(await confirmAnchored())) return { confirmed: false };
+          return { confirmed: true, hash: pending.hash, block: receipt.blockNumber };
+        }
+        const mined = await minedReceipt(network, pending.hash);
+        if (mined?.status === "success" && parties.to) {
+          const there = await readAnchor({
+            ...fresh,
+            contractAddress: parties.to,
+            registryVersion: REGISTRY_VERSION,
+          });
+          if (!there.reachable) return { confirmed: false };
           if (
-            !receipt.contractAddress ||
-            receipt.contractAddress.toLowerCase() !==
-              pending.expectedContractAddress.toLowerCase()
+            !there.anchored ||
+            !anchorFingerprintMatches(there.fingerprint, fresh.fingerprint)
           ) {
             throw new Error(
-              "Registry deploy receipt did not match the precomputed address",
+              "A stale anchor transaction was mined but its registry does not hold this fingerprint",
             );
           }
-          contractAddress = pending.expectedContractAddress;
-          await setChainState("contractAddress", contractAddress);
-          await setChainState("contractVersion", REGISTRY_VERSION);
+          return {
+            confirmed: true,
+            hash: pending.hash,
+            block: mined.blockNumber,
+            contractAddress: parties.to,
+          };
         }
-        if (!contractAddress) {
-          throw new Error(
-            "Confirmed anchor transaction has no registry contract address",
-          );
-        }
-        const confirmed = await readAnchor(invoiceId);
-        if (
-          !confirmed.reachable ||
-          !confirmed.anchored ||
-          !anchorFingerprintMatches(confirmed.fingerprint, fresh.fingerprint)
-        ) {
-          return { confirmed: false };
-        }
-        return {
-          confirmed: true,
-          hash: pending.hash,
-          contractAddress,
-        };
+        logger.warn(
+          { invoiceId, network: network.key, signedBy: parties.from, target: parties.to },
+          "Discarding a signed anchor left over from an operator or registry rotation",
+        );
+        await clearPendingSignedTransaction("anchor", invoiceId);
+        await db
+          .update(invoicesTable)
+          .set({ anchorTxHash: null })
+          .where(eq(invoicesTable.id, invoiceId));
+        fresh.anchorTxHash = null;
       }
 
       // Legacy submitted hashes have no persisted signed bytes. They are
@@ -990,32 +1159,19 @@ export async function anchorInvoiceOnChain(invoiceId: string): Promise<boolean> 
       // transaction or a second charge.
       if (fresh.anchorTxHash) {
         try {
-          const receipt = await publicClient.getTransactionReceipt({
-            hash: fresh.anchorTxHash as `0x${string}`,
+          const receipt = await network.publicClient.getTransactionReceipt({
+            hash: fresh.anchorTxHash as Hex,
           });
           if (receipt.status !== "success") {
             throw new Error(
               `Anchor transaction ${fresh.anchorTxHash} was mined but reverted`,
             );
           }
-          if (receipt.contractAddress) {
-            contractAddress = receipt.contractAddress;
-            await setChainState("contractAddress", contractAddress);
-            await setChainState("contractVersion", REGISTRY_VERSION);
-          }
-          if (!contractAddress) {
-            throw new Error(
-              "Confirmed anchor transaction has no registry contract address",
-            );
-          }
-          const confirmed = await readAnchor(invoiceId);
+          const confirmed = await readAnchor(fresh);
           if (!confirmed.reachable) return { confirmed: false };
           if (
             !confirmed.anchored ||
-            !anchorFingerprintMatches(
-              confirmed.fingerprint,
-              fresh.fingerprint,
-            )
+            !anchorFingerprintMatches(confirmed.fingerprint, fresh.fingerprint)
           ) {
             throw new Error(
               "Confirmed anchor transaction does not match the invoice fingerprint",
@@ -1024,7 +1180,7 @@ export async function anchorInvoiceOnChain(invoiceId: string): Promise<boolean> 
           return {
             confirmed: true,
             hash: fresh.anchorTxHash,
-            contractAddress,
+            block: receipt.blockNumber,
           };
         } catch (err) {
           if (err instanceof TransactionReceiptNotFoundError) {
@@ -1038,155 +1194,151 @@ export async function anchorInvoiceOnChain(invoiceId: string): Promise<boolean> 
         }
       }
 
-      if (contractAddress) {
-        const existing = await readAnchor(invoiceId);
-        if (existing.reachable && existing.anchored) {
-          if (!anchorFingerprintMatches(existing.fingerprint, fresh.fingerprint)) {
-            throw new Error(
-              "Registry contains a different fingerprint for this invoice",
-            );
-          }
-          return { confirmed: true, hash: null, contractAddress };
+      // The contract may already hold this anchor (a confirmation the app
+      // missed). Never send a second transaction for it.
+      const existing = await readAnchor(fresh);
+      if (existing.reachable && existing.anchored) {
+        if (!anchorFingerprintMatches(existing.fingerprint, fresh.fingerprint)) {
+          throw new Error(
+            "Registry contains a different fingerprint for this invoice",
+          );
         }
-        const data = encodeFunctionData({
-          abi: REGISTRY_ABI,
-          functionName: "anchorInvoice",
-          args: [
-            invoiceKey(invoiceId),
-            `0x${fresh.fingerprint}` as `0x${string}`,
-          ],
-        });
-        const signed = await signTransactionBeforeBroadcast(wallet, {
-          to: contractAddress,
-          data,
-        });
-        const transaction: PendingSignedTransaction = {
-          hash: signed.hash,
-          serialized: signed.serialized,
-        };
-        await persistSignedTransaction("anchor", invoiceId, transaction);
-        await submitSignedTransaction(transaction, "Anchor");
-        const confirmed = await readAnchor(invoiceId);
-        if (
-          !confirmed.reachable ||
-          !confirmed.anchored ||
-          !anchorFingerprintMatches(confirmed.fingerprint, fresh.fingerprint)
-        ) {
-          return { confirmed: false };
-        }
-        return { confirmed: true, hash: signed.hash, contractAddress };
+        return { confirmed: true, hash: null, block: null };
       }
 
-      const data = encodeDeployData({
-        abi: REGISTRY_ABI,
-        bytecode: REGISTRY_BYTECODE as `0x${string}`,
-        args: [
-          invoiceKey(invoiceId),
-          `0x${fresh.fingerprint}` as `0x${string}`,
-        ],
+      if (network.mode === "live") {
+        // Real money: refuse to sign when the operator cannot clearly cover
+        // the gas, instead of letting the node reject an underfunded tx.
+        const [balance, fee] = await Promise.all([
+          getBalance(signer.address, network),
+          estimateAnchorFeeWei(network, signer.address),
+        ]);
+        if (balance === null || fee === null) {
+          throw new Error("Mainnet operator balance or anchor fee is unreadable");
+        }
+        if (!decideAffordability(balance, fee).canAfford) {
+          throw new Error(
+            `Mainnet operator wallet ${signer.address} holds ${formatFeeUsdc(balance)} USDC, below the ${formatFeeUsdc(fee)} USDC anchor fee`,
+          );
+        }
+        // The same floor the approval sheet enforces, re-checked at the moment
+        // of signing: the balance may have dropped since the invoice was made.
+        const floorWei = parseUnits(mainnetOperatorMinBalanceUsdc(), 18);
+        if (balance < floorWei) {
+          throw new Error(
+            `Mainnet operator wallet ${signer.address} holds ${formatFeeUsdc(balance)} USDC, under its ${mainnetOperatorMinBalanceUsdc()} USDC floor`,
+          );
+        }
+      }
+
+      const commitment = paymentCommitment({
+        invoiceId,
+        payee: terms.payee,
+        amountWei: terms.amountWei,
+        salt: terms.salt,
       });
-      const signed = await signTransactionBeforeBroadcast(wallet, { data });
-      const expectedContractAddress = getCreateContractAddress({
-        from: wallet.account.address,
-        nonce: BigInt(signed.nonce),
+      const data = encodeAnchorCall({
+        invoiceId,
+        fingerprintHex: fresh.fingerprint,
+        commitment,
+      });
+      const signed = await signTransactionBeforeBroadcast(wallet, {
+        to: registry,
+        data,
       });
       const transaction: PendingSignedTransaction = {
         hash: signed.hash,
         serialized: signed.serialized,
-        expectedContractAddress,
       };
-      await persistRegistryActivation({
-        ...transaction,
-        activatingInvoiceId: invoiceId,
-        fingerprint: fresh.fingerprint,
-      });
-      const receipt = await submitSignedTransaction(
-        transaction,
-        "Registry activation and anchor",
-      );
-      if (
-        !receipt.contractAddress ||
-        receipt.contractAddress.toLowerCase() !==
-          expectedContractAddress.toLowerCase()
-      ) {
+      await persistSignedTransaction("anchor", invoiceId, transaction);
+      const receipt = await submitSignedTransaction(network, transaction, "Anchor");
+      if (!(await confirmAnchored())) return { confirmed: false };
+      const recorded = (await network.publicClient.readContract({
+        address: registry,
+        abi: REGISTRY_ABI,
+        functionName: "getCommitment",
+        args: [invoiceKey(invoiceId)],
+      })) as Hex;
+      if (recorded.toLowerCase() !== commitment.toLowerCase()) {
         throw new Error(
-          "Deploy receipt did not match the precomputed contract address",
+          "Registry recorded a different payment commitment for this invoice",
         );
       }
-      contractAddress = expectedContractAddress;
-      await setChainState("contractAddress", contractAddress);
-      await setChainState("contractVersion", REGISTRY_VERSION);
-      logger.info(
-        { contractAddress, invoiceId, version: REGISTRY_VERSION },
-        "SealedInvoiceRegistry activated by the first invoice sender",
-      );
-      const confirmed = await readAnchor(invoiceId);
-      if (
-        !confirmed.reachable ||
-        !confirmed.anchored ||
-        !anchorFingerprintMatches(confirmed.fingerprint, fresh.fingerprint)
-      ) {
-        return { confirmed: false };
-      }
-      return { confirmed: true, hash: signed.hash, contractAddress };
+      return { confirmed: true, hash: signed.hash, block: receipt.blockNumber };
     });
     if (!result.confirmed) return false;
-    await markAnchored(invoiceId, result.hash, result.contractAddress);
-    const completedActivation = await getPendingRegistryActivation();
-    if (
-      completedActivation?.activatingInvoiceId === invoiceId &&
-      completedActivation.hash === result.hash
-    ) {
-      await clearPendingRegistryActivation();
-    }
+    await markAnchored({
+      invoiceId,
+      txHash: result.hash,
+      contractAddress: result.contractAddress ?? registry,
+      registryVersion: REGISTRY_VERSION,
+      block: result.block,
+      network,
+    });
     await clearPendingSignedTransaction("anchor", invoiceId);
     logger.info(
-      { invoiceId, txHash: result.hash, contractAddress: result.contractAddress },
+      {
+        invoiceId,
+        txHash: result.hash,
+        contractAddress: registry,
+        network: network.key,
+        paidBy: anchorPayerFor(network),
+      },
       "Invoice fingerprint anchored on Arc",
     );
     return true;
   } catch (err) {
-    const connected = await isRpcConnected();
+    const connected = await isRpcConnected(network);
     await db
       .update(invoicesTable)
       .set({ anchorStatus: connected ? "pending" : "unavailable" })
       .where(eq(invoicesTable.id, invoiceId));
-    logger.warn({ err, invoiceId, connected }, "Anchoring failed; will retry");
+    logger.warn(
+      { err, invoiceId, network: network.key, connected },
+      "Anchoring failed; will retry",
+    );
     return false;
   }
 }
 
-async function markAnchored(
-  invoiceId: string,
-  txHash: string | null,
-  contractAddress: Address,
-): Promise<void> {
+async function markAnchored(args: {
+  invoiceId: string;
+  txHash: string | null;
+  contractAddress: Address;
+  registryVersion: number;
+  block: bigint | null;
+  network: ArcNetwork;
+}): Promise<void> {
   await db
     .update(invoicesTable)
     .set({
       anchorStatus: "anchored",
-      anchorTxHash: txHash,
-      // Pin which contract holds this anchor - but never overwrite an
-      // existing pin (an early-return re-mark must not repoint an invoice
-      // anchored on an older contract version at the current one).
-      contractAddress: sql`COALESCE(${invoicesTable.contractAddress}, ${contractAddress})`,
+      anchorTxHash: args.txHash,
+      // Pin which contract (and version) holds this anchor - but never
+      // overwrite an existing pin (an early-return re-mark must not repoint
+      // an invoice anchored on an older contract version at the current one).
+      contractAddress: sql`COALESCE(${invoicesTable.contractAddress}, ${args.contractAddress})`,
+      registryVersion: sql`COALESCE(${invoicesTable.registryVersion}, ${args.registryVersion})`,
+      anchorBlock: sql`COALESCE(${invoicesTable.anchorBlock}, ${args.block === null ? null : args.block.toString()}::bigint)`,
     })
-    .where(eq(invoicesTable.id, invoiceId));
+    .where(eq(invoicesTable.id, args.invoiceId));
   const events = await db
     .select()
     .from(invoiceEventsTable)
     .where(
       and(
-        eq(invoiceEventsTable.invoiceId, invoiceId),
+        eq(invoiceEventsTable.invoiceId, args.invoiceId),
         eq(invoiceEventsTable.kind, "anchored"),
       ),
     );
   if (events.length === 0) {
     await db.insert(invoiceEventsTable).values({
-      invoiceId,
+      invoiceId: args.invoiceId,
       kind: "anchored",
-      detail: `The invoice fingerprint (and nothing else) was recorded on ${NETWORK_NAME}.`,
-      txHash,
+      detail: `The invoice fingerprint and a hash of its payment terms (and nothing else) were recorded on ${args.network.name}${
+        args.network.mode === "live" ? " by Envelo's operator wallet" : ""
+      }.`,
+      txHash: args.txHash,
     });
   }
 }
@@ -1196,7 +1348,16 @@ export async function retryPendingAnchors(): Promise<void> {
     .select()
     .from(invoicesTable)
     .where(ne(invoicesTable.anchorStatus, "anchored"));
+  if (rows.length === 0) return;
+  // Probe each network once per pass; a down network's invoices just wait.
+  const reachable = new Map<number, boolean>();
   for (const row of rows) {
+    const network = networkForChainId(row.chainId);
+    if (network.mode === "live" && !mainnetAvailability().enabled) continue;
+    if (!reachable.has(network.chainId)) {
+      reachable.set(network.chainId, await isRpcConnected(network));
+    }
+    if (!reachable.get(network.chainId)) continue;
     await anchorInvoiceOnChain(row.id);
   }
 }
@@ -1204,60 +1365,131 @@ export async function retryPendingAnchors(): Promise<void> {
 // ------------------------------------------------------------ pay preview
 
 /**
- * Live cost of one payInvoice transaction for this invoice. Tries a real
- * simulation from the payer's own address first; a node refuses to simulate
- * a payment the payer cannot cover. Whenever the live estimate is unavailable,
- * the approval and submit guards use the permanent 0.1 test-USDC fallback.
+ * Live cost of one payInvoice transaction for this invoice, simulated from
+ * the payer's own address (a node refuses to simulate a payment the payer
+ * cannot cover). Sandbox falls back to the permanent 0.1 test-USDC figure;
+ * live returns null when no honest estimate exists.
  */
 export async function estimatePayFeeWei(args: {
-  invoiceId: string;
+  invoice: InvoiceRow;
   payerAddress: string;
   payeeAddress: string;
   amountWei: bigint;
-  contractAddress: Address;
-}): Promise<bigint> {
+}): Promise<bigint | null> {
+  const registry = registryFor(args.invoice);
+  if (!registry.address) return feeFallbackFor(registry.network);
   try {
-    const [gas, gasPrice] = await Promise.all([
-      publicClient.estimateContractGas({
-        address: args.contractAddress,
-        abi: REGISTRY_ABI,
-        functionName: "payInvoice",
-        args: [invoiceKey(args.invoiceId), args.payeeAddress as Address],
-        account: args.payerAddress as Address,
-        value: args.amountWei,
-      }),
-      publicClient.getGasPrice(),
-    ]);
+    const client = registry.network.publicClient;
+    const terms = paymentTermsOf(args.invoice);
+    const gasPromise =
+      registry.version >= 4 && terms
+        ? client.estimateContractGas({
+            address: registry.address,
+            abi: REGISTRY_ABI,
+            functionName: "payInvoice",
+            args: [invoiceKey(args.invoice.id), terms.payee, terms.salt],
+            account: args.payerAddress as Address,
+            value: args.amountWei,
+          })
+        : client.estimateGas({
+            account: args.payerAddress as Address,
+            to: registry.address,
+            data: encodePayCallV3({
+              invoiceId: args.invoice.id,
+              payee: args.payeeAddress as Address,
+            }),
+            value: args.amountWei,
+          });
+    const [gas, gasPrice] = await Promise.all([gasPromise, client.getGasPrice()]);
     return gas * gasPrice;
   } catch {
-    return FEE_ESTIMATE_FALLBACK_WEI;
+    return feeFallbackFor(registry.network);
   }
 }
 
+export interface ExternalPaymentRequest {
+  chainId: number;
+  to: Address;
+  data: Hex;
+  /** Native USDC wei, hex encoded the way eth_sendTransaction expects. */
+  value: Hex;
+  valueWei: bigint;
+}
+
 /**
- * Where a payment to this payee would land right now: their linked payout
- * wallet when configured, otherwise their custodial wallet. The real payment
- * re-resolves at submit time; the preview uses this for honest display.
+ * The exact transaction a client's own wallet must send to pay this invoice:
+ * payInvoice(key, committed payee, salt) on the invoice's registry with the
+ * invoice amount attached. Null until the invoice is anchored on a v4
+ * registry with its terms fixed - an unanchored invoice cannot be paid.
  */
-export async function resolvePayeeAddress(
-  payeeUserId: string,
-): Promise<{ address: string; linked: boolean } | null> {
-  const [payeeRow] = await db
-    .select()
-    .from(usersTable)
-    .where(eq(usersTable.id, payeeUserId));
-  if (payeeRow?.payoutAddress) {
-    return { address: payeeRow.payoutAddress, linked: true };
-  }
-  const wallet = await getWallet(payeeUserId);
-  return wallet ? { address: wallet.address, linked: false } : null;
+export function buildExternalPayment(
+  invoice: InvoiceRow,
+): ExternalPaymentRequest | null {
+  if (invoice.anchorStatus !== "anchored") return null;
+  const registry = registryFor(invoice);
+  const terms = paymentTermsOf(invoice);
+  if (!registry.address || registry.version < 4 || !terms) return null;
+  return {
+    chainId: registry.network.chainId,
+    to: registry.address,
+    data: encodePayCall({ invoiceId: invoice.id, payee: terms.payee, salt: terms.salt }),
+    value: `0x${terms.amountWei.toString(16)}`,
+    valueWei: terms.amountWei,
+  };
 }
 
 // -------------------------------------------------------------- payments
 
 /**
- * Send the real payment transaction from the payer's custodial wallet.
- * The registry contract forwards the attached native USDC to the payee.
+ * Mark an invoice paid from a verified on-chain fact. Idempotent: the row is
+ * only moved to paid once and the "paid" event is written once, so the
+ * custodial path, the browser-wallet path and reconciliation can all call it.
+ */
+export async function recordInvoicePaid(args: {
+  invoiceId: string;
+  txHash: string | null;
+  payerAddress: Address | null;
+  actorId: string | null;
+  detail: string;
+}): Promise<InvoiceRow | null> {
+  // One conditional update decides the winner: Postgres re-checks the
+  // status predicate after taking the row lock, so of several concurrent
+  // callers (custodial pay, wallet pay, reconciliation) exactly one sees a
+  // row come back and writes the single "paid" event.
+  const [won] = await db
+    .update(invoicesTable)
+    .set({
+      status: "paid",
+      payTxHash: sql`COALESCE(${args.txHash}, ${invoicesTable.payTxHash})`,
+      payerAddress: sql`COALESCE(${args.payerAddress}, ${invoicesTable.payerAddress})`,
+      paidAt: sql`COALESCE(${invoicesTable.paidAt}, now())`,
+    })
+    .where(
+      and(eq(invoicesTable.id, args.invoiceId), ne(invoicesTable.status, "paid")),
+    )
+    .returning();
+  if (won) {
+    await db.insert(invoiceEventsTable).values({
+      invoiceId: args.invoiceId,
+      kind: "paid",
+      actorId: args.actorId,
+      detail: args.detail,
+      txHash: args.txHash ?? won.payTxHash ?? null,
+    });
+    return won;
+  }
+  const [current] = await db
+    .select()
+    .from(invoicesTable)
+    .where(eq(invoicesTable.id, args.invoiceId));
+  return current ?? null;
+}
+
+/**
+ * Send the real payment transaction from the payer's SANDBOX wallet. The
+ * registry contract forwards the attached native USDC to the payee. Live
+ * invoices never come through here: they are paid from the client's own
+ * wallet and verified by confirmExternalPayment.
  */
 export async function payInvoiceOnChain(args: {
   invoiceId: string;
@@ -1269,44 +1501,76 @@ export async function payInvoiceOnChain(args: {
   txHash: string | null;
   alreadyPaidOnChain: boolean;
   paidToLinkedWallet: boolean;
+  payerAddress: Address | null;
 }> {
+  const invRow = await loadInvoice(args.invoiceId);
+  if (!invRow) throw new Error("Invoice not found");
   // Pay on the contract this invoice is actually anchored on (older
   // invoices stay on the contract version that recorded them).
-  const [invRow] = await db
-    .select({
-      pinned: invoicesTable.contractAddress,
-      fingerprint: invoicesTable.fingerprint,
-      payTxHash: invoicesTable.payTxHash,
-    })
-    .from(invoicesTable)
-    .where(eq(invoicesTable.id, args.invoiceId));
-  const contractAddress =
-    (invRow?.pinned as Address | null) ?? (await getContractAddress());
+  const registry = registryFor(invRow);
+  const { network } = registry;
+  if (network.mode === "live") {
+    throw new Error("Live invoices are paid from the client's own wallet");
+  }
+  const contractAddress = registry.address ?? (await getLegacyContractAddress());
   if (!contractAddress) throw new Error("Registry contract not deployed yet");
   const payer = await getWallet(args.payerWalletId);
   if (!payer) throw new Error("Custodial wallet missing");
-  const wallet = walletClientFor(payer.privateKey);
-  return enqueueTx(async () => {
+  const wallet = walletClientFor(payer.privateKey, network);
+  const amountWei = parseUnits(args.amountUsdc, 18);
+
+  // Once a receipt is in hand, the event is the proof (v4); v3 has no
+  // commitment, so its paid flag is all there is.
+  const verifyPaid = async (
+    receiptLogs: readonly { address: Address; data: Hex; topics: readonly Hex[] }[] | null,
+    terms: PaymentTerms | null,
+  ): Promise<InvoicePaidEvent | null> => {
+    if (receiptLogs && terms) {
+      const event = findInvoicePaidLog(
+        receiptLogs as Parameters<typeof findInvoicePaidLog>[0],
+        contractAddress,
+        args.invoiceId,
+      );
+      if (!event || !paymentSettlesInvoice(event, terms)) {
+        throw new Error(
+          "Payment receipt has no matching InvoicePaid event from the registry",
+        );
+      }
+      return event;
+    }
+    const confirmed = await readAnchor(invRow);
+    if (!confirmed.reachable || !confirmed.anchored || !confirmed.paid) {
+      throw new Error("Payment receipt succeeded but Arc does not report it paid");
+    }
+    return null;
+  };
+
+  return enqueueTx(network, async () => {
     // The contract is the source of truth: if an earlier attempt's receipt
     // timed out but the transaction landed, never pay a second time.
-    const anchor = await readAnchor(args.invoiceId);
+    const anchor = await readAnchor(invRow);
     if (
       !anchor.reachable ||
       !anchor.anchored ||
-      !invRow ||
       !anchorFingerprintMatches(anchor.fingerprint, invRow.fingerprint)
     ) {
       throw new Error(
         "Invoice payment blocked: the onchain fingerprint is missing or does not match",
       );
     }
-    if (anchor.reachable && anchor.anchored && anchor.paid) {
+    if (anchor.paid) {
       await clearPendingSignedTransaction("payment", args.invoiceId);
       return {
         txHash: invRow.payTxHash,
         alreadyPaidOnChain: true,
         paidToLinkedWallet: false,
+        payerAddress: anchor.payer,
       };
+    }
+
+    const terms = registry.version >= 4 ? paymentTermsOf(invRow) : null;
+    if (registry.version >= 4 && !terms) {
+      throw new Error("Invoice is anchored on v4 but has no payment terms");
     }
 
     const pending = await getPendingSignedTransaction("payment", args.invoiceId);
@@ -1314,16 +1578,14 @@ export async function payInvoiceOnChain(args: {
       if (invRow.payTxHash && invRow.payTxHash !== pending.hash) {
         throw new Error("Stored payment hash does not match its signed intent");
       }
-      await submitSignedTransaction(pending, "Payment");
-      const confirmed = await readAnchor(args.invoiceId);
-      if (!confirmed.reachable || !confirmed.anchored || !confirmed.paid) {
-        throw new Error("Payment receipt succeeded but Arc does not report it paid");
-      }
+      const receipt = await submitSignedTransaction(network, pending, "Payment");
+      await verifyPaid(receipt.logs, terms);
       await clearPendingSignedTransaction("payment", args.invoiceId);
       return {
         txHash: pending.hash,
         alreadyPaidOnChain: false,
         paidToLinkedWallet: pending.paidToLinkedWallet === true,
+        payerAddress: payer.address as Address,
       };
     }
 
@@ -1331,7 +1593,7 @@ export async function payInvoiceOnChain(args: {
     // create a replacement payment that could charge gas twice.
     if (invRow.payTxHash) {
       try {
-        const receipt = await publicClient.getTransactionReceipt({
+        const receipt = await network.publicClient.getTransactionReceipt({
           hash: invRow.payTxHash as Hex,
         });
         if (receipt.status !== "success") {
@@ -1339,16 +1601,12 @@ export async function payInvoiceOnChain(args: {
             `Payment transaction ${invRow.payTxHash} was mined but reverted`,
           );
         }
-        const confirmed = await readAnchor(args.invoiceId);
-        if (!confirmed.reachable || !confirmed.anchored || !confirmed.paid) {
-          throw new Error(
-            "Payment receipt succeeded but Arc does not report it paid",
-          );
-        }
+        await verifyPaid(receipt.logs, terms);
         return {
           txHash: invRow.payTxHash,
           alreadyPaidOnChain: false,
           paidToLinkedWallet: false,
+          payerAddress: payer.address as Address,
         };
       } catch (err) {
         if (err instanceof TransactionReceiptNotFoundError) {
@@ -1359,43 +1617,156 @@ export async function payInvoiceOnChain(args: {
         throw err;
       }
     }
-    // Resolve where the money goes at the LAST moment, inside the serialized
-    // queue: if the payee unlinks or swaps their payout wallet while this
-    // payment waits its turn, the freshest choice wins - never a stale one.
-    const [payeeRow] = await db
-      .select()
-      .from(usersTable)
-      .where(eq(usersTable.id, args.payeeWalletId));
-    const linkedAddress = payeeRow?.payoutAddress ?? null;
-    const payee = linkedAddress ? null : await getWallet(args.payeeWalletId);
-    if (!linkedAddress && !payee) throw new Error("Custodial wallet missing");
-    const payeeAddress = (linkedAddress ?? payee!.address) as Address;
-    const data = encodeFunctionData({
-      abi: REGISTRY_ABI,
-      functionName: "payInvoice",
-      args: [invoiceKey(args.invoiceId), payeeAddress],
-    });
+
+    let data: Hex;
+    let paidToLinkedWallet: boolean;
+    if (terms) {
+      // v4: the payee was fixed at anchor time and is part of the on-chain
+      // commitment; the contract rejects any other destination.
+      data = encodePayCall({
+        invoiceId: args.invoiceId,
+        payee: terms.payee,
+        salt: terms.salt,
+      });
+      const [payeeRow] = await db
+        .select({ payoutAddress: usersTable.payoutAddress })
+        .from(usersTable)
+        .where(eq(usersTable.id, args.payeeWalletId));
+      paidToLinkedWallet =
+        payeeRow?.payoutAddress?.toLowerCase() === terms.payee.toLowerCase();
+      if (terms.amountWei !== amountWei) {
+        throw new Error("Invoice amount does not match its committed payment terms");
+      }
+    } else {
+      // v3 (legacy sandbox anchors): resolve where the money goes at the
+      // LAST moment, inside the serialized queue, so a last-second payout
+      // wallet change is honoured.
+      const payee = await resolvePayeeForNetwork(args.payeeWalletId, network);
+      if (!payee) throw new Error("Custodial wallet missing");
+      data = encodePayCallV3({ invoiceId: args.invoiceId, payee: payee.address });
+      paidToLinkedWallet = payee.linked;
+    }
     const signed = await signTransactionBeforeBroadcast(wallet, {
       to: contractAddress,
       data,
-      value: parseUnits(args.amountUsdc, 18),
+      value: amountWei,
     });
     const transaction: PendingSignedTransaction = {
       hash: signed.hash,
       serialized: signed.serialized,
-      paidToLinkedWallet: linkedAddress !== null,
+      paidToLinkedWallet,
     };
     await persistSignedTransaction("payment", args.invoiceId, transaction);
-    await submitSignedTransaction(transaction, "Payment");
-    const confirmed = await readAnchor(args.invoiceId);
-    if (!confirmed.reachable || !confirmed.anchored || !confirmed.paid) {
-      throw new Error("Payment receipt succeeded but Arc does not report it paid");
-    }
+    const receipt = await submitSignedTransaction(network, transaction, "Payment");
+    await verifyPaid(receipt.logs, terms);
     await clearPendingSignedTransaction("payment", args.invoiceId);
     return {
       txHash: signed.hash,
       alreadyPaidOnChain: false,
-      paidToLinkedWallet: linkedAddress !== null,
+      paidToLinkedWallet,
+      payerAddress: payer.address as Address,
     };
   });
+}
+
+export type ExternalPaymentOutcome =
+  | { status: "paid"; txHash: string; payerAddress: Address }
+  | { status: "pending" }
+  | { status: "rejected"; reason: string };
+
+/**
+ * Verify a payment the client sent from their OWN wallet. The transaction
+ * hash is only a pointer; the proof is the receipt: mined successfully,
+ * carrying an InvoicePaid event emitted by THIS invoice's registry, for
+ * this invoice, with the committed payee and the exact amount. Anything
+ * short of that is rejected, and a hash the network has not mined yet is
+ * simply "pending" so the client can ask again.
+ */
+export async function confirmExternalPayment(
+  invoice: InvoiceRow,
+  txHash: Hex,
+): Promise<ExternalPaymentOutcome> {
+  const registry = registryFor(invoice);
+  const terms = paymentTermsOf(invoice);
+  if (invoice.anchorStatus !== "anchored" || !registry.address) {
+    return { status: "rejected", reason: "This invoice is not anchored yet, so it cannot be paid." };
+  }
+  if (registry.version < 4 || !terms) {
+    return {
+      status: "rejected",
+      reason: "This invoice predates wallet payments; pay it from the built-in wallet instead.",
+    };
+  }
+  let receipt;
+  try {
+    receipt = await registry.network.publicClient.waitForTransactionReceipt({
+      hash: txHash,
+      timeout: 15_000,
+    });
+  } catch {
+    // Not mined yet, or the RPC hiccupped: no verdict either way.
+    return { status: "pending" };
+  }
+  if (receipt.status !== "success") {
+    return { status: "rejected", reason: "The transaction was mined but reverted, so nothing was paid." };
+  }
+  const event = findInvoicePaidLog(receipt.logs, registry.address, invoice.id);
+  if (!event) {
+    return {
+      status: "rejected",
+      reason: "That transaction did not pay this invoice through the registry contract.",
+    };
+  }
+  if (!paymentSettlesInvoice(event, terms)) {
+    return {
+      status: "rejected",
+      reason: "The payment amount or destination does not match this invoice.",
+    };
+  }
+  return { status: "paid", txHash, payerAddress: event.payer };
+}
+
+/**
+ * Catch up an invoice the chain already shows as paid (the client closed the
+ * tab before the app heard about the wallet payment). The contract's own
+ * record - payee and amount - is checked against the committed terms; the
+ * hash is recovered from the event log when the node can search it.
+ */
+export async function reconcileExternalPayment(
+  invoice: InvoiceRow,
+): Promise<{ txHash: string | null; payerAddress: Address | null } | null> {
+  if (invoice.status === "paid" || invoice.anchorStatus !== "anchored") return null;
+  const registry = registryFor(invoice);
+  const terms = paymentTermsOf(invoice);
+  if (!registry.address || registry.version < 4 || !terms) return null;
+  const anchor = await readAnchor(invoice);
+  if (!anchor.reachable || !anchor.anchored || !anchor.paid) return null;
+  if (
+    anchor.paidAmountWei !== terms.amountWei ||
+    anchor.payee?.toLowerCase() !== terms.payee.toLowerCase()
+  ) {
+    logger.error(
+      { invoiceId: invoice.id },
+      "Registry reports this invoice paid with terms that do not match its commitment",
+    );
+    return null;
+  }
+  let txHash: string | null = null;
+  try {
+    const logs = await registry.network.publicClient.getContractEvents({
+      address: registry.address,
+      abi: REGISTRY_ABI,
+      eventName: "InvoicePaid",
+      args: { invoiceKey: invoiceKey(invoice.id) },
+      fromBlock: invoice.anchorBlock ?? "earliest",
+      toBlock: "latest",
+    });
+    txHash = logs[0]?.transactionHash ?? null;
+  } catch (err) {
+    logger.warn(
+      { err, invoiceId: invoice.id },
+      "Could not search InvoicePaid logs; recording the payment without its hash",
+    );
+  }
+  return { txHash, payerAddress: anchor.payer };
 }

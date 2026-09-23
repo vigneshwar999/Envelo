@@ -6,6 +6,9 @@
  * OpenAPI spec version: 0.2.0
  */
 import type { InvoiceAnchorStatus } from './invoiceAnchorStatus';
+import type { InvoiceNetwork } from './invoiceNetwork';
+import type { InvoiceNetworkMode } from './invoiceNetworkMode';
+import type { InvoicePaymentMode } from './invoicePaymentMode';
 import type { InvoiceStatus } from './invoiceStatus';
 
 export interface Invoice {
@@ -20,7 +23,7 @@ export interface Invoice {
   /** @nullable */
   dueDate?: string | null;
   fingerprint: string;
-  /** Whether the fingerprint has been recorded on the Arc testnet yet */
+  /** Whether the fingerprint has been recorded on the invoice's Arc network yet */
   anchorStatus: InvoiceAnchorStatus;
   /** @nullable */
   anchorTxHash?: string | null;
@@ -29,6 +32,27 @@ export interface Invoice {
   /** @nullable */
   paidAt?: string | null;
   createdAt: string;
+  /** The Arc chain this invoice lives on - 5042002 (Arc Testnet sandbox) or 5042 (Arc Mainnet). Fixed at creation. */
+  chainId: number;
+  network: InvoiceNetwork;
+  /** Human name of the network, e.g. "Arc Testnet" or "Arc Mainnet". */
+  networkName: string;
+  /** sandbox = test USDC and built-in wallets; live = real USDC, the client pays from their own wallet. */
+  networkMode: InvoiceNetworkMode;
+  /** Block explorer for THIS invoice's network - build tx links from here, never from a global constant. */
+  explorerBaseUrl: string;
+  /** How this invoice is normally paid - "custodial" from the client's built-in sandbox wallet (server-signed), "external" from the client's own wallet in the browser (live invoices, verified by the server). */
+  paymentMode: InvoicePaymentMode;
+  /**
+     * The wallet the payment must reach, fixed when the invoice was created and committed in its onchain anchor. Null only on invoices created before payment commitments existed.
+     * @nullable
+     */
+  payeeAddress?: string | null;
+  /**
+     * The wallet that paid, straight from the registry's InvoicePaid event. Null until paid.
+     * @nullable
+     */
+  payerAddress?: string | null;
   /** Only set for the two parties on the invoice: true when the signed-in user's own wrapped copy of the envelope key no longer exists (they reset their key), so this envelope will not open for them until the other party re-shares it. */
   myCopyLocked?: boolean;
   /** Only set for the two parties on the invoice: true when the OTHER party lost access by resetting their key and has registered a new one - the signed-in user can restore their access with a one-click re-share (re-wrap in the browser). */

@@ -5,6 +5,7 @@
  * Sealed Invoices API — privacy-first invoicing anchored on the Arc testnet, with real user accounts
  * OpenAPI spec version: 0.2.0
  */
+import type { InvoiceInputNetwork } from './invoiceInputNetwork';
 import type { WrappedKeyEntry } from './wrappedKeyEntry';
 
 export interface InvoiceInput {
@@ -24,4 +25,6 @@ export interface InvoiceInput {
   /** Base64 AES-GCM sealed envelope, encrypted in the browser */
   ciphertext: string;
   wrappedKeys: WrappedKeyEntry[];
+  /** Which Arc network to create the invoice on. Defaults to testnet (the sandbox). "mainnet" is only accepted while live invoicing is enabled (see ChainStatus.mainnetEnabled) and the sender has a linked payout wallet, because a live payment goes straight to that wallet. */
+  network?: InvoiceInputNetwork;
 }

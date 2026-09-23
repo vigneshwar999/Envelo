@@ -7,7 +7,7 @@
  */
 
 /**
- * Whether the fingerprint has been recorded on the Arc testnet yet
+ * Whether the fingerprint has been recorded on the invoice's Arc network yet
  */
 export type InvoiceAnchorStatus = typeof InvoiceAnchorStatus[keyof typeof InvoiceAnchorStatus];
 

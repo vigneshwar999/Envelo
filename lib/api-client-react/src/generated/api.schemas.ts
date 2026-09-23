@@ -270,6 +270,17 @@ export interface WrappedKeyEntry {
   wrappedKey: string;
 }
 
+/**
+ * Which Arc network to create the invoice on. Defaults to testnet (the sandbox). "mainnet" is only accepted while live invoicing is enabled (see ChainStatus.mainnetEnabled) and the sender has a linked payout wallet, because a live payment goes straight to that wallet.
+ */
+export type InvoiceInputNetwork = typeof InvoiceInputNetwork[keyof typeof InvoiceInputNetwork];
+
+
+export const InvoiceInputNetwork = {
+  testnet: 'testnet',
+  mainnet: 'mainnet',
+} as const;
+
 export interface InvoiceInput {
   /** The registered user who will pay this invoice */
   clientId: string;
@@ -287,6 +298,8 @@ export interface InvoiceInput {
   /** Base64 AES-GCM sealed envelope, encrypted in the browser */
   ciphertext: string;
   wrappedKeys: WrappedKeyEntry[];
+  /** Which Arc network to create the invoice on. Defaults to testnet (the sandbox). "mainnet" is only accepted while live invoicing is enabled (see ChainStatus.mainnetEnabled) and the sender has a linked payout wallet, because a live payment goes straight to that wallet. */
+  network?: InvoiceInputNetwork;
 }
 
 export type InvoiceStatus = typeof InvoiceStatus[keyof typeof InvoiceStatus];
@@ -298,7 +311,7 @@ export const InvoiceStatus = {
 } as const;
 
 /**
- * Whether the fingerprint has been recorded on the Arc testnet yet
+ * Whether the fingerprint has been recorded on the invoice's Arc network yet
  */
 export type InvoiceAnchorStatus = typeof InvoiceAnchorStatus[keyof typeof InvoiceAnchorStatus];
 
@@ -307,6 +320,36 @@ export const InvoiceAnchorStatus = {
   pending: 'pending',
   anchored: 'anchored',
   unavailable: 'unavailable',
+} as const;
+
+export type InvoiceNetwork = typeof InvoiceNetwork[keyof typeof InvoiceNetwork];
+
+
+export const InvoiceNetwork = {
+  testnet: 'testnet',
+  mainnet: 'mainnet',
+} as const;
+
+/**
+ * sandbox = test USDC and built-in wallets; live = real USDC, the client pays from their own wallet.
+ */
+export type InvoiceNetworkMode = typeof InvoiceNetworkMode[keyof typeof InvoiceNetworkMode];
+
+
+export const InvoiceNetworkMode = {
+  sandbox: 'sandbox',
+  live: 'live',
+} as const;
+
+/**
+ * How this invoice is normally paid - "custodial" from the client's built-in sandbox wallet (server-signed), "external" from the client's own wallet in the browser (live invoices, verified by the server).
+ */
+export type InvoicePaymentMode = typeof InvoicePaymentMode[keyof typeof InvoicePaymentMode];
+
+
+export const InvoicePaymentMode = {
+  custodial: 'custodial',
+  external: 'external',
 } as const;
 
 export interface Invoice {
@@ -321,7 +364,7 @@ export interface Invoice {
   /** @nullable */
   dueDate?: string | null;
   fingerprint: string;
-  /** Whether the fingerprint has been recorded on the Arc testnet yet */
+  /** Whether the fingerprint has been recorded on the invoice's Arc network yet */
   anchorStatus: InvoiceAnchorStatus;
   /** @nullable */
   anchorTxHash?: string | null;
@@ -330,6 +373,27 @@ export interface Invoice {
   /** @nullable */
   paidAt?: string | null;
   createdAt: string;
+  /** The Arc chain this invoice lives on - 5042002 (Arc Testnet sandbox) or 5042 (Arc Mainnet). Fixed at creation. */
+  chainId: number;
+  network: InvoiceNetwork;
+  /** Human name of the network, e.g. "Arc Testnet" or "Arc Mainnet". */
+  networkName: string;
+  /** sandbox = test USDC and built-in wallets; live = real USDC, the client pays from their own wallet. */
+  networkMode: InvoiceNetworkMode;
+  /** Block explorer for THIS invoice's network - build tx links from here, never from a global constant. */
+  explorerBaseUrl: string;
+  /** How this invoice is normally paid - "custodial" from the client's built-in sandbox wallet (server-signed), "external" from the client's own wallet in the browser (live invoices, verified by the server). */
+  paymentMode: InvoicePaymentMode;
+  /**
+     * The wallet the payment must reach, fixed when the invoice was created and committed in its onchain anchor. Null only on invoices created before payment commitments existed.
+     * @nullable
+     */
+  payeeAddress?: string | null;
+  /**
+     * The wallet that paid, straight from the registry's InvoicePaid event. Null until paid.
+     * @nullable
+     */
+  payerAddress?: string | null;
   /** Only set for the two parties on the invoice: true when the signed-in user's own wrapped copy of the envelope key no longer exists (they reset their key), so this envelope will not open for them until the other party re-shares it. */
   myCopyLocked?: boolean;
   /** Only set for the two parties on the invoice: true when the OTHER party lost access by resetting their key and has registered a new one - the signed-in user can restore their access with a one-click re-share (re-wrap in the browser). */
@@ -436,56 +500,186 @@ export interface InvoiceEvent {
   createdAt: string;
 }
 
+export type AnchorPreviewNetworkKey = typeof AnchorPreviewNetworkKey[keyof typeof AnchorPreviewNetworkKey];
+
+
+export const AnchorPreviewNetworkKey = {
+  testnet: 'testnet',
+  mainnet: 'mainnet',
+} as const;
+
+export type AnchorPreviewNetworkMode = typeof AnchorPreviewNetworkMode[keyof typeof AnchorPreviewNetworkMode];
+
+
+export const AnchorPreviewNetworkMode = {
+  sandbox: 'sandbox',
+  live: 'live',
+} as const;
+
 /**
- * Everything the pre-seal approval sheet displays. All values are live server facts - clients must never invent or cache fee numbers. The anchor is paid by the sender's own built-in wallet.
+ * Who pays the anchor gas - the sender's built-in wallet (sandbox) or Envelo's operator wallet (live).
+ */
+export type AnchorPreviewAnchorPaidBy = typeof AnchorPreviewAnchorPaidBy[keyof typeof AnchorPreviewAnchorPaidBy];
+
+
+export const AnchorPreviewAnchorPaidBy = {
+  sender: 'sender',
+  operator: 'operator',
+} as const;
+
+/**
+ * Everything the pre-seal approval sheet displays. All values are live server facts - clients must never invent or cache fee numbers. Sandbox anchors are paid by the sender's own built-in wallet; live anchors by Envelo's operator wallet.
  */
 export interface AnchorPreview {
+  /** Human name, e.g. "Arc Testnet" or "Arc Mainnet". */
   network: string;
+  networkKey: AnchorPreviewNetworkKey;
+  networkMode: AnchorPreviewNetworkMode;
   chainId: number;
   /**
-     * Null while the registry contract is still waiting on faucet funds; anchoring then happens automatically once it deploys.
+     * The registry contract the anchor is written to, or null when none is configured for this network yet (anchoring is then impossible until it is).
      * @nullable
      */
   contractAddress: string | null;
   explorerBaseUrl: string;
-  faucetUrl: string;
   /**
-     * Live estimate (anchor gas x current gas price) in test USDC, with a permanent 0.1 USDC fallback whenever Arc cannot return a live estimate.
+     * Where to get free test USDC - sandbox only, null on live.
+     * @nullable
+     */
+  faucetUrl: string | null;
+  /**
+     * Live estimate (anchor gas x current gas price) in USDC. Sandbox falls back to a permanent 0.1 test-USDC figure when Arc cannot answer; live returns null instead of guessing with real money.
      * @nullable
      */
   feeEstimateUsdc: string | null;
-  /** The sender's built-in wallet - the account that submits and pays the anchor transaction. */
-  walletAddress: string;
+  /** Who pays the anchor gas - the sender's built-in wallet (sandbox) or Envelo's operator wallet (live). */
+  anchorPaidBy: AnchorPreviewAnchorPaidBy;
   /**
-     * That wallet's live balance in test USDC, or null when the chain is unreachable.
+     * The account that submits and pays the anchor - the sender's built-in wallet on sandbox, the operator wallet on live.
+     * @nullable
+     */
+  walletAddress: string | null;
+  /**
+     * That account's live balance in USDC, or null when the chain is unreachable.
      * @nullable
      */
   walletBalanceUsdc: string | null;
   /**
-     * Server verdict from the same affordability rule the create route enforces (balance covers the estimated fee). False should disable Confirm; null means the fee or balance was unreadable, so no verdict exists - the route re-checks at submit.
+     * Server verdict from the same affordability rule the create route enforces (paying wallet covers the estimated fee). False should disable Confirm; null means the fee or balance was unreadable, so no verdict exists - the route re-checks at submit.
      * @nullable
      */
   canAfford: boolean | null;
   /**
-     * How much test USDC is missing when canAfford is false, else null.
+     * How much USDC the paying wallet is missing when canAfford is false, else null.
      * @nullable
      */
   shortfallUsdc: string | null;
+  /**
+     * The sender's linked payout wallet - where a payment for this invoice will land. Required on live; sandbox falls back to the built-in wallet when null.
+     * @nullable
+     */
+  payoutAddress: string | null;
+  /**
+     * Plain-language reason creation would be refused on this network right now (live invoicing off, no payout wallet, operator too low, no registry), or null when nothing blocks it.
+     * @nullable
+     */
+  blocker: string | null;
 }
+
+export interface PaymentSubmittedInput {
+  /** The 0x-prefixed 32-byte hash returned by the client's wallet after it sent the payment transaction. */
+  txHash: string;
+}
+
+/**
+ * paid = verified onchain and recorded; pending = not mined yet, poll again.
+ */
+export type PaymentSubmittedResultStatus = typeof PaymentSubmittedResultStatus[keyof typeof PaymentSubmittedResultStatus];
+
+
+export const PaymentSubmittedResultStatus = {
+  paid: 'paid',
+  pending: 'pending',
+} as const;
+
+export interface PaymentSubmittedResult {
+  /** paid = verified onchain and recorded; pending = not mined yet, poll again. */
+  status: PaymentSubmittedResultStatus;
+  invoice: Invoice;
+  message: string;
+}
+
+/**
+ * The exact eth_sendTransaction request the client's own wallet must send to pay this invoice - payInvoice(key, committed payee, salt) on the invoice's registry with the invoice amount attached as native USDC. Built by the server from the committed terms; never edit it client-side.
+ */
+export interface ExternalPaymentTransaction {
+  chainId: number;
+  /** The chain id as 0x-hex, ready for wallet_switchEthereumChain. */
+  chainIdHex: string;
+  /** The registry contract address. */
+  to: string;
+  /** ABI-encoded payInvoice calldata. */
+  data: string;
+  /** The invoice amount in native USDC wei (18 decimals), 0x-hex encoded. */
+  value: string;
+}
+
+export type PayPreviewNetworkKey = typeof PayPreviewNetworkKey[keyof typeof PayPreviewNetworkKey];
+
+
+export const PayPreviewNetworkKey = {
+  testnet: 'testnet',
+  mainnet: 'mainnet',
+} as const;
+
+export type PayPreviewNetworkMode = typeof PayPreviewNetworkMode[keyof typeof PayPreviewNetworkMode];
+
+
+export const PayPreviewNetworkMode = {
+  sandbox: 'sandbox',
+  live: 'live',
+} as const;
+
+/**
+ * custodial = the built-in wallet pays when the client confirms (sandbox); external = the client pays from their own wallet using `transaction` (live; also offered on sandbox v4 invoices).
+ */
+export type PayPreviewPaymentMode = typeof PayPreviewPaymentMode[keyof typeof PayPreviewPaymentMode];
+
+
+export const PayPreviewPaymentMode = {
+  custodial: 'custodial',
+  external: 'external',
+} as const;
 
 /**
  * Everything the Pay approval sheet displays. All values are live server facts computed with the same affordability rule the pay route enforces - clients must never re-derive money math.
  */
 export interface PayPreview {
+  /** Human name, e.g. "Arc Testnet" or "Arc Mainnet". */
   network: string;
+  networkKey: PayPreviewNetworkKey;
+  networkMode: PayPreviewNetworkMode;
   chainId: number;
   /**
-     * The registry contract this payment goes through - the one this invoice was anchored on (old invoices stay pinned to their original deployment), or null while none is deployed yet.
+     * The registry contract this payment goes through - the one this invoice was anchored on (old invoices stay pinned to their original deployment), or null while the anchor is not confirmed yet.
      * @nullable
      */
   contractAddress: string | null;
   explorerBaseUrl: string;
-  faucetUrl: string;
+  /**
+     * Where to get free test USDC - sandbox only, null on live.
+     * @nullable
+     */
+  faucetUrl: string | null;
+  /** custodial = the built-in wallet pays when the client confirms (sandbox); external = the client pays from their own wallet using `transaction` (live; also offered on sandbox v4 invoices). */
+  paymentMode: PayPreviewPaymentMode;
+  /** The wallet transaction for paying from the client's own wallet. Null whenever the server will not vouch for a payment right now - the anchor is not yet confirmed on the registry, the chain is unreachable, live payments are switched off, or the invoice predates payment commitments - and unavailableReason says which. */
+  transaction: ExternalPaymentTransaction | null;
+  /**
+     * Plain-language reason no payment can be started at this moment (from either path), or null when one can. Already-paid invoices report null with alreadyPaid true.
+     * @nullable
+     */
+  unavailableReason: string | null;
   /** The invoice amount - exactly what the payee receives. */
   amountUsdc: string;
   /**
@@ -498,25 +692,28 @@ export interface PayPreview {
      * @nullable
      */
   totalUsdc: string | null;
-  /** The payer's built-in wallet - the account that signs and pays this transaction. */
-  walletAddress: string;
   /**
-     * That wallet's live balance in test USDC, or null when the chain is unreachable.
+     * The payer's built-in sandbox wallet - the account that signs a custodial payment. Null on live invoices, which have no built-in wallet.
+     * @nullable
+     */
+  walletAddress: string | null;
+  /**
+     * That wallet's live balance in test USDC, or null when the chain is unreachable or there is no built-in wallet.
      * @nullable
      */
   walletBalanceUsdc: string | null;
   /**
-     * Server verdict from the same rule the pay route enforces (balance covers amount plus fee). False should disable Confirm; null means balance or fee was unreadable, so no verdict exists - the route re-checks at submit.
+     * Server verdict for the CUSTODIAL path from the same rule the pay route enforces (built-in balance covers amount plus fee). False should disable the built-in Confirm; null means balance or fee was unreadable (or the invoice is paid externally), so no verdict exists - the route re-checks at submit.
      * @nullable
      */
   canPay: boolean | null;
   /**
-     * How much test USDC is missing when canPay is false, else null.
+     * How much test USDC the built-in wallet is missing when canPay is false, else null.
      * @nullable
      */
   shortfallUsdc: string | null;
   /**
-     * Where the USDC lands - the payee's linked wallet when they linked one, otherwise their built-in wallet. Display only; the pay route re-resolves this at submit time.
+     * Where the USDC lands. On commitment-backed invoices this is the payee fixed at creation and enforced by the contract; on older invoices it is re-resolved at submit time.
      * @nullable
      */
   payeeAddress: string | null;
@@ -527,15 +724,86 @@ export interface PayPreview {
   alreadyPaid: boolean;
 }
 
+export type ChainNetworkStatusKey = typeof ChainNetworkStatusKey[keyof typeof ChainNetworkStatusKey];
+
+
+export const ChainNetworkStatusKey = {
+  testnet: 'testnet',
+  mainnet: 'mainnet',
+} as const;
+
+export type ChainNetworkStatusMode = typeof ChainNetworkStatusMode[keyof typeof ChainNetworkStatusMode];
+
+
+export const ChainNetworkStatusMode = {
+  sandbox: 'sandbox',
+  live: 'live',
+} as const;
+
+export type ChainNetworkStatusAnchorPaidBy = typeof ChainNetworkStatusAnchorPaidBy[keyof typeof ChainNetworkStatusAnchorPaidBy];
+
+
+export const ChainNetworkStatusAnchorPaidBy = {
+  sender: 'sender',
+  operator: 'operator',
+} as const;
+
+/**
+ * One Arc network as the server sees it right now.
+ */
+export interface ChainNetworkStatus {
+  key: ChainNetworkStatusKey;
+  mode: ChainNetworkStatusMode;
+  name: string;
+  chainId: number;
+  explorerBaseUrl: string;
+  /** @nullable */
+  faucetUrl: string | null;
+  rpcConnected: boolean;
+  /**
+     * The current registry on this network, or null when none is configured.
+     * @nullable
+     */
+  contractAddress: string | null;
+  /** Whether new invoices may be created on this network right now. */
+  enabled: boolean;
+  /**
+     * Why enabled is false, in plain language (live invoicing switched off, operator key missing, no registry).
+     * @nullable
+     */
+  disabledReason?: string | null;
+  anchorPaidBy: ChainNetworkStatusAnchorPaidBy;
+  /**
+     * Live only - Envelo's operator wallet that pays anchors.
+     * @nullable
+     */
+  operatorAddress?: string | null;
+  /**
+     * Live only - that wallet's balance in real USDC.
+     * @nullable
+     */
+  operatorBalanceUsdc?: string | null;
+  /** Live only - true when the operator balance is below its configured floor, so anchoring is about to fail. */
+  operatorLow?: boolean;
+}
+
 export interface ChainStatus {
+  /** The sandbox network's name (kept for older clients; see chains for both networks). */
   network: string;
   /** @nullable */
   chainId?: number | null;
+  /** Sandbox RPC reachability. */
   rpcConnected: boolean;
-  /** @nullable */
+  /**
+     * The sandbox registry address.
+     * @nullable
+     */
   contractAddress?: string | null;
   contractDeployed: boolean;
-  /** @nullable */
+  /**
+     * The sandbox deployment wallet (test USDC only).
+     * @nullable
+     */
   operatorAddress?: string | null;
   /** @nullable */
   operatorBalanceUsdc?: string | null;
@@ -549,6 +817,9 @@ export interface ChainStatus {
   readyForPayments: boolean;
   /** Plain-language explanation of what works right now and what step is next */
   statusMessage: string;
+  /** True when live (Arc Mainnet) invoices can be created right now. */
+  mainnetEnabled: boolean;
+  chains: ChainNetworkStatus[];
 }
 
 export interface DashboardSummary {
@@ -566,4 +837,19 @@ export interface DashboardSummary {
  * Not signed in
  */
 export type UnauthorizedResponse = ApiMessage;
+
+export type GetAnchorPreviewParams = {
+/**
+ * Which network the invoice will be created on (default testnet)
+ */
+network?: GetAnchorPreviewNetwork;
+};
+
+export type GetAnchorPreviewNetwork = typeof GetAnchorPreviewNetwork[keyof typeof GetAnchorPreviewNetwork];
+
+
+export const GetAnchorPreviewNetwork = {
+  testnet: 'testnet',
+  mainnet: 'mainnet',
+} as const;
 

@@ -5,16 +5,25 @@
  * Sealed Invoices API — privacy-first invoicing anchored on the Arc testnet, with real user accounts
  * OpenAPI spec version: 0.2.0
  */
+import type { ChainNetworkStatus } from './chainNetworkStatus';
 
 export interface ChainStatus {
+  /** The sandbox network's name (kept for older clients; see chains for both networks). */
   network: string;
   /** @nullable */
   chainId?: number | null;
+  /** Sandbox RPC reachability. */
   rpcConnected: boolean;
-  /** @nullable */
+  /**
+     * The sandbox registry address.
+     * @nullable
+     */
   contractAddress?: string | null;
   contractDeployed: boolean;
-  /** @nullable */
+  /**
+     * The sandbox deployment wallet (test USDC only).
+     * @nullable
+     */
   operatorAddress?: string | null;
   /** @nullable */
   operatorBalanceUsdc?: string | null;
@@ -28,4 +37,7 @@ export interface ChainStatus {
   readyForPayments: boolean;
   /** Plain-language explanation of what works right now and what step is next */
   statusMessage: string;
+  /** True when live (Arc Mainnet) invoices can be created right now. */
+  mainnetEnabled: boolean;
+  chains: ChainNetworkStatus[];
 }

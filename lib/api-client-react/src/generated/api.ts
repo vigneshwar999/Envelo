@@ -28,6 +28,7 @@ import type {
   DirectoryUser,
   DisplayNameInput,
   EnvelopeAccess,
+  GetAnchorPreviewParams,
   Grant,
   GrantInput,
   HealthStatus,
@@ -38,6 +39,8 @@ import type {
   LookupUserResult,
   MyWrappedKeys,
   PayPreview,
+  PaymentSubmittedInput,
+  PaymentSubmittedResult,
   PayoutAddressInput,
   PushTokenInput,
   PushTokenRegistration,
@@ -1495,7 +1498,7 @@ export const getPayInvoiceUrl = (invoiceId: string,) => {
 }
 
 /**
- * @summary Pay an invoice in test USDC on the Arc testnet (the signed-in user must be the client)
+ * @summary Pay a sandbox invoice from the client's built-in wallet in test USDC (the signed-in user must be the client). Live invoices are paid from the client's own wallet instead - see paymentSubmitted.
  */
 export const payInvoice = async (invoiceId: string, options?: Parameters<typeof customFetch>[1]): Promise<Invoice> => {
 
@@ -1544,7 +1547,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
     export type PayInvoiceMutationError = ErrorType<UnauthorizedResponse | ApiMessage>
 
     /**
- * @summary Pay an invoice in test USDC on the Arc testnet (the signed-in user must be the client)
+ * @summary Pay a sandbox invoice from the client's built-in wallet in test USDC (the signed-in user must be the client). Live invoices are paid from the client's own wallet instead - see paymentSubmitted.
  */
 export const usePayInvoice = <TError = ErrorType<UnauthorizedResponse | ApiMessage>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof payInvoice>>, TError,{invoiceId: string}, TContext>, request?: SecondParameter<typeof customFetch>}
@@ -1557,6 +1560,78 @@ export const usePayInvoice = <TError = ErrorType<UnauthorizedResponse | ApiMessa
       return useMutation(getPayInvoiceMutationOptions(options));
     }
 
+export const getPaymentSubmittedUrl = (invoiceId: string,) => {
+
+
+
+
+  return `/api/invoices/${invoiceId}/payment-submitted`
+}
+
+/**
+ * @summary Tell the server about a payment the client sent from their OWN wallet. The server verifies the receipt against the registry (InvoicePaid event, committed payee, exact amount) before marking the invoice paid.
+ */
+export const paymentSubmitted = async (invoiceId: string,
+    paymentSubmittedInput: PaymentSubmittedInput, options?: Parameters<typeof customFetch>[1]): Promise<PaymentSubmittedResult> => {
+
+  return customFetch<PaymentSubmittedResult>(getPaymentSubmittedUrl(invoiceId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(paymentSubmittedInput)
+  }
+);}
+
+
+
+
+
+export const getPaymentSubmittedMutationOptions = <TError = ErrorType<ApiMessage | UnauthorizedResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof paymentSubmitted>>, TError,{invoiceId: string;data: BodyType<PaymentSubmittedInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof paymentSubmitted>>, TError,{invoiceId: string;data: BodyType<PaymentSubmittedInput>}, TContext> => {
+
+const mutationKey = ['paymentSubmitted'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof paymentSubmitted>>, {invoiceId: string;data: BodyType<PaymentSubmittedInput>}> = (props) => {
+          const {invoiceId,data} = props ?? {};
+
+          return  paymentSubmitted(invoiceId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type PaymentSubmittedMutationResult = NonNullable<Awaited<ReturnType<typeof paymentSubmitted>>>
+    export type PaymentSubmittedMutationBody = BodyType<PaymentSubmittedInput>
+    export type PaymentSubmittedMutationError = ErrorType<ApiMessage | UnauthorizedResponse>
+
+    /**
+ * @summary Tell the server about a payment the client sent from their OWN wallet. The server verifies the receipt against the registry (InvoicePaid event, committed payee, exact amount) before marking the invoice paid.
+ */
+export const usePaymentSubmitted = <TError = ErrorType<ApiMessage | UnauthorizedResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof paymentSubmitted>>, TError,{invoiceId: string;data: BodyType<PaymentSubmittedInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof paymentSubmitted>>,
+        TError,
+        {invoiceId: string;data: BodyType<PaymentSubmittedInput>},
+        TContext
+      > => {
+      return useMutation(getPaymentSubmittedMutationOptions(options));
+    }
+
 export const getGetPayPreviewUrl = (invoiceId: string,) => {
 
 
@@ -1566,7 +1641,7 @@ export const getGetPayPreviewUrl = (invoiceId: string,) => {
 }
 
 /**
- * @summary What the Pay approval sheet shows - exact amount, live fee estimate, payer balance, and the server's affordability verdict
+ * @summary What the Pay approval sheet shows - exact amount, live fee estimate, the payer's built-in wallet balance (sandbox), the server's affordability verdict, and the exact transaction for paying from the client's own wallet
  */
 export const getPayPreview = async (invoiceId: string, options?: Parameters<typeof customFetch>[1]): Promise<PayPreview> => {
 
@@ -1613,7 +1688,7 @@ export type GetPayPreviewQueryError = ErrorType<UnauthorizedResponse | ApiMessag
 
 
 /**
- * @summary What the Pay approval sheet shows - exact amount, live fee estimate, payer balance, and the server's affordability verdict
+ * @summary What the Pay approval sheet shows - exact amount, live fee estimate, the payer's built-in wallet balance (sandbox), the server's affordability verdict, and the exact transaction for paying from the client's own wallet
  */
 
 export function useGetPayPreview<TData = Awaited<ReturnType<typeof getPayPreview>>, TError = ErrorType<UnauthorizedResponse | ApiMessage>>(
@@ -2164,7 +2239,7 @@ export const getGetChainStatusUrl = () => {
 }
 
 /**
- * @summary Live Arc testnet connection status, wallets, and balances
+ * @summary Live Arc connection status per network, sandbox wallets and balances, and whether live (mainnet) invoicing is enabled
  */
 export const getChainStatus = async ( options?: Parameters<typeof customFetch>[1]): Promise<ChainStatus> => {
 
@@ -2211,7 +2286,7 @@ export type GetChainStatusQueryError = ErrorType<UnauthorizedResponse>
 
 
 /**
- * @summary Live Arc testnet connection status, wallets, and balances
+ * @summary Live Arc connection status per network, sandbox wallets and balances, and whether live (mainnet) invoicing is enabled
  */
 
 export function useGetChainStatus<TData = Awaited<ReturnType<typeof getChainStatus>>, TError = ErrorType<UnauthorizedResponse>>(
@@ -2232,20 +2307,27 @@ export function useGetChainStatus<TData = Awaited<ReturnType<typeof getChainStat
 
 
 
-export const getGetAnchorPreviewUrl = () => {
+export const getGetAnchorPreviewUrl = (params?: GetAnchorPreviewParams,) => {
+  const normalizedParams = new URLSearchParams();
 
+  Object.entries(params || {}).forEach(([key, value]) => {
 
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
 
+  const stringifiedParams = normalizedParams.toString();
 
-  return `/api/chain/anchor-preview`
+  return stringifiedParams.length > 0 ? `/api/chain/anchor-preview?${stringifiedParams}` : `/api/chain/anchor-preview`
 }
 
 /**
- * @summary What Seal & Send shows - the live anchor or first registry-activation transaction, network, fee estimate, and sender affordability
+ * @summary What Seal & Send shows - the anchor transaction's network, fee estimate, who pays it, and whether they can afford it
  */
-export const getAnchorPreview = async ( options?: Parameters<typeof customFetch>[1]): Promise<AnchorPreview> => {
+export const getAnchorPreview = async (params?: GetAnchorPreviewParams, options?: Parameters<typeof customFetch>[1]): Promise<AnchorPreview> => {
 
-  return customFetch<AnchorPreview>(getGetAnchorPreviewUrl(),
+  return customFetch<AnchorPreview>(getGetAnchorPreviewUrl(params),
   {
     ...options,
     method: 'GET'
@@ -2258,23 +2340,23 @@ export const getAnchorPreview = async ( options?: Parameters<typeof customFetch>
 
 
 
-export const getGetAnchorPreviewQueryKey = () => {
+export const getGetAnchorPreviewQueryKey = (params?: GetAnchorPreviewParams,) => {
     return [
-    `/api/chain/anchor-preview`
+    `/api/chain/anchor-preview`, ...(params ? [params] : [])
     ] as const;
     }
 
 
-export const getGetAnchorPreviewQueryOptions = <TData = Awaited<ReturnType<typeof getAnchorPreview>>, TError = ErrorType<UnauthorizedResponse>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getAnchorPreview>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+export const getGetAnchorPreviewQueryOptions = <TData = Awaited<ReturnType<typeof getAnchorPreview>>, TError = ErrorType<UnauthorizedResponse>>(params?: GetAnchorPreviewParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getAnchorPreview>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 ) => {
 
 const {query: queryOptions, request: requestOptions} = options ?? {};
 
-  const queryKey =  queryOptions?.queryKey ?? getGetAnchorPreviewQueryKey();
+  const queryKey =  queryOptions?.queryKey ?? getGetAnchorPreviewQueryKey(params);
 
 
 
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof getAnchorPreview>>> = ({ signal }) => getAnchorPreview({ signal, ...requestOptions });
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getAnchorPreview>>> = ({ signal }) => getAnchorPreview(params, { signal, ...requestOptions });
 
 
 
@@ -2288,15 +2370,15 @@ export type GetAnchorPreviewQueryError = ErrorType<UnauthorizedResponse>
 
 
 /**
- * @summary What Seal & Send shows - the live anchor or first registry-activation transaction, network, fee estimate, and sender affordability
+ * @summary What Seal & Send shows - the anchor transaction's network, fee estimate, who pays it, and whether they can afford it
  */
 
 export function useGetAnchorPreview<TData = Awaited<ReturnType<typeof getAnchorPreview>>, TError = ErrorType<UnauthorizedResponse>>(
-  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getAnchorPreview>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+ params?: GetAnchorPreviewParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getAnchorPreview>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
-  const queryOptions = getGetAnchorPreviewQueryOptions(options)
+  const queryOptions = getGetAnchorPreviewQueryOptions(params,options)
 
   const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
 

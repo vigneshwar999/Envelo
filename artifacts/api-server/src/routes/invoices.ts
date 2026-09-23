@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { and, asc, desc, eq, or } from "drizzle-orm";
+import { and, asc, desc, eq, isNull, or } from "drizzle-orm";
 import { parseUnits } from "viem";
 import {
   db,
@@ -19,6 +19,8 @@ import {
   ListInvoiceEventsResponse,
   ListInvoicesResponse,
   PayInvoiceResponse,
+  PaymentSubmittedBody,
+  PaymentSubmittedResponse,
   RewrapInvoiceKeyBody,
   RewrapInvoiceKeyResponse,
   VerifyInvoiceBody,
@@ -28,25 +30,35 @@ import {
   anchorInvoiceOnChain,
   attemptChainSetup,
   anchorFingerprintMatches,
+  buildExternalPayment,
+  confirmExternalPayment,
   decideAffordability,
+  defaultPaymentMode,
   ensureWalletFor,
-  estimateAnchorFeeWei,
   estimatePayFeeWei,
   formatFeeUsdc,
   formatUsdc,
   getBalance,
-  getContractAddress,
-  getWallet,
+  getLegacyContractAddress,
+  isArcNetworkKey,
   isRpcConnected,
+  mainnetSwitchedOn,
+  networkByKey,
+  networkForChainId,
+  newPaymentSalt,
   payInvoiceOnChain,
+  paymentTermsOf,
   readAnchor,
+  reconcileExternalPayment,
+  recordInvoicePaid,
+  registryFor,
   resolvePayeeAddress,
-  ARC_CHAIN_ID,
-  EXPLORER_BASE_URL,
+  resolvePayeeForNetwork,
+  ARC_TESTNET,
   FAUCET_URL,
   FEE_ESTIMATE_FALLBACK_WEI,
-  NETWORK_NAME,
 } from "../chain/arc";
+import { assessAnchor } from "./chain";
 import { fmt2, toEvent, toInvoice } from "../lib/serializers";
 import { canSeeInvoice, findInvoice } from "../lib/access";
 import { notifyClientOfNewInvoice } from "../lib/invoicePush";
@@ -176,23 +188,42 @@ router.post("/invoices", async (req, res) => {
     return;
   }
 
-  // The anchor transaction is paid by the SENDER's own wallet - no
+  // Which network this invoice lives on, forever. Live (mainnet) needs the
+  // explicit on switch plus a payout wallet for the sender, because a live
+  // payment goes straight to that wallet and no custodial fallback exists.
+  const network = isArcNetworkKey(body.network) ? networkByKey(body.network) : ARC_TESTNET;
+  const anchor = await assessAnchor(creator.id, network);
+  if (anchor.blocker) {
+    res.status(409).json({ error: `${anchor.blocker} Nothing was saved.` });
+    return;
+  }
+  // Sandbox: the anchor transaction is paid by the SENDER's own wallet - no
   // sponsorship. Block creation only on an affirmative "can't afford": both
   // balance and fee were readable and the balance falls short. If the chain
   // is unreachable, sealing still works (the anchor stays pending and is
   // retried later) - blocking that path would gate offline sealing on RPC
   // health, and the pending state is already honest in the UI.
-  const senderWallet = await ensureWalletFor(creator.id);
-  const senderBalance = await getBalance(senderWallet);
-  const anchorFeeWei = await estimateAnchorFeeWei(senderWallet);
-  if (senderBalance !== null) {
-    const verdict = decideAffordability(senderBalance, anchorFeeWei);
-    if (!verdict.canAfford) {
-      res.status(409).json({
-        error: `Sealing writes your invoice's fingerprint to ${NETWORK_NAME}, and that anchor transaction is paid from your wallet - about ${formatFeeUsdc(anchorFeeWei)} USDC in gas, but your wallet ${senderWallet} holds ${formatUsdc(senderBalance)} USDC. Get free test USDC at ${FAUCET_URL} (choose Arc Testnet), then seal again. Nothing was saved.`,
-      });
-      return;
-    }
+  if (
+    network.mode === "sandbox" &&
+    anchor.verdict !== null &&
+    !anchor.verdict.canAfford &&
+    anchor.feeWei !== null &&
+    anchor.balanceWei !== null
+  ) {
+    res.status(409).json({
+      error: `Sealing writes your invoice's fingerprint to ${network.name}, and that anchor transaction is paid from your wallet - about ${formatFeeUsdc(anchor.feeWei)} USDC in gas, but your wallet ${anchor.walletAddress} holds ${formatUsdc(anchor.balanceWei)} USDC. Get free test USDC at ${FAUCET_URL} (choose Arc Testnet), then seal again. Nothing was saved.`,
+    });
+    return;
+  }
+  // The payment terms the anchor commits to are fixed now, before any chain
+  // write: the payee wallet (linked payout wallet, else the sandbox wallet)
+  // and a fresh random salt.
+  const payee = await resolvePayeeForNetwork(creator.id, network);
+  if (!payee) {
+    res.status(409).json({
+      error: "Your payout wallet could not be resolved, so the invoice was not created. Nothing was saved.",
+    });
+    return;
   }
 
   // The two wraps were prepared in the creator's browser against keys read
@@ -211,6 +242,10 @@ router.post("/invoices", async (req, res) => {
     fingerprint: body.fingerprint.toLowerCase(),
     ciphertext: body.ciphertext,
     wrappedKeys: body.wrappedKeys,
+    chainId: network.chainId,
+    networkName: network.name,
+    payeeAddress: payee.address,
+    paymentSalt: newPaymentSalt(),
   });
   if (!result.ok) {
     if (result.reason === "no_user") {
@@ -244,13 +279,39 @@ router.post("/invoices", async (req, res) => {
   res.status(201).json(CreateInvoiceResponse.parse(toInvoice(invoice, names)));
 });
 
+// A payment sent from the client's own wallet can land while the app is not
+// watching (tab closed before the confirmation call). The chain is the source
+// of truth, so a detail read of an unpaid, anchored, commitment-backed
+// invoice checks the registry - at most once every 15 seconds per invoice.
+const reconciledAt = new Map<string, number>();
+async function reconcileIfDue(invoice: InvoiceRow): Promise<InvoiceRow> {
+  if (invoice.status === "paid" || invoice.anchorStatus !== "anchored") return invoice;
+  if (!paymentTermsOf(invoice)) return invoice;
+  const last = reconciledAt.get(invoice.id) ?? 0;
+  if (Date.now() - last < 15_000) return invoice;
+  reconciledAt.set(invoice.id, Date.now());
+  const settled = await reconcileExternalPayment(invoice);
+  if (!settled) return invoice;
+  const network = networkForChainId(invoice.chainId);
+  const names = await namesById();
+  const updated = await recordInvoicePaid({
+    invoiceId: invoice.id,
+    txHash: settled.txHash,
+    payerAddress: settled.payerAddress,
+    actorId: invoice.clientId,
+    detail: `${names.get(invoice.clientId) ?? "The client"} paid ${fmt2(invoice.amountUsdc)} USDC to ${names.get(invoice.freelancerId) ?? "the freelancer"} on ${network.name} from their own wallet${settled.payerAddress ? ` (${settled.payerAddress})` : ""}. The registry contract forwarded the money to ${invoice.payeeAddress} in one transaction.`,
+  });
+  return updated ?? invoice;
+}
+
 router.get("/invoices/:invoiceId", async (req, res) => {
   const userId = userIdOf(req);
-  const invoice = await findInvoice(req.params.invoiceId);
-  if (!invoice || !(await canSeeInvoice(invoice, userId))) {
+  const found = await findInvoice(req.params.invoiceId);
+  if (!found || !(await canSeeInvoice(found, userId))) {
     res.status(404).json({ error: "Invoice not found." });
     return;
   }
+  const invoice = await reconcileIfDue(found);
   const userRows = await db.select().from(usersTable);
   const names = new Map(userRows.map((row) => [row.id, row.displayName]));
   const access = {
@@ -280,6 +341,15 @@ router.post("/invoices/:invoiceId/pay", async (req, res) => {
     });
     return;
   }
+  const network = networkForChainId(invoice.chainId);
+  if (network.mode === "live") {
+    // Real money never moves through a server-held key. Live invoices are
+    // paid from the client's own wallet and verified by payment-submitted.
+    res.status(409).json({
+      error: `This is a live invoice on ${network.name}. Pay it from your own wallet using the Pay button - Envelo never holds real funds for you.`,
+    });
+    return;
+  }
 
   if (paymentsInFlight.has(invoice.id)) {
     res.status(409).json({
@@ -290,16 +360,18 @@ router.post("/invoices/:invoiceId/pay", async (req, res) => {
   }
   paymentsInFlight.add(invoice.id);
   try {
-    // Give the chain one chance to catch up (deploy / anchor).
+    // Give the chain one chance to catch up on a pending anchor.
     await attemptChainSetup();
 
-    if (!(await isRpcConnected())) {
+    if (!(await isRpcConnected(network))) {
       res.status(409).json({
-        error: `${NETWORK_NAME} cannot be reached right now, so no real payment can happen. Nothing was charged - try again in a moment.`,
+        error: `${network.name} cannot be reached right now, so no real payment can happen. Nothing was charged - try again in a moment.`,
       });
       return;
     }
-    const contractAddress = await getContractAddress();
+    const registry = registryFor(invoice);
+    const contractAddress =
+      registry.address ?? (await getLegacyContractAddress());
     if (!contractAddress) {
       res.status(409).json({
         error:
@@ -332,8 +404,7 @@ router.post("/invoices/:invoiceId/pay", async (req, res) => {
       });
       return;
     }
-    const alreadyPaidOnChain =
-      anchorState.paid;
+    const alreadyPaidOnChain = anchorState.paid;
 
     if (!alreadyPaidOnChain) {
       // No subsidies: the payment leaves the payer's OWN wallet, so the
@@ -342,28 +413,27 @@ router.post("/invoices/:invoiceId/pay", async (req, res) => {
       // so what the sheet said and what happens here cannot drift apart.
       const payerAddress = await ensureWalletFor(userId);
       const payerBalance = await getBalance(payerAddress);
-      const payee = await resolvePayeeAddress(invoice.freelancerId);
-      const payContract =
-        (invoice.contractAddress as `0x${string}` | null) ??
-        (await getContractAddress());
+      const terms = paymentTermsOf(invoice);
+      const payee = terms
+        ? { address: terms.payee }
+        : await resolvePayeeAddress(invoice.freelancerId);
       const amountWei = parseUnits(fmt2(invoice.amountUsdc), 18);
-      if (!payee || !payContract) {
+      if (!payee) {
         res.status(409).json({
           error:
-            "The real payee or registry contract is not available, so no payment was attempted.",
+            "The real payee wallet is not available, so no payment was attempted.",
         });
         return;
       }
       const feeWei = await estimatePayFeeWei({
-        invoiceId: invoice.id,
+        invoice,
         payerAddress,
         payeeAddress: payee.address,
         amountWei,
-        contractAddress: payContract,
       });
-      if (payerBalance === null) {
+      if (payerBalance === null || feeWei === null) {
         res.status(409).json({
-          error: `Your built-in wallet balance cannot be read right now, so payment cannot be approved safely. Nothing was charged - try again in a moment.`,
+          error: `Your built-in wallet balance or the network fee cannot be read right now, so payment cannot be approved safely. Nothing was charged - try again in a moment.`,
         });
         return;
       }
@@ -376,9 +446,9 @@ router.post("/invoices/:invoiceId/pay", async (req, res) => {
       }
     }
 
-    // Where the money goes (linked payout wallet vs custodial) is resolved
-    // inside payInvoiceOnChain at submit time, so a last-second unlink or
-    // swap can never send funds to a stale address.
+    // On commitment-backed invoices the destination was fixed at creation
+    // and is enforced by the contract; older invoices resolve it inside
+    // payInvoiceOnChain at submit time.
     const payResult = await payInvoiceOnChain({
       invoiceId: invoice.id,
       payerWalletId: userId,
@@ -386,47 +456,115 @@ router.post("/invoices/:invoiceId/pay", async (req, res) => {
       amountUsdc: fmt2(invoice.amountUsdc),
     });
     const txHash = payResult.txHash ?? invoice.payTxHash ?? null;
-    const [updated] = await db
-      .update(invoicesTable)
-      .set({ status: "paid", payTxHash: txHash, paidAt: new Date() })
-      .where(eq(invoicesTable.id, invoice.id))
-      .returning();
     const payerName = names.get(userId) ?? "The client";
     const payeeName = names.get(invoice.freelancerId) ?? "the freelancer";
-    const priorPaidEvents = await db
-      .select()
-      .from(invoiceEventsTable)
-      .where(
-        and(
-          eq(invoiceEventsTable.invoiceId, invoice.id),
-          eq(invoiceEventsTable.kind, "paid"),
-        ),
-      );
-    if (priorPaidEvents.length === 0) {
-      await db.insert(invoiceEventsTable).values({
-        invoiceId: invoice.id,
-        kind: "paid",
-        actorId: userId,
-        detail: payResult.alreadyPaidOnChain
-          ? `${payerName}'s earlier payment had already gone through on ${NETWORK_NAME} - the app record just caught up with the chain.`
-          : `${payerName} paid ${fmt2(invoice.amountUsdc)} USDC to ${payeeName} on ${NETWORK_NAME}. The money moved through the registry contract in one transaction${
-              payResult.paidToLinkedWallet
-                ? ` and landed in ${payeeName}'s own linked wallet`
-                : ""
-            }.`,
-        txHash,
-      });
-    }
-    res.json(PayInvoiceResponse.parse(toInvoice(updated!, names)));
+    const updated = await recordInvoicePaid({
+      invoiceId: invoice.id,
+      txHash,
+      payerAddress: payResult.payerAddress,
+      actorId: userId,
+      detail: payResult.alreadyPaidOnChain
+        ? `${payerName}'s earlier payment had already gone through on ${network.name} - the app record just caught up with the chain.`
+        : `${payerName} paid ${fmt2(invoice.amountUsdc)} USDC to ${payeeName} on ${network.name}. The money moved through the registry contract in one transaction${
+            payResult.paidToLinkedWallet
+              ? ` and landed in ${payeeName}'s own linked wallet`
+              : ""
+          }.`,
+    });
+    res.json(PayInvoiceResponse.parse(toInvoice(updated ?? invoice, names)));
   } finally {
     paymentsInFlight.delete(invoice.id);
   }
 });
 
+// The client paid from their OWN wallet and hands over the transaction hash.
+// The hash is only a pointer; the server verifies the receipt against the
+// registry (InvoicePaid event for this invoice, committed payee, exact
+// amount) before anything is marked paid. Live invoices are paid only this
+// way; sandbox invoices on a v4 anchor accept it too.
+router.post("/invoices/:invoiceId/payment-submitted", async (req, res) => {
+  const userId = userIdOf(req);
+  const invoice = await findInvoice(req.params.invoiceId);
+  if (!invoice || !(await canSeeInvoice(invoice, userId))) {
+    res.status(404).json({ error: "Invoice not found." });
+    return;
+  }
+  const names = await namesById();
+  if (userId !== invoice.clientId) {
+    res.status(403).json({
+      error: `Only ${names.get(invoice.clientId) ?? "the client"} can report a payment for this invoice.`,
+    });
+    return;
+  }
+  const body = PaymentSubmittedBody.parse(req.body);
+  const txHash = body.txHash.trim();
+  if (!/^0x[0-9a-fA-F]{64}$/.test(txHash)) {
+    res.status(400).json({ error: "That is not a transaction hash." });
+    return;
+  }
+  const network = networkForChainId(invoice.chainId);
+  if (invoice.status === "paid") {
+    // Reconciliation can record a payment it saw on the registry without
+    // finding its transaction; a verified hash from the payer fills that in.
+    let current = invoice;
+    if (!invoice.payTxHash) {
+      const outcome = await confirmExternalPayment(invoice, txHash as `0x${string}`);
+      if (outcome.status === "paid") {
+        const [withHash] = await db
+          .update(invoicesTable)
+          .set({ payTxHash: outcome.txHash })
+          .where(and(eq(invoicesTable.id, invoice.id), isNull(invoicesTable.payTxHash)))
+          .returning();
+        current = withHash ?? invoice;
+      }
+    }
+    res.json(
+      PaymentSubmittedResponse.parse({
+        status: "paid",
+        invoice: toInvoice(current, names),
+        message: "This invoice is already recorded as paid.",
+      }),
+    );
+    return;
+  }
+  const outcome = await confirmExternalPayment(invoice, txHash as `0x${string}`);
+  if (outcome.status === "rejected") {
+    res.status(409).json({ error: outcome.reason });
+    return;
+  }
+  if (outcome.status === "pending") {
+    res.json(
+      PaymentSubmittedResponse.parse({
+        status: "pending",
+        invoice: toInvoice(invoice, names),
+        message: `${network.name} has not confirmed that transaction yet. The invoice updates as soon as it does.`,
+      }),
+    );
+    return;
+  }
+  const payerName = names.get(userId) ?? "The client";
+  const payeeName = names.get(invoice.freelancerId) ?? "the freelancer";
+  const updated = await recordInvoicePaid({
+    invoiceId: invoice.id,
+    txHash: outcome.txHash,
+    payerAddress: outcome.payerAddress,
+    actorId: userId,
+    detail: `${payerName} paid ${fmt2(invoice.amountUsdc)} USDC to ${payeeName} on ${network.name} from their own wallet (${outcome.payerAddress}). The registry contract checked the payment against the anchored terms and forwarded the money to ${invoice.payeeAddress} in one transaction.`,
+  });
+  res.json(
+    PaymentSubmittedResponse.parse({
+      status: "paid",
+      invoice: toInvoice(updated ?? invoice, names),
+      message: `Payment confirmed on ${network.name}.`,
+    }),
+  );
+});
+
 // Everything the Pay approval sheet shows, as live server facts: the exact
 // amount, a fee estimated at this moment's gas price, the payer's real
-// balance, and one verdict (canPay) computed by the SAME rule the pay route
-// enforces - the sheet never re-derives money math client-side.
+// sandbox balance, one verdict (canPay) computed by the SAME rule the pay
+// route enforces, and the exact transaction for paying from the client's own
+// wallet - the sheet never re-derives money math client-side.
 router.get("/invoices/:invoiceId/pay-preview", async (req, res) => {
   const userId = userIdOf(req);
   const invoice = await findInvoice(req.params.invoiceId);
@@ -440,7 +578,8 @@ router.get("/invoices/:invoiceId/pay-preview", async (req, res) => {
     });
     return;
   }
-  const connected = await isRpcConnected();
+  const network = networkForChainId(invoice.chainId);
+  const connected = await isRpcConnected(network);
   const anchorState =
     connected && invoice.anchorStatus === "anchored"
       ? await readAnchor(invoice.id)
@@ -450,28 +589,58 @@ router.get("/invoices/:invoiceId/pay-preview", async (req, res) => {
     anchorState.reachable &&
     anchorState.anchored &&
     anchorFingerprintMatches(anchorState.fingerprint, invoice.fingerprint);
+  const registry = registryFor(invoice);
   const contractAddress = anchorVerified
-    ? (invoice.contractAddress as `0x${string}` | null) ??
-      (await getContractAddress())
+    ? registry.address ?? (await getLegacyContractAddress())
     : null;
-  const payerAddress = await ensureWalletFor(userId);
-  const payerBalance = connected ? await getBalance(payerAddress) : null;
-  const payee = await resolvePayeeAddress(invoice.freelancerId);
+  const terms = paymentTermsOf(invoice);
+  const payee = terms
+    ? { address: terms.payee, linked: null as boolean | null }
+    : await resolvePayeeAddress(invoice.freelancerId);
   const amountWei = parseUnits(fmt2(invoice.amountUsdc), 18);
   const alreadyPaid = invoice.status === "paid";
+  const paymentMode = defaultPaymentMode(network);
+  // The wallet transaction is only handed out when the server would stand
+  // behind it right now: the registry really holds this anchor (a payment
+  // against a missing anchor just reverts and burns the client's gas) and,
+  // on live, the mainnet switch is on. Payments already broadcast still
+  // settle through payment-submitted whatever this says.
+  const liveHalted = network.mode === "live" && !mainnetSwitchedOn();
+  const unavailableReason = alreadyPaid
+    ? null
+    : !connected
+      ? `${network.name} is not reachable right now, so the payment cannot be prepared. Try again in a moment.`
+      : liveHalted
+        ? "Live payments are paused for maintenance. The invoice stays valid; try again later."
+        : !anchorVerified
+          ? "This invoice is still being anchored on Arc. Payment unlocks after its transaction confirms."
+          : paymentMode === "external" && buildExternalPayment(invoice) === null
+            ? "The payment transaction could not be built for this invoice, so it cannot be paid from a wallet yet."
+            : null;
+  const transaction =
+    alreadyPaid || unavailableReason !== null ? null : buildExternalPayment(invoice);
+
+  // The custodial side only exists in the sandbox; on live there is no
+  // built-in wallet to price against.
+  const payerAddress =
+    network.mode === "sandbox" ? await ensureWalletFor(userId) : null;
+  const payerBalance =
+    connected && payerAddress ? await getBalance(payerAddress, network) : null;
   const feeWei = alreadyPaid
     ? null
-    : contractAddress && payee
+    : contractAddress && payee && payerAddress
       ? await estimatePayFeeWei({
-          invoiceId: invoice.id,
+          invoice,
           payerAddress,
           payeeAddress: payee.address,
           amountWei,
-          contractAddress,
         })
-      : FEE_ESTIMATE_FALLBACK_WEI;
+      : network.mode === "sandbox"
+        ? FEE_ESTIMATE_FALLBACK_WEI
+        : null;
   const totalWei = feeWei === null ? null : amountWei + feeWei;
   const verdict =
+    paymentMode === "custodial" &&
     connected &&
     contractAddress !== null &&
     payee !== null &&
@@ -480,13 +649,34 @@ router.get("/invoices/:invoiceId/pay-preview", async (req, res) => {
       ? decideAffordability(payerBalance, totalWei)
       : null;
   const names = await namesById();
+  const [payeeUser] = await db
+    .select({ payoutAddress: usersTable.payoutAddress })
+    .from(usersTable)
+    .where(eq(usersTable.id, invoice.freelancerId));
+  const paidToLinkedWallet =
+    payee?.linked ??
+    (payee !== null &&
+      payeeUser?.payoutAddress?.toLowerCase() === payee.address.toLowerCase());
   res.json(
     GetPayPreviewResponse.parse({
-      network: NETWORK_NAME,
-      chainId: ARC_CHAIN_ID,
+      network: network.name,
+      networkKey: network.key,
+      networkMode: network.mode,
+      chainId: network.chainId,
       contractAddress: contractAddress ?? null,
-      explorerBaseUrl: EXPLORER_BASE_URL,
-      faucetUrl: FAUCET_URL,
+      explorerBaseUrl: network.explorerBaseUrl,
+      faucetUrl: network.faucetUrl,
+      paymentMode,
+      transaction:
+        transaction === null
+          ? null
+          : {
+              chainId: transaction.chainId,
+              chainIdHex: `0x${transaction.chainId.toString(16)}`,
+              to: transaction.to,
+              data: transaction.data,
+              value: transaction.value,
+            },
       amountUsdc: fmt2(invoice.amountUsdc),
       feeEstimateUsdc: feeWei === null ? null : formatFeeUsdc(feeWei),
       totalUsdc: totalWei === null ? null : formatFeeUsdc(totalWei),
@@ -498,9 +688,10 @@ router.get("/invoices/:invoiceId/pay-preview", async (req, res) => {
         verdict !== null && !verdict.canAfford
           ? formatFeeUsdc(verdict.shortfallWei)
           : null,
+      unavailableReason,
       payeeAddress: payee?.address ?? null,
       payeeName: names.get(invoice.freelancerId) ?? null,
-      paidToLinkedWallet: payee?.linked ?? false,
+      paidToLinkedWallet,
       alreadyPaid,
     }),
   );
@@ -689,6 +880,7 @@ router.post("/invoices/:invoiceId/verify", async (req, res) => {
   const matchesRecord = computed === recordFingerprint;
 
   const anchor = await readAnchor(invoice.id);
+  const networkName = networkForChainId(invoice.chainId).name;
   let onchainFingerprint: string | null = null;
   let matchesOnchain: boolean | null = null;
   if (anchor.reachable && anchor.anchored && anchor.fingerprint) {
@@ -698,7 +890,7 @@ router.post("/invoices/:invoiceId/verify", async (req, res) => {
 
   let summary: string;
   if (matchesRecord && matchesOnchain === true) {
-    summary = `The document is authentic. The fingerprint recomputed in your browser matches both the app's record and the copy anchored on ${NETWORK_NAME}.`;
+    summary = `The document is authentic. The fingerprint recomputed in your browser matches both the app's record and the copy anchored on ${networkName}.`;
   } else if (!matchesRecord) {
     summary =
       "Warning: the recomputed fingerprint does NOT match the recorded one. The document you decrypted is not the one that was originally sealed.";
@@ -706,7 +898,7 @@ router.post("/invoices/:invoiceId/verify", async (req, res) => {
     summary =
       "Warning: the recomputed fingerprint matches the app's record but NOT the copy anchored onchain. That should never happen - treat this invoice as suspect.";
   } else if (!anchor.reachable) {
-    summary = `The recomputed fingerprint matches the app's record. ${NETWORK_NAME} could not be reached just now, so the onchain copy was not double-checked.`;
+    summary = `The recomputed fingerprint matches the app's record. ${networkName} could not be reached just now, so the onchain copy was not double-checked.`;
   } else {
     summary =
       "The recomputed fingerprint matches the app's record. This invoice has not been anchored onchain yet, so there is no onchain copy to compare against.";

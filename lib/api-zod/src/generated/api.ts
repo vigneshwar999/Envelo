@@ -303,11 +303,19 @@ export const ListInvoicesResponseItem = zod.object({
   "clientName": zod.string(),
   "dueDate": zod.string().nullish(),
   "fingerprint": zod.string(),
-  "anchorStatus": zod.enum(['pending', 'anchored', 'unavailable']).describe('Whether the fingerprint has been recorded on the Arc testnet yet'),
+  "anchorStatus": zod.enum(['pending', 'anchored', 'unavailable']).describe('Whether the fingerprint has been recorded on the invoice\'s Arc network yet'),
   "anchorTxHash": zod.string().nullish(),
   "payTxHash": zod.string().nullish(),
   "paidAt": zod.string().nullish(),
   "createdAt": zod.string(),
+  "chainId": zod.number().describe('The Arc chain this invoice lives on - 5042002 (Arc Testnet sandbox) or 5042 (Arc Mainnet). Fixed at creation.'),
+  "network": zod.enum(['testnet', 'mainnet']),
+  "networkName": zod.string().describe('Human name of the network, e.g. \"Arc Testnet\" or \"Arc Mainnet\".'),
+  "networkMode": zod.enum(['sandbox', 'live']).describe('sandbox = test USDC and built-in wallets; live = real USDC, the client pays from their own wallet.'),
+  "explorerBaseUrl": zod.string().describe('Block explorer for THIS invoice\'s network - build tx links from here, never from a global constant.'),
+  "paymentMode": zod.enum(['custodial', 'external']).describe('How this invoice is normally paid - \"custodial\" from the client\'s built-in sandbox wallet (server-signed), \"external\" from the client\'s own wallet in the browser (live invoices, verified by the server).'),
+  "payeeAddress": zod.string().nullish().describe('The wallet the payment must reach, fixed when the invoice was created and committed in its onchain anchor. Null only on invoices created before payment commitments existed.'),
+  "payerAddress": zod.string().nullish().describe('The wallet that paid, straight from the registry\'s InvoicePaid event. Null until paid.'),
   "myCopyLocked": zod.boolean().optional().describe('Only set for the two parties on the invoice: true when the signed-in user\'s own wrapped copy of the envelope key no longer exists (they reset their key), so this envelope will not open for them until the other party re-shares it.'),
   "counterpartyNeedsRekey": zod.boolean().optional().describe('Only set for the two parties on the invoice: true when the OTHER party lost access by resetting their key and has registered a new one - the signed-in user can restore their access with a one-click re-share (re-wrap in the browser).'),
   "counterpartyPublicKeyJwk": zod.string().nullish().describe('The other party\'s CURRENT public key JWK, present exactly when counterpartyNeedsRekey is true, so the client can re-wrap without a directory lookup.')
@@ -330,7 +338,8 @@ export const CreateInvoiceBody = zod.object({
   "wrappedKeys": zod.array(zod.object({
   "userId": zod.string(),
   "wrappedKey": zod.string().describe('Base64 AES key wrapped with this user\'s public key')
-}))
+})),
+  "network": zod.enum(['testnet', 'mainnet']).optional().describe('Which Arc network to create the invoice on. Defaults to testnet (the sandbox). \"mainnet\" is only accepted while live invoicing is enabled (see ChainStatus.mainnetEnabled) and the sender has a linked payout wallet, because a live payment goes straight to that wallet.')
 })
 
 export const CreateInvoiceResponse = zod.object({
@@ -344,11 +353,19 @@ export const CreateInvoiceResponse = zod.object({
   "clientName": zod.string(),
   "dueDate": zod.string().nullish(),
   "fingerprint": zod.string(),
-  "anchorStatus": zod.enum(['pending', 'anchored', 'unavailable']).describe('Whether the fingerprint has been recorded on the Arc testnet yet'),
+  "anchorStatus": zod.enum(['pending', 'anchored', 'unavailable']).describe('Whether the fingerprint has been recorded on the invoice\'s Arc network yet'),
   "anchorTxHash": zod.string().nullish(),
   "payTxHash": zod.string().nullish(),
   "paidAt": zod.string().nullish(),
   "createdAt": zod.string(),
+  "chainId": zod.number().describe('The Arc chain this invoice lives on - 5042002 (Arc Testnet sandbox) or 5042 (Arc Mainnet). Fixed at creation.'),
+  "network": zod.enum(['testnet', 'mainnet']),
+  "networkName": zod.string().describe('Human name of the network, e.g. \"Arc Testnet\" or \"Arc Mainnet\".'),
+  "networkMode": zod.enum(['sandbox', 'live']).describe('sandbox = test USDC and built-in wallets; live = real USDC, the client pays from their own wallet.'),
+  "explorerBaseUrl": zod.string().describe('Block explorer for THIS invoice\'s network - build tx links from here, never from a global constant.'),
+  "paymentMode": zod.enum(['custodial', 'external']).describe('How this invoice is normally paid - \"custodial\" from the client\'s built-in sandbox wallet (server-signed), \"external\" from the client\'s own wallet in the browser (live invoices, verified by the server).'),
+  "payeeAddress": zod.string().nullish().describe('The wallet the payment must reach, fixed when the invoice was created and committed in its onchain anchor. Null only on invoices created before payment commitments existed.'),
+  "payerAddress": zod.string().nullish().describe('The wallet that paid, straight from the registry\'s InvoicePaid event. Null until paid.'),
   "myCopyLocked": zod.boolean().optional().describe('Only set for the two parties on the invoice: true when the signed-in user\'s own wrapped copy of the envelope key no longer exists (they reset their key), so this envelope will not open for them until the other party re-shares it.'),
   "counterpartyNeedsRekey": zod.boolean().optional().describe('Only set for the two parties on the invoice: true when the OTHER party lost access by resetting their key and has registered a new one - the signed-in user can restore their access with a one-click re-share (re-wrap in the browser).'),
   "counterpartyPublicKeyJwk": zod.string().nullish().describe('The other party\'s CURRENT public key JWK, present exactly when counterpartyNeedsRekey is true, so the client can re-wrap without a directory lookup.')
@@ -373,11 +390,19 @@ export const GetInvoiceResponse = zod.object({
   "clientName": zod.string(),
   "dueDate": zod.string().nullish(),
   "fingerprint": zod.string(),
-  "anchorStatus": zod.enum(['pending', 'anchored', 'unavailable']).describe('Whether the fingerprint has been recorded on the Arc testnet yet'),
+  "anchorStatus": zod.enum(['pending', 'anchored', 'unavailable']).describe('Whether the fingerprint has been recorded on the invoice\'s Arc network yet'),
   "anchorTxHash": zod.string().nullish(),
   "payTxHash": zod.string().nullish(),
   "paidAt": zod.string().nullish(),
   "createdAt": zod.string(),
+  "chainId": zod.number().describe('The Arc chain this invoice lives on - 5042002 (Arc Testnet sandbox) or 5042 (Arc Mainnet). Fixed at creation.'),
+  "network": zod.enum(['testnet', 'mainnet']),
+  "networkName": zod.string().describe('Human name of the network, e.g. \"Arc Testnet\" or \"Arc Mainnet\".'),
+  "networkMode": zod.enum(['sandbox', 'live']).describe('sandbox = test USDC and built-in wallets; live = real USDC, the client pays from their own wallet.'),
+  "explorerBaseUrl": zod.string().describe('Block explorer for THIS invoice\'s network - build tx links from here, never from a global constant.'),
+  "paymentMode": zod.enum(['custodial', 'external']).describe('How this invoice is normally paid - \"custodial\" from the client\'s built-in sandbox wallet (server-signed), \"external\" from the client\'s own wallet in the browser (live invoices, verified by the server).'),
+  "payeeAddress": zod.string().nullish().describe('The wallet the payment must reach, fixed when the invoice was created and committed in its onchain anchor. Null only on invoices created before payment commitments existed.'),
+  "payerAddress": zod.string().nullish().describe('The wallet that paid, straight from the registry\'s InvoicePaid event. Null until paid.'),
   "myCopyLocked": zod.boolean().optional().describe('Only set for the two parties on the invoice: true when the signed-in user\'s own wrapped copy of the envelope key no longer exists (they reset their key), so this envelope will not open for them until the other party re-shares it.'),
   "counterpartyNeedsRekey": zod.boolean().optional().describe('Only set for the two parties on the invoice: true when the OTHER party lost access by resetting their key and has registered a new one - the signed-in user can restore their access with a one-click re-share (re-wrap in the browser).'),
   "counterpartyPublicKeyJwk": zod.string().nullish().describe('The other party\'s CURRENT public key JWK, present exactly when counterpartyNeedsRekey is true, so the client can re-wrap without a directory lookup.')
@@ -385,7 +410,7 @@ export const GetInvoiceResponse = zod.object({
 
 
 /**
- * @summary Pay an invoice in test USDC on the Arc testnet (the signed-in user must be the client)
+ * @summary Pay a sandbox invoice from the client's built-in wallet in test USDC (the signed-in user must be the client). Live invoices are paid from the client's own wallet instead - see paymentSubmitted.
  */
 export const PayInvoiceParams = zod.object({
   "invoiceId": zod.coerce.string()
@@ -402,11 +427,19 @@ export const PayInvoiceResponse = zod.object({
   "clientName": zod.string(),
   "dueDate": zod.string().nullish(),
   "fingerprint": zod.string(),
-  "anchorStatus": zod.enum(['pending', 'anchored', 'unavailable']).describe('Whether the fingerprint has been recorded on the Arc testnet yet'),
+  "anchorStatus": zod.enum(['pending', 'anchored', 'unavailable']).describe('Whether the fingerprint has been recorded on the invoice\'s Arc network yet'),
   "anchorTxHash": zod.string().nullish(),
   "payTxHash": zod.string().nullish(),
   "paidAt": zod.string().nullish(),
   "createdAt": zod.string(),
+  "chainId": zod.number().describe('The Arc chain this invoice lives on - 5042002 (Arc Testnet sandbox) or 5042 (Arc Mainnet). Fixed at creation.'),
+  "network": zod.enum(['testnet', 'mainnet']),
+  "networkName": zod.string().describe('Human name of the network, e.g. \"Arc Testnet\" or \"Arc Mainnet\".'),
+  "networkMode": zod.enum(['sandbox', 'live']).describe('sandbox = test USDC and built-in wallets; live = real USDC, the client pays from their own wallet.'),
+  "explorerBaseUrl": zod.string().describe('Block explorer for THIS invoice\'s network - build tx links from here, never from a global constant.'),
+  "paymentMode": zod.enum(['custodial', 'external']).describe('How this invoice is normally paid - \"custodial\" from the client\'s built-in sandbox wallet (server-signed), \"external\" from the client\'s own wallet in the browser (live invoices, verified by the server).'),
+  "payeeAddress": zod.string().nullish().describe('The wallet the payment must reach, fixed when the invoice was created and committed in its onchain anchor. Null only on invoices created before payment commitments existed.'),
+  "payerAddress": zod.string().nullish().describe('The wallet that paid, straight from the registry\'s InvoicePaid event. Null until paid.'),
   "myCopyLocked": zod.boolean().optional().describe('Only set for the two parties on the invoice: true when the signed-in user\'s own wrapped copy of the envelope key no longer exists (they reset their key), so this envelope will not open for them until the other party re-shares it.'),
   "counterpartyNeedsRekey": zod.boolean().optional().describe('Only set for the two parties on the invoice: true when the OTHER party lost access by resetting their key and has registered a new one - the signed-in user can restore their access with a one-click re-share (re-wrap in the browser).'),
   "counterpartyPublicKeyJwk": zod.string().nullish().describe('The other party\'s CURRENT public key JWK, present exactly when counterpartyNeedsRekey is true, so the client can re-wrap without a directory lookup.')
@@ -414,26 +447,82 @@ export const PayInvoiceResponse = zod.object({
 
 
 /**
- * @summary What the Pay approval sheet shows - exact amount, live fee estimate, payer balance, and the server's affordability verdict
+ * @summary Tell the server about a payment the client sent from their OWN wallet. The server verifies the receipt against the registry (InvoicePaid event, committed payee, exact amount) before marking the invoice paid.
+ */
+export const PaymentSubmittedParams = zod.object({
+  "invoiceId": zod.coerce.string()
+})
+
+export const PaymentSubmittedBody = zod.object({
+  "txHash": zod.string().describe('The 0x-prefixed 32-byte hash returned by the client\'s wallet after it sent the payment transaction.')
+})
+
+export const PaymentSubmittedResponse = zod.object({
+  "status": zod.enum(['paid', 'pending']).describe('paid = verified onchain and recorded; pending = not mined yet, poll again.'),
+  "invoice": zod.object({
+  "id": zod.string(),
+  "invoiceNumber": zod.string(),
+  "status": zod.enum(['awaiting_payment', 'paid']),
+  "amountUsdc": zod.string(),
+  "freelancerId": zod.string(),
+  "clientId": zod.string(),
+  "freelancerName": zod.string(),
+  "clientName": zod.string(),
+  "dueDate": zod.string().nullish(),
+  "fingerprint": zod.string(),
+  "anchorStatus": zod.enum(['pending', 'anchored', 'unavailable']).describe('Whether the fingerprint has been recorded on the invoice\'s Arc network yet'),
+  "anchorTxHash": zod.string().nullish(),
+  "payTxHash": zod.string().nullish(),
+  "paidAt": zod.string().nullish(),
+  "createdAt": zod.string(),
+  "chainId": zod.number().describe('The Arc chain this invoice lives on - 5042002 (Arc Testnet sandbox) or 5042 (Arc Mainnet). Fixed at creation.'),
+  "network": zod.enum(['testnet', 'mainnet']),
+  "networkName": zod.string().describe('Human name of the network, e.g. \"Arc Testnet\" or \"Arc Mainnet\".'),
+  "networkMode": zod.enum(['sandbox', 'live']).describe('sandbox = test USDC and built-in wallets; live = real USDC, the client pays from their own wallet.'),
+  "explorerBaseUrl": zod.string().describe('Block explorer for THIS invoice\'s network - build tx links from here, never from a global constant.'),
+  "paymentMode": zod.enum(['custodial', 'external']).describe('How this invoice is normally paid - \"custodial\" from the client\'s built-in sandbox wallet (server-signed), \"external\" from the client\'s own wallet in the browser (live invoices, verified by the server).'),
+  "payeeAddress": zod.string().nullish().describe('The wallet the payment must reach, fixed when the invoice was created and committed in its onchain anchor. Null only on invoices created before payment commitments existed.'),
+  "payerAddress": zod.string().nullish().describe('The wallet that paid, straight from the registry\'s InvoicePaid event. Null until paid.'),
+  "myCopyLocked": zod.boolean().optional().describe('Only set for the two parties on the invoice: true when the signed-in user\'s own wrapped copy of the envelope key no longer exists (they reset their key), so this envelope will not open for them until the other party re-shares it.'),
+  "counterpartyNeedsRekey": zod.boolean().optional().describe('Only set for the two parties on the invoice: true when the OTHER party lost access by resetting their key and has registered a new one - the signed-in user can restore their access with a one-click re-share (re-wrap in the browser).'),
+  "counterpartyPublicKeyJwk": zod.string().nullish().describe('The other party\'s CURRENT public key JWK, present exactly when counterpartyNeedsRekey is true, so the client can re-wrap without a directory lookup.')
+}),
+  "message": zod.string()
+})
+
+
+/**
+ * @summary What the Pay approval sheet shows - exact amount, live fee estimate, the payer's built-in wallet balance (sandbox), the server's affordability verdict, and the exact transaction for paying from the client's own wallet
  */
 export const GetPayPreviewParams = zod.object({
   "invoiceId": zod.coerce.string()
 })
 
 export const GetPayPreviewResponse = zod.object({
-  "network": zod.string(),
+  "network": zod.string().describe('Human name, e.g. \"Arc Testnet\" or \"Arc Mainnet\".'),
+  "networkKey": zod.enum(['testnet', 'mainnet']),
+  "networkMode": zod.enum(['sandbox', 'live']),
   "chainId": zod.number(),
-  "contractAddress": zod.string().nullable().describe('The registry contract this payment goes through - the one this invoice was anchored on (old invoices stay pinned to their original deployment), or null while none is deployed yet.'),
+  "contractAddress": zod.string().nullable().describe('The registry contract this payment goes through - the one this invoice was anchored on (old invoices stay pinned to their original deployment), or null while the anchor is not confirmed yet.'),
   "explorerBaseUrl": zod.string(),
-  "faucetUrl": zod.string(),
+  "faucetUrl": zod.string().nullable().describe('Where to get free test USDC - sandbox only, null on live.'),
+  "paymentMode": zod.enum(['custodial', 'external']).describe('custodial = the built-in wallet pays when the client confirms (sandbox); external = the client pays from their own wallet using `transaction` (live; also offered on sandbox v4 invoices).'),
+  "transaction": zod.union([zod.object({
+  "chainId": zod.number(),
+  "chainIdHex": zod.string().describe('The chain id as 0x-hex, ready for wallet_switchEthereumChain.'),
+  "to": zod.string().describe('The registry contract address.'),
+  "data": zod.string().describe('ABI-encoded payInvoice calldata.'),
+  "value": zod.string().describe('The invoice amount in native USDC wei (18 decimals), 0x-hex encoded.')
+}).describe('The exact eth_sendTransaction request the client\'s own wallet must send to pay this invoice - payInvoice(key, committed payee, salt) on the invoice\'s registry with the invoice amount attached as native USDC. Built by the server from the committed terms; never edit it client-side.'),zod.null()]).describe('The wallet transaction for paying from the client\'s own wallet. Null whenever the server will not vouch for a payment right now - the anchor is not yet confirmed on the registry, the chain is unreachable, live payments are switched off, or the invoice predates payment commitments - and unavailableReason says which.'),
+  "unavailableReason": zod.string().nullable().describe('Plain-language reason no payment can be started at this moment (from either path), or null when one can. Already-paid invoices report null with alreadyPaid true.'),
   "amountUsdc": zod.string().describe('The invoice amount - exactly what the payee receives.'),
   "feeEstimateUsdc": zod.string().nullable().describe('Live gas estimate in test USDC for the payment transaction, with a permanent 0.1 USDC fallback whenever Arc cannot return a live estimate. Null only when the invoice is already paid.'),
   "totalUsdc": zod.string().nullable().describe('amountUsdc plus feeEstimateUsdc - the estimated total required in the payer\'s built-in wallet. Null only when the invoice is already paid.'),
-  "walletAddress": zod.string().describe('The payer\'s built-in wallet - the account that signs and pays this transaction.'),
-  "walletBalanceUsdc": zod.string().nullable().describe('That wallet\'s live balance in test USDC, or null when the chain is unreachable.'),
-  "canPay": zod.boolean().nullable().describe('Server verdict from the same rule the pay route enforces (balance covers amount plus fee). False should disable Confirm; null means balance or fee was unreadable, so no verdict exists - the route re-checks at submit.'),
-  "shortfallUsdc": zod.string().nullable().describe('How much test USDC is missing when canPay is false, else null.'),
-  "payeeAddress": zod.string().nullable().describe('Where the USDC lands - the payee\'s linked wallet when they linked one, otherwise their built-in wallet. Display only; the pay route re-resolves this at submit time.'),
+  "walletAddress": zod.string().nullable().describe('The payer\'s built-in sandbox wallet - the account that signs a custodial payment. Null on live invoices, which have no built-in wallet.'),
+  "walletBalanceUsdc": zod.string().nullable().describe('That wallet\'s live balance in test USDC, or null when the chain is unreachable or there is no built-in wallet.'),
+  "canPay": zod.boolean().nullable().describe('Server verdict for the CUSTODIAL path from the same rule the pay route enforces (built-in balance covers amount plus fee). False should disable the built-in Confirm; null means balance or fee was unreadable (or the invoice is paid externally), so no verdict exists - the route re-checks at submit.'),
+  "shortfallUsdc": zod.string().nullable().describe('How much test USDC the built-in wallet is missing when canPay is false, else null.'),
+  "payeeAddress": zod.string().nullable().describe('Where the USDC lands. On commitment-backed invoices this is the payee fixed at creation and enforced by the contract; on older invoices it is re-resolved at submit time.'),
   "payeeName": zod.string().nullable(),
   "paidToLinkedWallet": zod.boolean().describe('True when payeeAddress is a wallet the payee linked themselves rather than their built-in custodial one.'),
   "alreadyPaid": zod.boolean()
@@ -575,11 +664,19 @@ export const RewrapInvoiceKeyResponse = zod.object({
   "clientName": zod.string(),
   "dueDate": zod.string().nullish(),
   "fingerprint": zod.string(),
-  "anchorStatus": zod.enum(['pending', 'anchored', 'unavailable']).describe('Whether the fingerprint has been recorded on the Arc testnet yet'),
+  "anchorStatus": zod.enum(['pending', 'anchored', 'unavailable']).describe('Whether the fingerprint has been recorded on the invoice\'s Arc network yet'),
   "anchorTxHash": zod.string().nullish(),
   "payTxHash": zod.string().nullish(),
   "paidAt": zod.string().nullish(),
   "createdAt": zod.string(),
+  "chainId": zod.number().describe('The Arc chain this invoice lives on - 5042002 (Arc Testnet sandbox) or 5042 (Arc Mainnet). Fixed at creation.'),
+  "network": zod.enum(['testnet', 'mainnet']),
+  "networkName": zod.string().describe('Human name of the network, e.g. \"Arc Testnet\" or \"Arc Mainnet\".'),
+  "networkMode": zod.enum(['sandbox', 'live']).describe('sandbox = test USDC and built-in wallets; live = real USDC, the client pays from their own wallet.'),
+  "explorerBaseUrl": zod.string().describe('Block explorer for THIS invoice\'s network - build tx links from here, never from a global constant.'),
+  "paymentMode": zod.enum(['custodial', 'external']).describe('How this invoice is normally paid - \"custodial\" from the client\'s built-in sandbox wallet (server-signed), \"external\" from the client\'s own wallet in the browser (live invoices, verified by the server).'),
+  "payeeAddress": zod.string().nullish().describe('The wallet the payment must reach, fixed when the invoice was created and committed in its onchain anchor. Null only on invoices created before payment commitments existed.'),
+  "payerAddress": zod.string().nullish().describe('The wallet that paid, straight from the registry\'s InvoicePaid event. Null until paid.'),
   "myCopyLocked": zod.boolean().optional().describe('Only set for the two parties on the invoice: true when the signed-in user\'s own wrapped copy of the envelope key no longer exists (they reset their key), so this envelope will not open for them until the other party re-shares it.'),
   "counterpartyNeedsRekey": zod.boolean().optional().describe('Only set for the two parties on the invoice: true when the OTHER party lost access by resetting their key and has registered a new one - the signed-in user can restore their access with a one-click re-share (re-wrap in the browser).'),
   "counterpartyPublicKeyJwk": zod.string().nullish().describe('The other party\'s CURRENT public key JWK, present exactly when counterpartyNeedsRekey is true, so the client can re-wrap without a directory lookup.')
@@ -606,40 +703,66 @@ export const ListInvoiceEventsResponse = zod.array(ListInvoiceEventsResponseItem
 
 
 /**
- * @summary Live Arc testnet connection status, wallets, and balances
+ * @summary Live Arc connection status per network, sandbox wallets and balances, and whether live (mainnet) invoicing is enabled
  */
 export const GetChainStatusResponse = zod.object({
-  "network": zod.string(),
+  "network": zod.string().describe('The sandbox network\'s name (kept for older clients; see chains for both networks).'),
   "chainId": zod.number().nullish(),
-  "rpcConnected": zod.boolean(),
-  "contractAddress": zod.string().nullish(),
+  "rpcConnected": zod.boolean().describe('Sandbox RPC reachability.'),
+  "contractAddress": zod.string().nullish().describe('The sandbox registry address.'),
   "contractDeployed": zod.boolean(),
-  "operatorAddress": zod.string().nullish(),
+  "operatorAddress": zod.string().nullish().describe('The sandbox deployment wallet (test USDC only).'),
   "operatorBalanceUsdc": zod.string().nullish(),
   "myWalletAddress": zod.string().nullish(),
   "myBalanceUsdc": zod.string().nullish(),
   "faucetUrl": zod.string(),
   "explorerBaseUrl": zod.string().nullish(),
   "readyForPayments": zod.boolean(),
-  "statusMessage": zod.string().describe('Plain-language explanation of what works right now and what step is next')
+  "statusMessage": zod.string().describe('Plain-language explanation of what works right now and what step is next'),
+  "mainnetEnabled": zod.boolean().describe('True when live (Arc Mainnet) invoices can be created right now.'),
+  "chains": zod.array(zod.object({
+  "key": zod.enum(['testnet', 'mainnet']),
+  "mode": zod.enum(['sandbox', 'live']),
+  "name": zod.string(),
+  "chainId": zod.number(),
+  "explorerBaseUrl": zod.string(),
+  "faucetUrl": zod.string().nullable(),
+  "rpcConnected": zod.boolean(),
+  "contractAddress": zod.string().nullable().describe('The current registry on this network, or null when none is configured.'),
+  "enabled": zod.boolean().describe('Whether new invoices may be created on this network right now.'),
+  "disabledReason": zod.string().nullish().describe('Why enabled is false, in plain language (live invoicing switched off, operator key missing, no registry).'),
+  "anchorPaidBy": zod.enum(['sender', 'operator']),
+  "operatorAddress": zod.string().nullish().describe('Live only - Envelo\'s operator wallet that pays anchors.'),
+  "operatorBalanceUsdc": zod.string().nullish().describe('Live only - that wallet\'s balance in real USDC.'),
+  "operatorLow": zod.boolean().optional().describe('Live only - true when the operator balance is below its configured floor, so anchoring is about to fail.')
+}).describe('One Arc network as the server sees it right now.'))
 })
 
 
 /**
- * @summary What Seal & Send shows - the live anchor or first registry-activation transaction, network, fee estimate, and sender affordability
+ * @summary What Seal & Send shows - the anchor transaction's network, fee estimate, who pays it, and whether they can afford it
  */
+export const GetAnchorPreviewQueryParams = zod.object({
+  "network": zod.enum(['testnet', 'mainnet']).optional().describe('Which network the invoice will be created on (default testnet)')
+})
+
 export const GetAnchorPreviewResponse = zod.object({
-  "network": zod.string(),
+  "network": zod.string().describe('Human name, e.g. \"Arc Testnet\" or \"Arc Mainnet\".'),
+  "networkKey": zod.enum(['testnet', 'mainnet']),
+  "networkMode": zod.enum(['sandbox', 'live']),
   "chainId": zod.number(),
-  "contractAddress": zod.string().nullable().describe('Null while the registry contract is still waiting on faucet funds; anchoring then happens automatically once it deploys.'),
+  "contractAddress": zod.string().nullable().describe('The registry contract the anchor is written to, or null when none is configured for this network yet (anchoring is then impossible until it is).'),
   "explorerBaseUrl": zod.string(),
-  "faucetUrl": zod.string(),
-  "feeEstimateUsdc": zod.string().nullable().describe('Live estimate (anchor gas x current gas price) in test USDC, with a permanent 0.1 USDC fallback whenever Arc cannot return a live estimate.'),
-  "walletAddress": zod.string().describe('The sender\'s built-in wallet - the account that submits and pays the anchor transaction.'),
-  "walletBalanceUsdc": zod.string().nullable().describe('That wallet\'s live balance in test USDC, or null when the chain is unreachable.'),
-  "canAfford": zod.boolean().nullable().describe('Server verdict from the same affordability rule the create route enforces (balance covers the estimated fee). False should disable Confirm; null means the fee or balance was unreadable, so no verdict exists - the route re-checks at submit.'),
-  "shortfallUsdc": zod.string().nullable().describe('How much test USDC is missing when canAfford is false, else null.')
-}).describe('Everything the pre-seal approval sheet displays. All values are live server facts - clients must never invent or cache fee numbers. The anchor is paid by the sender\'s own built-in wallet.')
+  "faucetUrl": zod.string().nullable().describe('Where to get free test USDC - sandbox only, null on live.'),
+  "feeEstimateUsdc": zod.string().nullable().describe('Live estimate (anchor gas x current gas price) in USDC. Sandbox falls back to a permanent 0.1 test-USDC figure when Arc cannot answer; live returns null instead of guessing with real money.'),
+  "anchorPaidBy": zod.enum(['sender', 'operator']).describe('Who pays the anchor gas - the sender\'s built-in wallet (sandbox) or Envelo\'s operator wallet (live).'),
+  "walletAddress": zod.string().nullable().describe('The account that submits and pays the anchor - the sender\'s built-in wallet on sandbox, the operator wallet on live.'),
+  "walletBalanceUsdc": zod.string().nullable().describe('That account\'s live balance in USDC, or null when the chain is unreachable.'),
+  "canAfford": zod.boolean().nullable().describe('Server verdict from the same affordability rule the create route enforces (paying wallet covers the estimated fee). False should disable Confirm; null means the fee or balance was unreadable, so no verdict exists - the route re-checks at submit.'),
+  "shortfallUsdc": zod.string().nullable().describe('How much USDC the paying wallet is missing when canAfford is false, else null.'),
+  "payoutAddress": zod.string().nullable().describe('The sender\'s linked payout wallet - where a payment for this invoice will land. Required on live; sandbox falls back to the built-in wallet when null.'),
+  "blocker": zod.string().nullable().describe('Plain-language reason creation would be refused on this network right now (live invoicing off, no payout wallet, operator too low, no registry), or null when nothing blocks it.')
+}).describe('Everything the pre-seal approval sheet displays. All values are live server facts - clients must never invent or cache fee numbers. Sandbox anchors are paid by the sender\'s own built-in wallet; live anchors by Envelo\'s operator wallet.')
 
 
 /**

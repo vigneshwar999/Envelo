@@ -5,20 +5,40 @@
  * Sealed Invoices API — privacy-first invoicing anchored on the Arc testnet, with real user accounts
  * OpenAPI spec version: 0.2.0
  */
+import type { ExternalPaymentTransaction } from './externalPaymentTransaction';
+import type { PayPreviewNetworkKey } from './payPreviewNetworkKey';
+import type { PayPreviewNetworkMode } from './payPreviewNetworkMode';
+import type { PayPreviewPaymentMode } from './payPreviewPaymentMode';
 
 /**
  * Everything the Pay approval sheet displays. All values are live server facts computed with the same affordability rule the pay route enforces - clients must never re-derive money math.
  */
 export interface PayPreview {
+  /** Human name, e.g. "Arc Testnet" or "Arc Mainnet". */
   network: string;
+  networkKey: PayPreviewNetworkKey;
+  networkMode: PayPreviewNetworkMode;
   chainId: number;
   /**
-     * The registry contract this payment goes through - the one this invoice was anchored on (old invoices stay pinned to their original deployment), or null while none is deployed yet.
+     * The registry contract this payment goes through - the one this invoice was anchored on (old invoices stay pinned to their original deployment), or null while the anchor is not confirmed yet.
      * @nullable
      */
   contractAddress: string | null;
   explorerBaseUrl: string;
-  faucetUrl: string;
+  /**
+     * Where to get free test USDC - sandbox only, null on live.
+     * @nullable
+     */
+  faucetUrl: string | null;
+  /** custodial = the built-in wallet pays when the client confirms (sandbox); external = the client pays from their own wallet using `transaction` (live; also offered on sandbox v4 invoices). */
+  paymentMode: PayPreviewPaymentMode;
+  /** The wallet transaction for paying from the client's own wallet. Null whenever the server will not vouch for a payment right now - the anchor is not yet confirmed on the registry, the chain is unreachable, live payments are switched off, or the invoice predates payment commitments - and unavailableReason says which. */
+  transaction: ExternalPaymentTransaction | null;
+  /**
+     * Plain-language reason no payment can be started at this moment (from either path), or null when one can. Already-paid invoices report null with alreadyPaid true.
+     * @nullable
+     */
+  unavailableReason: string | null;
   /** The invoice amount - exactly what the payee receives. */
   amountUsdc: string;
   /**
@@ -31,25 +51,28 @@ export interface PayPreview {
      * @nullable
      */
   totalUsdc: string | null;
-  /** The payer's built-in wallet - the account that signs and pays this transaction. */
-  walletAddress: string;
   /**
-     * That wallet's live balance in test USDC, or null when the chain is unreachable.
+     * The payer's built-in sandbox wallet - the account that signs a custodial payment. Null on live invoices, which have no built-in wallet.
+     * @nullable
+     */
+  walletAddress: string | null;
+  /**
+     * That wallet's live balance in test USDC, or null when the chain is unreachable or there is no built-in wallet.
      * @nullable
      */
   walletBalanceUsdc: string | null;
   /**
-     * Server verdict from the same rule the pay route enforces (balance covers amount plus fee). False should disable Confirm; null means balance or fee was unreadable, so no verdict exists - the route re-checks at submit.
+     * Server verdict for the CUSTODIAL path from the same rule the pay route enforces (built-in balance covers amount plus fee). False should disable the built-in Confirm; null means balance or fee was unreadable (or the invoice is paid externally), so no verdict exists - the route re-checks at submit.
      * @nullable
      */
   canPay: boolean | null;
   /**
-     * How much test USDC is missing when canPay is false, else null.
+     * How much test USDC the built-in wallet is missing when canPay is false, else null.
      * @nullable
      */
   shortfallUsdc: string | null;
   /**
-     * Where the USDC lands - the payee's linked wallet when they linked one, otherwise their built-in wallet. Display only; the pay route re-resolves this at submit time.
+     * Where the USDC lands. On commitment-backed invoices this is the payee fixed at creation and enforced by the contract; on older invoices it is re-resolved at submit time.
      * @nullable
      */
   payeeAddress: string | null;

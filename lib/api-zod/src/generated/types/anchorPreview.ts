@@ -5,40 +5,65 @@
  * Sealed Invoices API — privacy-first invoicing anchored on the Arc testnet, with real user accounts
  * OpenAPI spec version: 0.2.0
  */
+import type { AnchorPreviewAnchorPaidBy } from './anchorPreviewAnchorPaidBy';
+import type { AnchorPreviewNetworkKey } from './anchorPreviewNetworkKey';
+import type { AnchorPreviewNetworkMode } from './anchorPreviewNetworkMode';
 
 /**
- * Everything the pre-seal approval sheet displays. All values are live server facts - clients must never invent or cache fee numbers. The anchor is paid by the sender's own built-in wallet.
+ * Everything the pre-seal approval sheet displays. All values are live server facts - clients must never invent or cache fee numbers. Sandbox anchors are paid by the sender's own built-in wallet; live anchors by Envelo's operator wallet.
  */
 export interface AnchorPreview {
+  /** Human name, e.g. "Arc Testnet" or "Arc Mainnet". */
   network: string;
+  networkKey: AnchorPreviewNetworkKey;
+  networkMode: AnchorPreviewNetworkMode;
   chainId: number;
   /**
-     * Null while the registry contract is still waiting on faucet funds; anchoring then happens automatically once it deploys.
+     * The registry contract the anchor is written to, or null when none is configured for this network yet (anchoring is then impossible until it is).
      * @nullable
      */
   contractAddress: string | null;
   explorerBaseUrl: string;
-  faucetUrl: string;
   /**
-     * Live estimate (anchor gas x current gas price) in test USDC, with a permanent 0.1 USDC fallback whenever Arc cannot return a live estimate.
+     * Where to get free test USDC - sandbox only, null on live.
+     * @nullable
+     */
+  faucetUrl: string | null;
+  /**
+     * Live estimate (anchor gas x current gas price) in USDC. Sandbox falls back to a permanent 0.1 test-USDC figure when Arc cannot answer; live returns null instead of guessing with real money.
      * @nullable
      */
   feeEstimateUsdc: string | null;
-  /** The sender's built-in wallet - the account that submits and pays the anchor transaction. */
-  walletAddress: string;
+  /** Who pays the anchor gas - the sender's built-in wallet (sandbox) or Envelo's operator wallet (live). */
+  anchorPaidBy: AnchorPreviewAnchorPaidBy;
   /**
-     * That wallet's live balance in test USDC, or null when the chain is unreachable.
+     * The account that submits and pays the anchor - the sender's built-in wallet on sandbox, the operator wallet on live.
+     * @nullable
+     */
+  walletAddress: string | null;
+  /**
+     * That account's live balance in USDC, or null when the chain is unreachable.
      * @nullable
      */
   walletBalanceUsdc: string | null;
   /**
-     * Server verdict from the same affordability rule the create route enforces (balance covers the estimated fee). False should disable Confirm; null means the fee or balance was unreadable, so no verdict exists - the route re-checks at submit.
+     * Server verdict from the same affordability rule the create route enforces (paying wallet covers the estimated fee). False should disable Confirm; null means the fee or balance was unreadable, so no verdict exists - the route re-checks at submit.
      * @nullable
      */
   canAfford: boolean | null;
   /**
-     * How much test USDC is missing when canAfford is false, else null.
+     * How much USDC the paying wallet is missing when canAfford is false, else null.
      * @nullable
      */
   shortfallUsdc: string | null;
+  /**
+     * The sender's linked payout wallet - where a payment for this invoice will land. Required on live; sandbox falls back to the built-in wallet when null.
+     * @nullable
+     */
+  payoutAddress: string | null;
+  /**
+     * Plain-language reason creation would be refused on this network right now (live invoicing off, no payout wallet, operator too low, no registry), or null when nothing blocks it.
+     * @nullable
+     */
+  blocker: string | null;
 }

@@ -47,6 +47,16 @@ export interface SealedInvoiceInsertInput {
   fingerprint: string;
   ciphertext: string;
   wrappedKeys: Array<{ userId: string; wrappedKey: string }>;
+  /** Which Arc network the invoice lives on, fixed forever at creation. */
+  chainId: number;
+  /** Human name of that network, for the timeline entry. */
+  networkName: string;
+  /**
+   * Payment terms the anchor will commit to. Fixed here, before any chain
+   * write, so the commitment and the row can never disagree.
+   */
+  payeeAddress: string;
+  paymentSalt: string;
 }
 
 /**
@@ -101,6 +111,9 @@ export async function insertSealedInvoice(
         dueDate: input.dueDate,
         fingerprint: input.fingerprint,
         ciphertext: input.ciphertext,
+        chainId: input.chainId,
+        payeeAddress: input.payeeAddress,
+        paymentSalt: input.paymentSalt,
       })
       .returning();
     await tx.insert(wrappedKeysTable).values(
@@ -114,7 +127,7 @@ export async function insertSealedInvoice(
       invoiceId: invoice!.id,
       kind: "created",
       actorId: creator.id,
-      detail: `${creator.displayName} sealed invoice ${input.invoiceNumber} for ${client.displayName} - ${input.amountUsdc} USDC. The contents stay encrypted; only the fingerprint goes onchain.`,
+      detail: `${creator.displayName} sealed invoice ${input.invoiceNumber} for ${client.displayName} - ${input.amountUsdc} USDC on ${input.networkName}. The contents stay encrypted; only the fingerprint and a hash of the payment terms go onchain.`,
     });
     return { ok: true as const, invoice: invoice! };
   });

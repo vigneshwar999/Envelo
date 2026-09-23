@@ -546,6 +546,12 @@ paths:
                 $ref: "#/components/schemas/ApiMessage"
         "401":
           $ref: "#/components/responses/Unauthorized"
+        "409":
+          description: Cannot create right now (sender cannot cover the sandbox anchor fee, live invoicing is off, no payout wallet linked for a live invoice, or the operator wallet is too low to anchor on mainnet - message explains why)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiMessage"
   /invoices/{invoiceId}:
     get:
       operationId: getInvoice
@@ -575,7 +581,7 @@ paths:
     post:
       operationId: payInvoice
       tags: [invoices]
-      summary: Pay an invoice in test USDC on the Arc testnet (the signed-in user must be the client)
+      summary: Pay a sandbox invoice from the client's built-in wallet in test USDC (the signed-in user must be the client). Live invoices are paid from the client's own wallet instead - see paymentSubmitted.
       parameters:
         - name: invoiceId
           in: path
@@ -608,11 +614,60 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ApiMessage"
+  /invoices/{invoiceId}/payment-submitted:
+    post:
+      operationId: paymentSubmitted
+      tags: [invoices]
+      summary: Tell the server about a payment the client sent from their OWN wallet. The server verifies the receipt against the registry (InvoicePaid event, committed payee, exact amount) before marking the invoice paid.
+      parameters:
+        - name: invoiceId
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PaymentSubmittedInput"
+      responses:
+        "200":
+          description: Verification outcome. "paid" carries the updated invoice; "pending" means the transaction is not mined yet - ask again in a few seconds.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaymentSubmittedResult"
+        "400":
+          description: Not a transaction hash
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiMessage"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          description: Only the invoice's client can report a payment
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiMessage"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiMessage"
+        "409":
+          description: The transaction does not pay this invoice (reverted, wrong contract, wrong amount or payee) - message explains why
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiMessage"
   /invoices/{invoiceId}/pay-preview:
     get:
       operationId: getPayPreview
       tags: [invoices]
-      summary: What the Pay approval sheet shows - exact amount, live fee estimate, payer balance, and the server's affordability verdict
+      summary: What the Pay approval sheet shows - exact amount, live fee estimate, the payer's built-in wallet balance (sandbox), the server's affordability verdict, and the exact transaction for paying from the client's own wallet
       parameters:
         - name: invoiceId
           in: path
@@ -892,7 +947,7 @@ paths:
     get:
       operationId: getChainStatus
       tags: [chain]
-      summary: Live Arc testnet connection status, wallets, and balances
+      summary: Live Arc connection status per network, sandbox wallets and balances, and whether live (mainnet) invoicing is enabled
       responses:
         "200":
           description: Chain status
@@ -906,7 +961,15 @@ paths:
     get:
       operationId: getAnchorPreview
       tags: [chain]
-      summary: What Seal & Send shows - the live anchor or first registry-activation transaction, network, fee estimate, and sender affordability
+      summary: What Seal & Send shows - the anchor transaction's network, fee estimate, who pays it, and whether they can afford it
+      parameters:
+        - name: network
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [testnet, mainnet]
+          description: Which network the invoice will be created on (default testnet)
       responses:
         "200":
           description: Anchor transaction preview
@@ -1291,6 +1354,15 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/WrappedKeyEntry"
+        network:
+          type: string
+          enum: [testnet, mainnet]
+          description: >-
+            Which Arc network to create the invoice on. Defaults to testnet
+            (the sandbox). "mainnet" is only accepted while live invoicing is
+            enabled (see ChainStatus.mainnetEnabled) and the sender has a
+            linked payout wallet, because a live payment goes straight to that
+            wallet.
     Invoice:
       type: object
       required:
@@ -1306,6 +1378,12 @@ components:
           fingerprint,
           anchorStatus,
           createdAt,
+          chainId,
+          network,
+          networkName,
+          networkMode,
+          explorerBaseUrl,
+          paymentMode,
         ]
       properties:
         id: { type: string }
@@ -1323,11 +1401,37 @@ components:
         anchorStatus:
           type: string
           enum: [pending, anchored, unavailable]
-          description: Whether the fingerprint has been recorded on the Arc testnet yet
+          description: Whether the fingerprint has been recorded on the invoice's Arc network yet
         anchorTxHash: { type: ["string", "null"] }
         payTxHash: { type: ["string", "null"] }
         paidAt: { type: ["string", "null"] }
         createdAt: { type: string }
+        chainId:
+          type: number
+          description: The Arc chain this invoice lives on - 5042002 (Arc Testnet sandbox) or 5042 (Arc Mainnet). Fixed at creation.
+        network:
+          type: string
+          enum: [testnet, mainnet]
+        networkName:
+          type: string
+          description: Human name of the network, e.g. "Arc Testnet" or "Arc Mainnet".
+        networkMode:
+          type: string
+          enum: [sandbox, live]
+          description: sandbox = test USDC and built-in wallets; live = real USDC, the client pays from their own wallet.
+        explorerBaseUrl:
+          type: string
+          description: Block explorer for THIS invoice's network - build tx links from here, never from a global constant.
+        paymentMode:
+          type: string
+          enum: [custodial, external]
+          description: How this invoice is normally paid - "custodial" from the client's built-in sandbox wallet (server-signed), "external" from the client's own wallet in the browser (live invoices, verified by the server).
+        payeeAddress:
+          type: ["string", "null"]
+          description: The wallet the payment must reach, fixed when the invoice was created and committed in its onchain anchor. Null only on invoices created before payment commitments existed.
+        payerAddress:
+          type: ["string", "null"]
+          description: The wallet that paid, straight from the registry's InvoicePaid event. Null until paid.
         myCopyLocked:
           type: boolean
           description: >-
@@ -1437,49 +1541,112 @@ components:
         createdAt: { type: string }
     AnchorPreview:
       type: object
-      description: Everything the pre-seal approval sheet displays. All values are live server facts - clients must never invent or cache fee numbers. The anchor is paid by the sender's own built-in wallet.
+      description: Everything the pre-seal approval sheet displays. All values are live server facts - clients must never invent or cache fee numbers. Sandbox anchors are paid by the sender's own built-in wallet; live anchors by Envelo's operator wallet.
       required:
         [
           network,
+          networkKey,
+          networkMode,
           chainId,
           contractAddress,
           explorerBaseUrl,
           faucetUrl,
           feeEstimateUsdc,
+          anchorPaidBy,
           walletAddress,
           walletBalanceUsdc,
           canAfford,
           shortfallUsdc,
+          payoutAddress,
+          blocker,
         ]
       properties:
-        network: { type: string }
+        network:
+          type: string
+          description: Human name, e.g. "Arc Testnet" or "Arc Mainnet".
+        networkKey:
+          type: string
+          enum: [testnet, mainnet]
+        networkMode:
+          type: string
+          enum: [sandbox, live]
         chainId: { type: number }
         contractAddress:
           type: ["string", "null"]
-          description: Null while the registry contract is still waiting on faucet funds; anchoring then happens automatically once it deploys.
+          description: The registry contract the anchor is written to, or null when none is configured for this network yet (anchoring is then impossible until it is).
         explorerBaseUrl: { type: string }
-        faucetUrl: { type: string }
+        faucetUrl:
+          type: ["string", "null"]
+          description: Where to get free test USDC - sandbox only, null on live.
         feeEstimateUsdc:
           type: ["string", "null"]
-          description: Live estimate (anchor gas x current gas price) in test USDC, with a permanent 0.1 USDC fallback whenever Arc cannot return a live estimate.
-        walletAddress:
+          description: Live estimate (anchor gas x current gas price) in USDC. Sandbox falls back to a permanent 0.1 test-USDC figure when Arc cannot answer; live returns null instead of guessing with real money.
+        anchorPaidBy:
           type: string
-          description: The sender's built-in wallet - the account that submits and pays the anchor transaction.
+          enum: [sender, operator]
+          description: Who pays the anchor gas - the sender's built-in wallet (sandbox) or Envelo's operator wallet (live).
+        walletAddress:
+          type: ["string", "null"]
+          description: The account that submits and pays the anchor - the sender's built-in wallet on sandbox, the operator wallet on live.
         walletBalanceUsdc:
           type: ["string", "null"]
-          description: That wallet's live balance in test USDC, or null when the chain is unreachable.
+          description: That account's live balance in USDC, or null when the chain is unreachable.
         canAfford:
           type: ["boolean", "null"]
-          description: Server verdict from the same affordability rule the create route enforces (balance covers the estimated fee). False should disable Confirm; null means the fee or balance was unreadable, so no verdict exists - the route re-checks at submit.
+          description: Server verdict from the same affordability rule the create route enforces (paying wallet covers the estimated fee). False should disable Confirm; null means the fee or balance was unreadable, so no verdict exists - the route re-checks at submit.
         shortfallUsdc:
           type: ["string", "null"]
-          description: How much test USDC is missing when canAfford is false, else null.
+          description: How much USDC the paying wallet is missing when canAfford is false, else null.
+        payoutAddress:
+          type: ["string", "null"]
+          description: The sender's linked payout wallet - where a payment for this invoice will land. Required on live; sandbox falls back to the built-in wallet when null.
+        blocker:
+          type: ["string", "null"]
+          description: Plain-language reason creation would be refused on this network right now (live invoicing off, no payout wallet, operator too low, no registry), or null when nothing blocks it.
+    PaymentSubmittedInput:
+      type: object
+      required: [txHash]
+      properties:
+        txHash:
+          type: string
+          description: The 0x-prefixed 32-byte hash returned by the client's wallet after it sent the payment transaction.
+    PaymentSubmittedResult:
+      type: object
+      required: [status, invoice, message]
+      properties:
+        status:
+          type: string
+          enum: [paid, pending]
+          description: paid = verified onchain and recorded; pending = not mined yet, poll again.
+        invoice:
+          $ref: "#/components/schemas/Invoice"
+        message: { type: string }
+    ExternalPaymentTransaction:
+      type: object
+      description: The exact eth_sendTransaction request the client's own wallet must send to pay this invoice - payInvoice(key, committed payee, salt) on the invoice's registry with the invoice amount attached as native USDC. Built by the server from the committed terms; never edit it client-side.
+      required: [chainId, chainIdHex, to, data, value]
+      properties:
+        chainId: { type: number }
+        chainIdHex:
+          type: string
+          description: The chain id as 0x-hex, ready for wallet_switchEthereumChain.
+        to:
+          type: string
+          description: The registry contract address.
+        data:
+          type: string
+          description: ABI-encoded payInvoice calldata.
+        value:
+          type: string
+          description: The invoice amount in native USDC wei (18 decimals), 0x-hex encoded.
     PayPreview:
       type: object
       description: Everything the Pay approval sheet displays. All values are live server facts computed with the same affordability rule the pay route enforces - clients must never re-derive money math.
       required:
         [
           network,
+          networkKey,
+          networkMode,
           chainId,
           contractAddress,
           explorerBaseUrl,
@@ -1495,15 +1662,40 @@ components:
           payeeName,
           paidToLinkedWallet,
           alreadyPaid,
+          paymentMode,
+          transaction,
+          unavailableReason,
         ]
       properties:
-        network: { type: string }
+        network:
+          type: string
+          description: Human name, e.g. "Arc Testnet" or "Arc Mainnet".
+        networkKey:
+          type: string
+          enum: [testnet, mainnet]
+        networkMode:
+          type: string
+          enum: [sandbox, live]
         chainId: { type: number }
         contractAddress:
           type: ["string", "null"]
-          description: The registry contract this payment goes through - the one this invoice was anchored on (old invoices stay pinned to their original deployment), or null while none is deployed yet.
+          description: The registry contract this payment goes through - the one this invoice was anchored on (old invoices stay pinned to their original deployment), or null while the anchor is not confirmed yet.
         explorerBaseUrl: { type: string }
-        faucetUrl: { type: string }
+        faucetUrl:
+          type: ["string", "null"]
+          description: Where to get free test USDC - sandbox only, null on live.
+        paymentMode:
+          type: string
+          enum: [custodial, external]
+          description: custodial = the built-in wallet pays when the client confirms (sandbox); external = the client pays from their own wallet using `transaction` (live; also offered on sandbox v4 invoices).
+        transaction:
+          oneOf:
+            - $ref: "#/components/schemas/ExternalPaymentTransaction"
+            - type: "null"
+          description: The wallet transaction for paying from the client's own wallet. Null whenever the server will not vouch for a payment right now - the anchor is not yet confirmed on the registry, the chain is unreachable, live payments are switched off, or the invoice predates payment commitments - and unavailableReason says which.
+        unavailableReason:
+          type: ["string", "null"]
+          description: Plain-language reason no payment can be started at this moment (from either path), or null when one can. Already-paid invoices report null with alreadyPaid true.
         amountUsdc:
           type: string
           description: The invoice amount - exactly what the payee receives.
@@ -1514,25 +1706,62 @@ components:
           type: ["string", "null"]
           description: amountUsdc plus feeEstimateUsdc - the estimated total required in the payer's built-in wallet. Null only when the invoice is already paid.
         walletAddress:
-          type: string
-          description: The payer's built-in wallet - the account that signs and pays this transaction.
+          type: ["string", "null"]
+          description: The payer's built-in sandbox wallet - the account that signs a custodial payment. Null on live invoices, which have no built-in wallet.
         walletBalanceUsdc:
           type: ["string", "null"]
-          description: That wallet's live balance in test USDC, or null when the chain is unreachable.
+          description: That wallet's live balance in test USDC, or null when the chain is unreachable or there is no built-in wallet.
         canPay:
           type: ["boolean", "null"]
-          description: Server verdict from the same rule the pay route enforces (balance covers amount plus fee). False should disable Confirm; null means balance or fee was unreadable, so no verdict exists - the route re-checks at submit.
+          description: Server verdict for the CUSTODIAL path from the same rule the pay route enforces (built-in balance covers amount plus fee). False should disable the built-in Confirm; null means balance or fee was unreadable (or the invoice is paid externally), so no verdict exists - the route re-checks at submit.
         shortfallUsdc:
           type: ["string", "null"]
-          description: How much test USDC is missing when canPay is false, else null.
+          description: How much test USDC the built-in wallet is missing when canPay is false, else null.
         payeeAddress:
           type: ["string", "null"]
-          description: Where the USDC lands - the payee's linked wallet when they linked one, otherwise their built-in wallet. Display only; the pay route re-resolves this at submit time.
+          description: Where the USDC lands. On commitment-backed invoices this is the payee fixed at creation and enforced by the contract; on older invoices it is re-resolved at submit time.
         payeeName: { type: ["string", "null"] }
         paidToLinkedWallet:
           type: boolean
           description: True when payeeAddress is a wallet the payee linked themselves rather than their built-in custodial one.
         alreadyPaid: { type: boolean }
+    ChainNetworkStatus:
+      type: object
+      description: One Arc network as the server sees it right now.
+      required: [key, mode, name, chainId, explorerBaseUrl, faucetUrl, rpcConnected, contractAddress, enabled, anchorPaidBy]
+      properties:
+        key:
+          type: string
+          enum: [testnet, mainnet]
+        mode:
+          type: string
+          enum: [sandbox, live]
+        name: { type: string }
+        chainId: { type: number }
+        explorerBaseUrl: { type: string }
+        faucetUrl: { type: ["string", "null"] }
+        rpcConnected: { type: boolean }
+        contractAddress:
+          type: ["string", "null"]
+          description: The current registry on this network, or null when none is configured.
+        enabled:
+          type: boolean
+          description: Whether new invoices may be created on this network right now.
+        disabledReason:
+          type: ["string", "null"]
+          description: Why enabled is false, in plain language (live invoicing switched off, operator key missing, no registry).
+        anchorPaidBy:
+          type: string
+          enum: [sender, operator]
+        operatorAddress:
+          type: ["string", "null"]
+          description: Live only - Envelo's operator wallet that pays anchors.
+        operatorBalanceUsdc:
+          type: ["string", "null"]
+          description: Live only - that wallet's balance in real USDC.
+        operatorLow:
+          type: boolean
+          description: Live only - true when the operator balance is below its configured floor, so anchoring is about to fail.
     ChainStatus:
       type: object
       required:
@@ -1543,14 +1772,24 @@ components:
           readyForPayments,
           faucetUrl,
           statusMessage,
+          mainnetEnabled,
+          chains,
         ]
       properties:
-        network: { type: string }
+        network:
+          type: string
+          description: The sandbox network's name (kept for older clients; see chains for both networks).
         chainId: { type: ["number", "null"] }
-        rpcConnected: { type: boolean }
-        contractAddress: { type: ["string", "null"] }
+        rpcConnected:
+          type: boolean
+          description: Sandbox RPC reachability.
+        contractAddress:
+          type: ["string", "null"]
+          description: The sandbox registry address.
         contractDeployed: { type: boolean }
-        operatorAddress: { type: ["string", "null"] }
+        operatorAddress:
+          type: ["string", "null"]
+          description: The sandbox deployment wallet (test USDC only).
         operatorBalanceUsdc: { type: ["string", "null"] }
         myWalletAddress: { type: ["string", "null"] }
         myBalanceUsdc: { type: ["string", "null"] }
@@ -1560,6 +1799,13 @@ components:
         statusMessage:
           type: string
           description: Plain-language explanation of what works right now and what step is next
+        mainnetEnabled:
+          type: boolean
+          description: True when live (Arc Mainnet) invoices can be created right now.
+        chains:
+          type: array
+          items:
+            $ref: "#/components/schemas/ChainNetworkStatus"
     DashboardSummary:
       type: object
       required:

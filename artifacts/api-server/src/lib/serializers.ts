@@ -1,5 +1,6 @@
 // Shared row -> API response mappers.
 import type { GrantRow, InvoiceEventRow, InvoiceRow } from "@workspace/db";
+import { networkForChainId } from "../chain/networks";
 
 /** Normalize any decimal string to exactly two decimals, e.g. "12" -> "12.00". */
 export function fmt2(value: string): string {
@@ -27,6 +28,28 @@ export interface EnvelopeAccessContext {
   publicKeyJwkById: Map<string, string | null>;
 }
 
+/**
+ * Which Arc network an invoice lives on and how it gets paid, so clients
+ * never guess a chain id or explorer from a global constant. Payment mode:
+ * live invoices are paid from the client's own wallet ("external"); sandbox
+ * invoices from the built-in wallet ("custodial") - the wallet option is also
+ * offered there once the anchor is on a v4 registry, which the transaction
+ * in the pay preview reflects.
+ */
+export function networkFields(row: InvoiceRow) {
+  const network = networkForChainId(row.chainId);
+  return {
+    chainId: network.chainId,
+    network: network.key,
+    networkName: network.name,
+    networkMode: network.mode,
+    explorerBaseUrl: network.explorerBaseUrl,
+    paymentMode: network.mode === "live" ? "external" : "custodial",
+    payeeAddress: row.payeeAddress,
+    payerAddress: row.payerAddress,
+  };
+}
+
 /** names: user id -> display name, for labeling invoices without extra requests. */
 export function toInvoice(
   row: InvoiceRow,
@@ -49,6 +72,7 @@ export function toInvoice(
     payTxHash: row.payTxHash,
     paidAt: row.paidAt ? row.paidAt.toISOString() : null,
     createdAt: row.createdAt.toISOString(),
+    ...networkFields(row),
   };
   if (!access) return base;
   const isParty =
