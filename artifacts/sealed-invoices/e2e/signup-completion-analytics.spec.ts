@@ -1,6 +1,7 @@
 import { expect, test, type Browser, type Page } from "@playwright/test";
 import {
   ensureClerkTestUser,
+  hideDevBanner,
   mintSignInToken,
   resetUnsyncedTestPersona,
   signIn,
@@ -92,7 +93,9 @@ async function openSignedOutPage(browser: Browser): Promise<{
   page: Page;
 }> {
   const context = await browser.newContext({ baseURL });
-  return { context, page: await context.newPage() };
+  const page = await context.newPage();
+  await hideDevBanner(page);
+  return { context, page };
 }
 
 test("an Explore signup click becomes one completed-account event", async ({

@@ -35,7 +35,7 @@ const doc: InvoiceDocument = {
 
 const TX = "0x" + "ab".repeat(32);
 const CHAIN_ID = 5042002;
-const EXPLORER = "https://testnet.arcscan.app";
+const EXPLORER = "https://explorer.testnet.arc.io";
 
 test.describe("invoice-copy proof file (builder honesty rules)", () => {
   test("pending anchor: no chain-verification claim, no pointers", async () => {
@@ -66,12 +66,14 @@ test.describe("invoice-copy proof file (builder honesty rules)", () => {
       anchorTxHash: TX,
       chainId: CHAIN_ID,
       explorerBaseUrl: EXPLORER,
+      networkName: "Arc Testnet",
     });
     expect(file.fingerprint).toBe(fingerprint);
     expect(file.anchor.txHash).toBe(TX);
     expect(file.anchor.chainId).toBe(CHAIN_ID);
+    expect(file.anchor.network).toBe("Arc Testnet");
     expect(file.anchor.explorerTxUrl).toBe(`${EXPLORER}/tx/${TX}`);
-    expect(file.howToVerify).toMatch(/embedded in the Arc testnet anchor transaction/);
+    expect(file.howToVerify).toMatch(/embedded in the Arc Testnet anchor transaction/);
     expect(file.howToVerify).toMatch(/RFC 8785/);
   });
 

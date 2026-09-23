@@ -1,5 +1,9 @@
 import { expect, test, type Page } from "@playwright/test";
-import { mintSignInToken, signIn } from "./helpers";
+import { hideDevBanner, mintSignInToken, signIn } from "./helpers";
+
+test.beforeEach(async ({ page }) => {
+  await hideDevBanner(page);
+});
 
 const TEST_USER_ID =
   process.env.WALLET_MENU_TEST_USER_ID ??

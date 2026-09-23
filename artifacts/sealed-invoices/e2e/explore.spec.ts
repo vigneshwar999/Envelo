@@ -1,5 +1,6 @@
 import { expect, test } from "@playwright/test";
 import {
+  hideDevBanner,
   mintSignInToken,
   requiredPersonaId,
   signIn,
@@ -10,6 +11,7 @@ const TEST_USER_ID = requiredPersonaId("WALLET_MENU_TEST_USER_ID");
 test("signed-out visitors can explore Envelo before authentication", async ({
   page,
 }) => {
+  await hideDevBanner(page);
   await page.goto("/");
 
   await expect(
@@ -49,6 +51,7 @@ test("mobile visitors can reach public pages and authentication", async ({
   page,
 }) => {
   await page.setViewportSize({ width: 390, height: 844 });
+  await hideDevBanner(page);
   await page.goto("/");
   await expect(page.getByTestId("button-mobile-menu")).toBeVisible({
     timeout: 30_000,

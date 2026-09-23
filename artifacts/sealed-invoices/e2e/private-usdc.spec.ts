@@ -27,7 +27,8 @@ test("private usdc page renders correctly, shows real balance, and keeps control
   const balanceText = page.getByTestId("text-public-balance");
   await expect(balanceText).toBeVisible({ timeout: 20_000 });
   if (wallet.body.balanceUsdc != null) {
-    await expect(balanceText).toHaveText(`${wallet.body.balanceUsdc} USDC`);
+    // The built-in wallet only ever holds sandbox money, and the label says so.
+    await expect(balanceText).toHaveText(`${wallet.body.balanceUsdc} test USDC`);
   } else {
     await expect(balanceText).toHaveText("Unavailable");
   }

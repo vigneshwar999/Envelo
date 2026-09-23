@@ -107,8 +107,26 @@ export function requiredPersonaId(environmentName: string): string {
   return userId;
 }
 
+/**
+ * The dev server's Replit banner ("Publish your app") is a fixed overlay that
+ * covers the header when the page is not framed by the workspace, and it
+ * swallows pointer clicks on whatever sits under it. It does not exist in
+ * production builds. Mark it dismissed before any page script runs, the
+ * same way a visitor closing it once would.
+ */
+export async function hideDevBanner(page: Page): Promise<void> {
+  await page.addInitScript(() => {
+    try {
+      localStorage.setItem("replitDevBannerClosed-" + location.hostname, "true");
+    } catch {
+      // Storage can be unavailable in odd contexts; the banner is cosmetic.
+    }
+  });
+}
+
 /** Sign the browser session in via the ticket strategy (see .agents/memory/clerk-e2e-signin.md). */
 export async function signIn(page: Page, token: string): Promise<void> {
+  await hideDevBanner(page);
   await page.goto("/", { waitUntil: "domcontentloaded" });
   await page.waitForFunction(() => (window as any).Clerk?.loaded, undefined, {
     timeout: 30_000,
@@ -275,6 +293,22 @@ export async function emailOf(userId: string): Promise<string> {
     );
   }
   return email;
+}
+
+/**
+ * A persona's custodial signing key, for the browser-wallet payment spec:
+ * its mock wallet must sign a REAL Arc transaction, and the sandbox wallet is
+ * the only funded key a test persona has. Never logged, never leaves Node.
+ */
+export async function custodialPrivateKeyOf(userId: string): Promise<`0x${string}`> {
+  const { rows } = await dbQuery("SELECT private_key FROM chain_wallets WHERE id = $1", [
+    userId,
+  ]);
+  const key: string | null = rows[0]?.private_key ?? null;
+  if (!key) {
+    throw new Error(`Persona ${userId} has no custodial wallet row yet (created on first sign-in).`);
+  }
+  return (key.startsWith("0x") ? key : `0x${key}`) as `0x${string}`;
 }
 
 export async function custodialAddressOf(userId: string): Promise<string> {
