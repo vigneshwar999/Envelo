@@ -1,82 +1,89 @@
-# Envelo on Arc mainnet: migration plan
+# Envelo on Arc mainnet
 
-Arc mainnet went live on 17 September 2026 (chain ID `5042`, RPC `https://rpc.mainnet.arc.io`, explorer `https://explorer.arc.io`, USDC as the native gas token with 18-decimal native accounting and a 6-decimal ERC-20 interface, fee target of about $0.001 per transfer). Envelo runs on Arc Testnet (`5042002`). This document is the plan for moving it to mainnet without turning a privacy product into an unlicensed custodian.
+Envelo runs on two Arc networks from one codebase. Every invoice is created on exactly one of them and carries that choice for life: its chain id, the registry it was anchored to, the explorer its links point at and the way it gets paid all come from the invoice row, never from a global setting.
 
-## What Envelo does on-chain today
+| | Sandbox | Live |
+| --- | --- | --- |
+| Network | Arc Testnet, chain id `5042002` | Arc Mainnet, chain id `5042` |
+| RPC | `https://rpc.testnet.arc.io` | `https://rpc.mainnet.arc.io` |
+| Explorer | `https://explorer.testnet.arc.io` | `https://explorer.arc.io` |
+| Money | test USDC from `faucet.circle.com` | real USDC |
+| Who anchors | the sender, from the app-managed sandbox wallet | Envelo's operator wallet |
+| Who pays | the client, from the app-managed sandbox wallet (or their own browser wallet) | the client, from their own browser wallet only |
+| Where the money lands | the sender's sandbox wallet, or a linked payout address | the sender's linked payout address (required) |
+| Registry | `SealedInvoiceRegistry` v4 at `0xde0565b22c4451e714c81f5a0ce5f83b6d11e51d` | `SealedInvoiceRegistry` v4, address in `artifacts/api-server/src/chain/networks.ts` |
 
-- One registry contract, `SealedInvoiceRegistry` (version 3), deployed lazily by the first funded invoice sender and recorded in the `chain_state` table. Every invoice row also stores the registry address it was anchored to, so old anchors stay verifiable after a redeploy.
-- Anchoring calls `anchorInvoice` with a SHA-256 fingerprint of the invoice plaintext. Payment is a second call, to the payable `payInvoice`, which forwards the native USDC to the payee and records the paid flag in the same transaction. Grants and revocations do not touch the chain.
-- **What v3 does not enforce.** `anchorInvoice` is first-write-wins for anyone who knows the key, and `payInvoice` accepts any positive `msg.value`, any `payee` and any caller, then flips `paid` for good. The server marks the invoice paid from that boolean alone (`arc.ts` discards the event's amount, payer and payee). On testnet this is a demo shortcut; on mainnet it means anyone who learns an invoice key could "pay" 1 wei to themselves and block the real payment. Fixing this is a precondition for Phase 1, not a Phase 3 nicety.
-- Every user gets a custodial wallet whose private key is generated server-side and stored in `chain_wallets`. This is acceptable only because test USDC has no value; the schema comment says exactly that.
-- The sender pays gas for anchoring (and for the one-time registry deployment), the client pays the invoice amount plus gas. There is no gas sponsorship. Balances come from the Circle faucet, surfaced through `FAUCET_URL`.
-- All chain constants are compile-time literals in `artifacts/api-server/src/chain/arc.ts` (RPC, chain ID, explorer, faucet, "Arc Testnet", "test USDC"). The web app, the mobile app and the generated API types repeat the testnet wording in around forty places, and the e2e suite funds its personas from the faucet directly.
+On both networks USDC is the native currency with 18 decimals, so `payInvoice` moves `msg.value` and there is no ERC-20 approval step.
 
-## Principles for mainnet
+## Principles
 
-1. **Never hold customer money.** Custodial wallets with plaintext keys in Postgres do not move to mainnet. Anchoring can be paid by an operator wallet Envelo controls; payments must come from wallets the client controls.
-2. **Keep testnet alive.** Testnet stays the free sandbox for demos, tests and new users. The app must run against both chains from the same codebase, selected per environment, and old testnet anchors must remain verifiable.
-3. **No silent fallbacks.** Today a failed gas estimate falls back to a fixed 0.1 test-USDC figure (`FEE_ESTIMATE_FALLBACK_WEI`), and a failed anchor is left `pending` for retry while the RPC is reachable, `unavailable` only when it is not. On mainnet the fixed fallback goes away: if gas cannot be estimated or the operator wallet is empty, the attempt fails loudly, the invoice stays `pending` with a visible reason, and an alert fires.
-4. **Truthful copy.** Every "test USDC", "testnet" and "faucet" string is driven by the active chain profile, never hard-coded.
+1. **Envelo never holds real money.** The app-managed wallets with keys in Postgres exist for the sandbox only. A live invoice is anchored by the operator wallet and paid from a wallet the client controls straight to a wallet the sender controls. There is no custodial balance, no sweep, and nothing to withdraw.
+2. **The sandbox stays.** Testnet is the free place to try Envelo, run the demo and run the tests. Nothing about it changed for existing invoices; anchors made on the earlier v3 registry stay verifiable because every invoice remembers its own registry address.
+3. **No silent fallbacks on live.** The sandbox still uses a fixed 0.1 test-USDC fee estimate when the RPC cannot estimate gas. Live does not: if the fee cannot be estimated, the operator wallet is below its floor, or the registry is not configured, the request fails with a plain-language reason and the invoice is not created.
+4. **Truthful copy.** Network names, currency labels, explorer links and faucet hints are rendered from the API's chain description, not from strings in the web or mobile app. The amount of a payment is public on the chain; Envelo says so and claims no confidential transfers.
 
-## Phases
+## What the v4 registry enforces
 
-### Phase 0: chain profiles (no behaviour change)
+`contracts/SealedInvoiceRegistry.sol` version 4 is deployed on both networks.
 
-- Replace the literals in `arc.ts` with a `ChainProfile` object (`id`, `name`, `rpcUrl`, `explorerUrl`, `faucetUrl | null`, `currencyLabel`, `isTestnet`, `nativeDecimals`) and keep one client per known profile (testnet and mainnet). An `ARC_NETWORK` environment variable (`testnet` default, `mainnet` opt-in) picks the profile used for new writes; reads for an existing invoice always use the profile matching the `chain_id` stored on that invoice. Expose the active profile on `GET /chain/status` so web and mobile render names, explorer links and faucet hints from the API instead of their own strings.
-- Namespace `chain_state` keys and the registry address by chain ID so a mainnet deployment cannot read the testnet contract address, and store `chain_id` on invoice rows next to the registry address.
-- Validate payment receipts properly: decode the `InvoicePaid` event and compare `amount` and `payee` with the invoice before marking it paid, instead of trusting the `paid` boolean. This is a server-only change and should ship on testnet first.
-- Regenerate the API types (`pnpm --filter @workspace/api-spec run codegen`) after the OpenAPI descriptions lose their testnet wording.
-- Ship this to production with `ARC_NETWORK=testnet`. Nothing changes for users; the code is now capable of mainnet.
+- `anchorInvoice(key, fingerprint, commitment)` stores the SHA-256 fingerprint of the invoice plaintext plus `keccak256(payee, amount, salt)`. On mainnet only the operator address may anchor; on testnet the registry is open because every sender anchors from their own sandbox wallet.
+- `payInvoice(key, payee, salt)` reverts unless `msg.value` and `payee` reproduce the commitment, forwards the USDC to `payee` and emits `InvoicePaid(key, payer, payee, amount)`. Nobody can mark an invoice paid with the wrong amount or to the wrong address, whoever they are.
+- The server never trusts a `paid` flag alone. For both payment paths it loads the receipt, finds the registry's `InvoicePaid` log for that invoice key and only then records `pay_tx_hash`, the payer and the paid time.
 
-### Phase 1: anchoring on mainnet (fingerprints only, no customer funds)
+The payee and salt are fixed when the invoice is created. On live the sender must have a linked payout address first; the creation form says so before anything is sealed.
 
-- Deploy a `SealedInvoiceRegistry` **v4** on mainnet, not v3. v4 changes two things: anchoring is restricted to the operator address (the sender no longer submits the transaction on mainnet), and every anchor carries a payment commitment `keccak256(payee, amount, salt)` so that `payInvoice(invoiceKey, payee, salt)` reverts unless `msg.value` and `payee` match what the sender committed to. Nothing new leaks before payment (the commitment is a hash); after payment the amount is public anyway, as it is today. Deploy and exercise v4 on testnet first, then on mainnet from an operator wallet whose key lives in a secret (not the database), with a documented rotation path. Deployment is a one-time cost of a few cents at the published fee target.
-- Anchoring is paid by the operator wallet, not the sender. At about $0.001 per transaction, 10,000 anchors cost on the order of $10 to $50 including the paid-flag update, so a small prefunded balance covers a long runway. Add a balance alert (log plus email) at a configurable floor.
-- Client payments stay off mainnet in this phase: an invoice anchored on mainnet can still be marked paid only through an on-chain payment (Phase 2) or not at all. Do not add a "mark as paid" button that writes an unverifiable flag; the whole point of the paid flag is that it is backed by a transfer.
-- Verification (`/verify`) reads the chain recorded on the invoice, so testnet invoices verify against testnet and mainnet invoices against mainnet.
-- Exit criteria: mainnet registry address published on the landing page and in `docs/`, at least one invoice anchored and verified on `explorer.arc.io`, balance alerts tested.
+## How a live invoice moves
 
-### Phase 2: payments from user-controlled wallets
+1. **Create.** The sender picks Live in the network selector. The approval sheet shows the network, the registry, that Envelo pays the anchor, and the payout address the money will go to.
+2. **Anchor.** The API signs `anchorInvoice` with the operator key (`ARC_MAINNET_OPERATOR_PRIVATE_KEY`) and retries in the background until the receipt lands. While the operator balance is under `ARC_MAINNET_OPERATOR_MIN_BALANCE_USDC` (default 1 USDC) the approval sheet explains why and creating a live invoice is refused; an invoice created before that keeps retrying.
+3. **Pay.** The client opens the invoice and presses "Pay from wallet". The API builds the exact transaction (`to`, `data`, `value`, chain id) from the invoice row; the browser asks the client's wallet (MetaMask, Rabby, Coinbase Wallet, Rainbow or any EIP-1193 provider) to switch to Arc Mainnet, adding it if needed, and to sign that transaction unchanged.
+4. **Confirm.** The browser posts the transaction hash to `POST /invoices/{id}/payment-submitted`. The server checks the receipt for the `InvoicePaid` event and answers `paid` or `pending`; the page keeps asking every few seconds until it is paid. The audit trail links the transaction on `explorer.arc.io`.
+5. **Verify.** "Verify Content Matches Record" recomputes the fingerprint in the browser and compares it with the database and with the registry on the invoice's own network. The keep-a-copy file records the network name, chain id and anchor transaction so the check works without Envelo.
 
-- Clients pay from a wallet they control: MetaMask, Rabby, Coinbase Wallet or Rainbow configured for Arc (all documented by Arc), or an embedded Circle Wallet created for the user. Envelo builds the `payInvoice` transaction (the registry already forwards the USDC and records the paid flag in one call), the client signs it in their wallet, and the server watches for the receipt and records `pay_tx_hash`.
-- Senders receive funds directly at a payout address they set in their profile; Envelo never sits in the middle of the money. The existing "linked payout address" path in `arc.ts` is the starting point.
-- Funding a client's Arc wallet happens outside Envelo: CCTP or Circle Gateway from USDC on another chain, or an exchange withdrawal once Arc is listed. Show the client the exact amount plus estimated fee in dollars, as today.
-- Mind the two faces of USDC on Arc. `payInvoice` moves the native balance (18-decimal `msg.value`); CCTP and Gateway deliver USDC through the 6-decimal ERC-20 interface. Before Phase 2 ships, confirm on testnet whether the ERC-20 interface is a view over the same native balance or a separate token that needs a wrap or unwrap step. If a step is needed, either add it to the funding flow or move payment to an ERC-20 `approve` + `transferFrom` path in v4. Either way, quote amounts with the right decimals for the path in use; a 6-versus-18 mistake is a million-fold error.
-- Remove the custodial wallet creation for mainnet users entirely (the table stays for testnet). Delete the withdraw/sweep code path on mainnet; there is nothing to sweep.
-- Exit criteria: an invoice paid on mainnet from a third-party wallet, paid flag verified on-chain, receipt shown in web and mobile, and the testnet demo still works unchanged.
+Nothing about sealing, grants, key backup or the lost-key reset depends on the network.
 
-### Phase 3: production hardening
+## Configuration
 
-- Operator key in a KMS or HSM-backed signer rather than a raw secret, with an audit log of every anchoring transaction.
-- Confirmation policy: treat a mainnet transaction as final only after the receipt is in a finalized block (Arc has sub-second deterministic finality, so this is cheap), and make anchoring idempotent per invoice (already true for testnet through the persisted signed intent; keep it).
-- Terms and privacy updates: Envelo is a software provider, the client's wallet provider holds the funds, on-chain data is public and permanent (fingerprint, addresses, amount of the transfer).
-- Monitoring: RPC health, pending-anchor retry backlog, operator balance, and explorer link checks in the e2e suite (mainnet checks read-only, never paying).
-- Selective-disclosure privacy for the amount on the transfer once Arc ships its planned confidential transfer features; until then the transfer amount is public, which the product copy must say.
+Mainnet is off until all three are true. `GET /chain/status` reports which one is missing (`flag_off`, `no_operator_key`, `no_registry`).
 
-## Decisions needed before Phase 1
-
-| Decision | Recommendation |
+| Setting | Meaning |
 | --- | --- |
-| Contract version | v4 with operator-only anchoring and payee-plus-amount binding; v3 stays only for existing testnet anchors. Get an external review of v4 before mainnet payments (Phase 2). |
-| Who operates the mainnet wallet | A dedicated operator key in the deployment secrets, prefunded with a small USDC balance, rotated on a schedule. |
-| Whether senders ever pay anchoring gas on mainnet | No. Anchoring is Envelo's cost of goods; it is a fraction of a cent. |
-| Custody | None. Payments only from user-controlled or embedded wallets the user owns. |
-| Pricing | Free anchoring during Phase 1 and 2; a per-seat or per-invoice fee can come once payments work, and the fee must never depend on holding funds. |
-| Legal | Confirm with counsel that a non-custodial invoice tool with public-chain anchoring needs no money-transmission licence in the operating jurisdiction before Phase 2 goes live. |
+| `ARC_MAINNET_ENABLED=true` | the explicit on switch; off, nothing new is signed for or offered on mainnet (no anchors, no wallet payments) while reads, verification and the settlement of payments already sent keep working |
+| `ARC_MAINNET_OPERATOR_PRIVATE_KEY` | secret; signs every mainnet anchor, never logged, read on each use |
+| `ARC_MAINNET_REGISTRY_ADDRESS` | optional override of the address baked into `networks.ts` |
+| `ARC_MAINNET_OPERATOR_MIN_BALANCE_USDC` | optional floor, default `1`; anchoring refuses below it and the status panel shows a low-balance warning |
+| `ARC_MAINNET_RPC_URL` / `ARC_TESTNET_RPC_URL` | optional private RPC endpoints; the browser uses the public ones for wallet network switching |
 
-## Cost estimate at the published fee target
+Production runs on Replit autoscale: after changing any of these in the deployment's environment, republish so the new values take effect.
 
-| Action | Approximate mainnet cost |
-| --- | --- |
-| Registry deployment (one-time) | a few cents |
-| Anchor an invoice | ~$0.001 to $0.005 |
-| Pay an invoice (transfer plus paid flag, paid by the client) | ~$0.001 |
-| 10,000 invoices anchored and paid | roughly $20 to $60 |
+## Runbook
 
-Actual fees follow Arc's EIP-1559 market with EWMA smoothing; the app already reads `eth_gasPrice` and shows dollar estimates, so real numbers appear in the UI before any transaction is sent.
+**Deploy or redeploy the registry** (one-time per network, paid by the deployer):
+
+```
+cd artifacts/api-server
+DEPLOYER_PRIVATE_KEY=0x... node scripts/deploy-registry.mjs --network mainnet --anchorer <operator address>
+```
+
+The script refuses to deploy an open registry on mainnet. Bake the printed address into `networks.ts` (or set `ARC_MAINNET_REGISTRY_ADDRESS`) and restart the API.
+
+**Fund the operator.** Send USDC on Arc Mainnet to the operator address shown in the Network Status panel. An anchor costs on the order of 0.001 to 0.005 USDC, so 10 USDC covers thousands of invoices. Watch `operatorBalanceUsdc` and `operatorLow` in `GET /chain/status`.
+
+**Rotate the operator key.** Deploy a fresh registry with the new address as anchorer (old anchors stay readable on the old registry because invoices pin their registry), update the secret and the address, republish. Invoices still `pending` at rotation time anchor on the new registry.
+
+**Pause or roll back.** Set `ARC_MAINNET_ENABLED=false` and republish. Creating live invoices stops, pending live anchors stop retrying, and the Pay sheet on live invoices shows "Live payments are paused" instead of a wallet transaction. Nothing already on the chain is affected: verification keeps working, a payment that was already broadcast still settles through `payment-submitted` and the 15-second reconciliation on invoice reads, and everything resumes when the flag is set back.
+
+**Rotation safety.** An anchor that was signed but not yet mined when the key or registry changed is never rebroadcast: the API recovers its signer and target from the stored bytes, and if either differs from the current operator or registry it discards the intent and signs a fresh one (or, if the old transaction did land, pins the invoice to the registry it landed on).
+
+## Tests
+
+- `artifacts/api-server`: `pnpm run test` covers the v4 payment commitment (the exact Solidity preimage rule), the `anchorInvoice` and `payInvoice` calldata, and the `InvoicePaid` log validation that rejects look-alike events, other invoices, wrong payees and wrong amounts.
+- `artifacts/sealed-invoices/e2e/pay-invoice.spec.ts` pays a real sandbox invoice both ways: from the app-managed wallet, and from a browser wallet (a minimal EIP-1193 provider whose `eth_sendTransaction` is signed in Node with the persona's funded key and broadcast to Arc Testnet, so the server's receipt check runs against a real transaction).
+- Mainnet is never exercised by automated tests. A manual smoke test after each deploy: create one live invoice for 0.01 USDC, pay it from a browser wallet, check the transaction on `explorer.arc.io` and run Verify.
 
 ## Not in scope
 
-- Moving testnet users or testnet invoices to mainnet. Testnet data stays on testnet.
-- Sponsoring client gas. A client who pays an invoice pays a fraction of a cent in fees; hiding it adds a paymaster and a risk surface for no user benefit.
-- Any change to the browser-side encryption model. Sealing, grants and key backup are chain-independent and stay as they are.
+- Moving sandbox invoices to live. Sandbox data stays on the sandbox.
+- Sponsoring client gas. A payment costs the client a fraction of a cent; a paymaster would add a risk surface for no user benefit.
+- Confidential amounts. The transfer amount is public on Arc today; Envelo will not claim otherwise until Arc ships confidential transfers.
+- Any change to the browser-side encryption model.
