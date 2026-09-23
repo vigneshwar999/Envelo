@@ -84,7 +84,7 @@ export default function InvoicesScreen() {
         <WaxSeal size={40} />
         <View style={{ flexShrink: 1 }}>
           <Text style={styles.title}>Invoices</Text>
-          <Text style={styles.subtitle}>Sealed envelopes on Arc's test network</Text>
+          <Text style={styles.subtitle}>Sealed envelopes on Arc</Text>
         </View>
       </View>
 
@@ -100,7 +100,7 @@ export default function InvoicesScreen() {
           </Card>
           <Card style={styles.statCard}>
             <Text style={styles.statValue}>{formatUsdc(summary.totalOutstandingUsdc)}</Text>
-            <Text style={styles.statLabel}>test USDC due</Text>
+            <Text style={styles.statLabel}>USDC due</Text>
           </Card>
         </View>
       ) : null}
@@ -150,7 +150,7 @@ export default function InvoicesScreen() {
           <WaxSeal size={40} />
           <View>
             <Text style={styles.title}>Invoices</Text>
-            <Text style={styles.subtitle}>Sealed envelopes on Arc's test network</Text>
+            <Text style={styles.subtitle}>Sealed envelopes on Arc</Text>
           </View>
         </View>
         <AccountNotSetUp onRefresh={() => meQ.refetch()} refreshing={meQ.isRefetching} />
@@ -192,8 +192,8 @@ export default function InvoicesScreen() {
                 {filter === "all" ? "No invoices yet" : "Nothing here yet"}
               </Text>
               <Text style={styles.emptyBody}>
-                Invoices are created in the web app. Anything sent to you — or by you —
-                shows up here, ready to open, verify, and pay in test USDC.
+                Invoices are created in the web app. Anything sent to you or by you shows
+                up here, ready to open, verify, and pay in USDC.
               </Text>
             </Card>
           )

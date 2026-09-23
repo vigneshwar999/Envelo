@@ -34,6 +34,7 @@ export function InvoiceCard(props: {
           {counterparty}
         </Text>
         <View style={styles.badges}>
+          <Badge label={invoice.networkMode === "live" ? "Mainnet" : "Testnet"} tone="neutral" />
           {awaiting ? (
             iAmClient ? (
               <Badge label="For you to pay" tone="amber" />
@@ -48,7 +49,7 @@ export function InvoiceCard(props: {
       </View>
       <View style={styles.right}>
         <Text style={styles.amount}>{formatUsdc(invoice.amountUsdc)}</Text>
-        <Text style={styles.testUsdc}>test USDC</Text>
+        <Text style={styles.usdc}>USDC</Text>
         {invoice.dueDate && awaiting ? (
           <Text style={styles.due}>Due {formatDate(invoice.dueDate)}</Text>
         ) : null}
@@ -87,7 +88,7 @@ const styles = StyleSheet.create({
     fontSize: 18,
     color: c.foreground,
   },
-  testUsdc: {
+  usdc: {
     fontFamily: fonts.sans,
     fontSize: 11,
     color: c.mutedForeground,

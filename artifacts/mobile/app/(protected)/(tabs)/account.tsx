@@ -138,10 +138,10 @@ export default function AccountScreen() {
           )}
         </Card>
 
-        <SectionTitle>Network status</SectionTitle>
+        <SectionTitle>Built-in sandbox wallet - test USDC on Arc Testnet</SectionTitle>
         <Card style={{ gap: 4 }}>
           {chainQ.isLoading ? (
-            <Text style={styles.bodyText}>Checking the Arc testnet…</Text>
+            <Text style={styles.bodyText}>Checking Arc Testnet…</Text>
           ) : chainQ.error ? (
             <Banner tone="error">
               {apiErrorMessage(chainQ.error, "Network status is unavailable right now.")}
@@ -154,7 +154,7 @@ export default function AccountScreen() {
                   {chain.chainId ? ` · chain ${chain.chainId}` : ""}
                 </Text>
               </KeyValueRow>
-              <KeyValueRow label="App-managed wallet">
+              <KeyValueRow label="Built-in wallet">
                 <MonoText testID="text-wallet-address">
                   {shortHex(chain.myWalletAddress)}
                 </MonoText>
@@ -163,7 +163,7 @@ export default function AccountScreen() {
                 <Text style={styles.valueText} testID="text-balance">
                   {chain.myBalanceUsdc !== null && chain.myBalanceUsdc !== undefined
                     ? `${formatUsdc(chain.myBalanceUsdc)} test USDC`
-                    : "—"}
+                    : "-"}
                 </Text>
               </KeyValueRow>
               <Text style={styles.statusMessage}>{chain.statusMessage}</Text>
@@ -175,7 +175,7 @@ export default function AccountScreen() {
                 />
                 {chain.explorerBaseUrl && chain.myWalletAddress ? (
                   <LinkText
-                    label="View wallet on ArcScan"
+                    label="View wallet in the explorer"
                     onPress={() =>
                       Linking.openURL(`${chain.explorerBaseUrl}/address/${chain.myWalletAddress}`)
                     }
@@ -183,6 +183,12 @@ export default function AccountScreen() {
                   />
                 ) : null}
               </View>
+              {chain.mainnetEnabled ? (
+                <Text style={styles.statusMessage}>
+                  Live invoices on Arc Mainnet are paid from your own wallet to your linked
+                  payout wallet.
+                </Text>
+              ) : null}
             </>
           ) : null}
         </Card>
@@ -190,9 +196,9 @@ export default function AccountScreen() {
         <SectionTitle>About</SectionTitle>
         <Card>
           <Text style={styles.bodyText}>
-            Sealed Invoices runs on Arc's test network. Every amount is test USDC — practice
-            money from a faucet, not real dollars. Invoice contents are encrypted on your
-            devices; the chain records only the fingerprint stamp and the test-USDC payment.
+            Your built-in wallet holds test USDC on Arc Testnet. Live invoices on Arc
+            Mainnet are paid from your own wallet. Invoice contents are encrypted on your
+            devices, while amounts and payments are public onchain.
           </Text>
         </Card>
 

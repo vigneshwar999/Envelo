@@ -130,7 +130,7 @@ export default function SignInScreen() {
           <WaxSeal size={64} />
           <Text style={styles.title}>Sealed Invoices</Text>
           <Text style={styles.subtitle}>
-            Private invoices, sealed on your device and stamped on Arc's test network.
+            Encrypted invoices, sealed on your device and stamped on Arc.
           </Text>
 
           <View style={styles.form}>
@@ -191,8 +191,7 @@ export default function SignInScreen() {
           </View>
 
           <Text style={styles.honesty}>
-            Runs on Arc's test network — every amount you'll see is test USDC, not real
-            money.
+            Sandbox uses test USDC, and live invoices use USDC on Arc Mainnet when enabled.
           </Text>
         </View>
       </ScrollView>

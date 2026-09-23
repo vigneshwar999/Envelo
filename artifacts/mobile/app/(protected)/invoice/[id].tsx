@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { ScrollView, StyleSheet, Text, View } from "react-native";
+import { Alert, Platform, ScrollView, StyleSheet, Text, View } from "react-native";
 import * as Linking from "expo-linking";
 import { useQueryClient } from "@tanstack/react-query";
 import { useLocalSearchParams, useRouter } from "expo-router";
@@ -77,7 +77,11 @@ export default function InvoiceDetailScreen() {
   const payPreviewQ = useGetPayPreview(id, {
     query: {
       queryKey: getGetPayPreviewQueryKey(id),
-      enabled: id !== "" && iAmClient && invoice?.status === "awaiting_payment",
+      enabled:
+        id !== "" &&
+        iAmClient &&
+        invoice?.status === "awaiting_payment" &&
+        invoice.networkMode === "sandbox",
       staleTime: 0,
     },
   });
@@ -88,7 +92,18 @@ export default function InvoiceDetailScreen() {
     key.privateKeyJwk,
     me?.publicKeyJwk ?? null,
   );
-  const explorerBaseUrl = chain?.explorerBaseUrl ?? null;
+  const explorerBaseUrl = invoice?.explorerBaseUrl ?? null;
+
+  const handleCopyPayee = async () => {
+    if (!invoice?.payeeAddress) return;
+    if (Platform.OS === "web" && navigator.clipboard) {
+      await navigator.clipboard.writeText(invoice.payeeAddress);
+      return;
+    }
+    Alert.alert("Payout address", invoice.payeeAddress, [
+      { text: "Press and hold the address to copy", style: "cancel" },
+    ]);
+  };
 
   const handleOpen = async () => {
     if (!key.privateKeyJwk) return;
@@ -187,8 +202,11 @@ export default function InvoiceDetailScreen() {
           <Text style={styles.amount} testID="text-amount">
             {formatUsdc(invoice.amountUsdc)}
           </Text>
-          <Text style={styles.amountUnit}>test USDC</Text>
+          <Text style={styles.amountUnit}>
+            {invoice.networkMode === "live" ? "USDC" : "test USDC"}
+          </Text>
         </View>
+        <Badge label={invoice.networkName} tone="neutral" />
         <KeyValueRow label="From">
           <Text style={styles.valueText}>{invoice.freelancerName}</Text>
         </KeyValueRow>
@@ -202,7 +220,7 @@ export default function InvoiceDetailScreen() {
         ) : null}
         <KeyValueRow label="Fingerprint stamp">
           {invoice.anchorStatus === "anchored" ? (
-            <Badge label="Stamped on Arc testnet" tone="green" />
+            <Badge label={`Stamped on ${invoice.networkName}`} tone="green" />
           ) : invoice.anchorStatus === "pending" ? (
             <Badge label="Stamp pending" tone="neutral" />
           ) : (
@@ -211,13 +229,13 @@ export default function InvoiceDetailScreen() {
         </KeyValueRow>
         {invoice.anchorStatus === "unavailable" ? (
           <Text style={styles.mutedNote}>
-            The test network was unreachable when this invoice was created. Verification
-            still checks the app's record.
+            {invoice.networkName} was unreachable when this invoice was created.
+            Verification still checks the app's record.
           </Text>
         ) : null}
         {invoice.anchorTxHash && explorerBaseUrl ? (
           <LinkText
-            label="View the stamp on ArcScan"
+            label={`View the stamp on ${invoice.networkName}`}
             onPress={() => Linking.openURL(`${explorerBaseUrl}/tx/${invoice.anchorTxHash}`)}
             testID="link-anchor-tx"
           />
@@ -229,7 +247,7 @@ export default function InvoiceDetailScreen() {
       {document ? (
         <Card style={{ gap: 10 }} testID="card-document">
           <Text style={styles.decryptNote}>
-            Decrypted on this device — the server and the chain never see this.
+            Decrypted on this device. The server and the chain never see this.
           </Text>
           <Text style={styles.docTitle} testID="text-doc-title">
             {document.title}
@@ -245,7 +263,8 @@ export default function InvoiceDetailScreen() {
           <View style={styles.totalRow}>
             <Text style={styles.totalLabel}>Total</Text>
             <Text style={styles.totalValue}>
-              {formatUsdc(document.amountUsdc)} test USDC
+              {formatUsdc(document.amountUsdc)}{" "}
+              {invoice.networkMode === "live" ? "USDC" : "test USDC"}
             </Text>
           </View>
           {document.notes ? <Text style={styles.notes}>{document.notes}</Text> : null}
@@ -256,8 +275,8 @@ export default function InvoiceDetailScreen() {
           {access?.accessSource === "grant" ? (
             <Banner tone="info" testID="banner-grant-access">
               {access.grantExpiresAt
-                ? `Shared with you until ${formatDateTime(access.grantExpiresAt)}. The owner can end the share sooner — that stops future opens.`
-                : "Shared with you. The owner can end the share at any time — that stops future opens."}
+                ? `Shared with you until ${formatDateTime(access.grantExpiresAt)}. The owner can end the share sooner. That stops future opens.`
+                : "Shared with you. The owner can end the share at any time. That stops future opens."}
             </Banner>
           ) : null}
         </Card>
@@ -266,7 +285,7 @@ export default function InvoiceDetailScreen() {
           {invoice.myCopyLocked ? (
             <Banner tone="warning" testID="banner-copy-locked">
               Your copy of the envelope key was removed when your account's key was reset.
-              The envelope itself is untouched — ask{" "}
+              The envelope itself is untouched. Ask{" "}
               {iAmClient ? invoice.freelancerName : invoice.clientName} to re-share access
               from the web app.
             </Banner>
@@ -306,7 +325,7 @@ export default function InvoiceDetailScreen() {
           <Card style={{ gap: 10 }}>
             <Text style={styles.bodyText}>
               Recomputes the fingerprint from what you just decrypted and compares it with
-              the app's record and the stamp on Arc's test network.
+              the app's record and the stamp on {invoice.networkName}.
             </Text>
             <Button
               title={verifyMut.isPending ? "Verifying…" : "Verify the seal"}
@@ -333,7 +352,7 @@ export default function InvoiceDetailScreen() {
                     {verification.matchesRecord ? "✓ Matches" : "✗ Doesn't match"}
                   </Text>
                 </KeyValueRow>
-                <KeyValueRow label="Arc testnet">
+                <KeyValueRow label={invoice.networkName}>
                   <Text
                     style={[
                       styles.verdict,
@@ -352,7 +371,7 @@ export default function InvoiceDetailScreen() {
                       ? "✓ Matches"
                       : verification.matchesOnchain === false
                         ? "✗ Doesn't match"
-                        : "— Not stamped"}
+                        : "- Not stamped"}
                   </Text>
                 </KeyValueRow>
                 <Text style={styles.summary} testID="text-verification-summary">
@@ -363,7 +382,7 @@ export default function InvoiceDetailScreen() {
                 </MonoText>
                 {verification.anchorTxHash && explorerBaseUrl ? (
                   <LinkText
-                    label="View the stamp on ArcScan"
+                    label={`View the stamp on ${invoice.networkName}`}
                     onPress={() =>
                       Linking.openURL(`${explorerBaseUrl}/tx/${verification.anchorTxHash}`)
                     }
@@ -382,12 +401,18 @@ export default function InvoiceDetailScreen() {
         {invoice.status === "paid" ? (
           <>
             <Banner tone="success" testID="banner-paid">
-              Paid{invoice.paidAt ? ` ${formatDateTime(invoice.paidAt)}` : ""} in test USDC
-              on Arc's test network.
+              Paid{invoice.paidAt ? ` ${formatDateTime(invoice.paidAt)}` : ""} in{" "}
+              {invoice.networkMode === "live" ? "USDC" : "test USDC"} on{" "}
+              {invoice.networkName}.
             </Banner>
+            {invoice.payerAddress ? (
+              <KeyValueRow label="Paid by">
+                <MonoText>{invoice.payerAddress}</MonoText>
+              </KeyValueRow>
+            ) : null}
             {invoice.payTxHash && explorerBaseUrl ? (
               <LinkText
-                label="View the payment on ArcScan"
+                label={`View the payment on ${invoice.networkName}`}
                 onPress={() =>
                   Linking.openURL(`${explorerBaseUrl}/tx/${invoice.payTxHash}`)
                 }
@@ -395,10 +420,31 @@ export default function InvoiceDetailScreen() {
               />
             ) : null}
           </>
+        ) : invoice.networkMode === "live" ? (
+          <>
+            <Text style={styles.bodyText}>
+              This is a live invoice on {invoice.networkName}. Pay it from your own wallet
+              on the web app - Envelo never holds real funds for you.
+            </Text>
+            <Text style={styles.liveAmount}>
+              {formatUsdc(invoice.amountUsdc)} USDC
+            </Text>
+            {invoice.payeeAddress ? (
+              <>
+                <Text style={styles.mutedNote}>Payout address</Text>
+                <Text style={styles.payeeAddress} selectable>
+                  {invoice.payeeAddress}
+                </Text>
+                <Button title="Copy address" variant="secondary" onPress={handleCopyPayee} />
+              </>
+            ) : (
+              <Banner tone="error">The payout address is unavailable.</Banner>
+            )}
+          </>
         ) : iAmClient ? (
           <>
             {!chain ? (
-              <Text style={styles.bodyText}>Checking the test network…</Text>
+              <Text style={styles.bodyText}>Checking {invoice.networkName}…</Text>
             ) : !chain.readyForPayments ? (
               <Banner tone="warning" testID="banner-chain-not-ready">
                 {chain.statusMessage}
@@ -410,7 +456,7 @@ export default function InvoiceDetailScreen() {
                 <Banner tone="error" testID="banner-pay-preview-error">
                   {apiErrorMessage(
                     payPreviewQ.error,
-                    "The live payment details couldn't be loaded.",
+                    "The payment details couldn't be loaded.",
                   )}
                 </Banner>
                 <Button
@@ -425,13 +471,13 @@ export default function InvoiceDetailScreen() {
                 <Banner tone="warning" testID="banner-amount-too-large">
                   This payment needs {formatUsdc(payPreview.totalUsdc)} test USDC including
                   the estimated network fee. Your wallet has{" "}
-                  {formatUsdc(payPreview.walletBalanceUsdc)} and is about{" "}
-                  {formatUsdc(payPreview.shortfallUsdc)} short. Top up at the faucet, then
-                  try again.
+                  {formatUsdc(payPreview.walletBalanceUsdc ?? "0")} and is about{" "}
+                  {formatUsdc(payPreview.shortfallUsdc ?? "0")} short. Top up at the
+                  faucet, then try again.
                 </Banner>
                 <LinkText
                   label="Get test USDC from the faucet"
-                  onPress={() => Linking.openURL(chain.faucetUrl)}
+                  onPress={() => chain.faucetUrl && Linking.openURL(chain.faucetUrl)}
                   testID="link-faucet-detail"
                 />
               </>
@@ -442,7 +488,7 @@ export default function InvoiceDetailScreen() {
                   {payPreview?.feeEstimateUsdc
                     ? ` plus an estimated ${formatUsdc(payPreview.feeEstimateUsdc)} test USDC network fee`
                     : ""}
-                  ? This moves practice money on Arc's test network — not real dollars.
+                  ? This moves practice money on Arc Testnet, not real dollars.
                 </Text>
                 <View style={styles.buttonRow}>
                   <Button
@@ -491,8 +537,8 @@ export default function InvoiceDetailScreen() {
           </>
         ) : (
           <Text style={styles.bodyText}>
-            Waiting for {invoice.clientName} to pay. The payment will show up here the
-            moment it lands on the test network.
+            Waiting for {invoice.clientName} to pay. The payment will show up here when it
+            lands on {invoice.networkName}.
           </Text>
         )}
       </Card>
@@ -638,6 +684,16 @@ const styles = StyleSheet.create({
   fingerprint: {
     fontSize: 12,
     color: c.mutedForeground,
+  },
+  liveAmount: {
+    fontFamily: fonts.sansSemiBold,
+    fontSize: 20,
+    color: c.foreground,
+  },
+  payeeAddress: {
+    fontFamily: fonts.mono,
+    fontSize: 12,
+    color: c.foreground,
   },
   buttonRow: { flexDirection: "row", gap: 8 },
   eventRow: { paddingVertical: 10, gap: 2 },
