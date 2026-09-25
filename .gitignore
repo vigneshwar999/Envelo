@@ -5,6 +5,10 @@ dist
 tmp
 out-tsc
 *.tsbuildinfo
+# Vercel function bundle output (api/index.js is the tracked pre-build entry).
+/api/*.map
+/api/pino-*.js
+/api/thread-stream-worker.js
 .expo
 .expo-shared
 
