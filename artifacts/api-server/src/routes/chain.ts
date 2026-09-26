@@ -7,6 +7,7 @@ import {
   anchorPayerFor,
   attemptChainSetup,
   decideAffordability,
+  ensureOperatorWallet,
   ensureWalletFor,
   estimateAnchorFeeWei,
   formatFeeUsdc,
@@ -46,6 +47,10 @@ function mainnetDisabledReason(
 
 router.get("/chain/status", async (req, res) => {
   const userId = userIdOf(req);
+
+  // Initialize the sandbox operator only when chain status needs its address.
+  // Public requests and unrelated invoice reads must not wait for this DB write.
+  await ensureOperatorWallet();
 
   // Best-effort background pass: re-drive any anchor still pending on a
   // reachable network (a sender who topped up, an operator submission that

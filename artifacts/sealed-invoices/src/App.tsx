@@ -177,8 +177,9 @@ function AppLoading() {
 /** Public landing for signed-out visitors; signed-in users go straight to work. */
 function HomeRoute() {
   const { isLoaded, isSignedIn } = useUser();
-  if (!isLoaded) return <PageLoading />;
-  if (isSignedIn) return <Redirect to="/dashboard" />;
+  // Marketing content is public: do not make first paint wait for Clerk's
+  // session/bootstrap request. Redirect returning users once it finishes.
+  if (isLoaded && isSignedIn) return <Redirect to="/dashboard" />;
   return <Explore />;
 }
 
