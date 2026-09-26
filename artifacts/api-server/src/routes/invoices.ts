@@ -311,7 +311,16 @@ router.get("/invoices/:invoiceId", async (req, res) => {
     res.status(404).json({ error: "Invoice not found." });
     return;
   }
-  const invoice = await reconcileIfDue(found);
+  // Serverless runtimes can stop the detached create-time anchor task as soon
+  // as the response ends. A participant reading a pending invoice must await
+  // the existing signed intent's reconciliation within this request.
+  if (found.anchorStatus !== "anchored") {
+    await anchorInvoiceOnChain(found.id);
+  }
+  const latest = found.anchorStatus === "anchored"
+    ? found
+    : (await findInvoice(found.id)) ?? found;
+  const invoice = await reconcileIfDue(latest);
   const userRows = await db.select().from(usersTable);
   const names = new Map(userRows.map((row) => [row.id, row.displayName]));
   const access = {
