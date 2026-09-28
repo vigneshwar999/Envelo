@@ -90,10 +90,18 @@ async function mintSessionJwt(
 
 const router: IRouter = Router();
 
+export function isDemoBootstrapAllowed(env: NodeJS.ProcessEnv): boolean {
+  // A missing flag or a production/unknown Clerk tenant must fail closed.
+  return env["DEMO_BOOTSTRAP_ENABLED"] === "1" &&
+    !env["DEMO_BOOTSTRAP_DISABLED"] &&
+    !!env["CLERK_SECRET_KEY"]?.startsWith("sk_test_");
+}
+
 router.post("/demo/bootstrap", async (req, res) => {
-  // Kill-switch: once activation has run, the deployment can retire this
-  // route without a code change by setting DEMO_BOOTSTRAP_DISABLED=1.
-  if (process.env["DEMO_BOOTSTRAP_DISABLED"]) {
+  // An unauthenticated HTTP route must never default to being able to reset
+  // fixed-password demo users or mint their sessions. Live Clerk tenants are
+  // never eligible, even if an enable flag is set by mistake.
+  if (!isDemoBootstrapAllowed(process.env)) {
     res.status(404).json({ error: "Not found." });
     return;
   }

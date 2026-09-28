@@ -7,6 +7,7 @@ import chainRouter from "./chain";
 import dashboardRouter from "./dashboard";
 import demoBootstrapRouter from "./demoBootstrap";
 import ghostCleanupRouter from "./ghostCleanup";
+import anchorRecoveryRouter from "./anchorRecovery";
 import { requireAuth } from "../middlewares/requireAuth";
 
 const router: IRouter = Router();
@@ -19,6 +20,8 @@ router.use(demoBootstrapRouter);
 // Ghost cleanup uses the same self-authenticating token pattern and must run
 // before requireAuth (the accounts it removes can never hold a session).
 router.use(ghostCleanupRouter);
+// Vercel Cron authenticates with its own secret, before user-session middleware.
+router.use(anchorRecoveryRouter);
 router.use(requireAuth);
 router.use(usersRouter);
 router.use(invoicesRouter);

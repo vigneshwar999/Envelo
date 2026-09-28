@@ -1,0 +1,13 @@
+{
+  "name": "envelo-anchor-recovery-runner",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "start": "node trigger-anchor-recovery.mjs",
+    "test": "node --test trigger-anchor-recovery.test.mjs"
+  }
+}

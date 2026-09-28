@@ -19,7 +19,7 @@ import {
 } from "viem";
 import { TransactionReceiptNotFoundError } from "viem";
 import { generatePrivateKey, privateKeyToAccount } from "viem/accounts";
-import { and, eq, ne, sql } from "drizzle-orm";
+import { and, asc, eq, gt, ne, sql } from "drizzle-orm";
 import {
   db,
   chainStateTable,
@@ -1360,6 +1360,56 @@ export async function retryPendingAnchors(): Promise<void> {
     if (!reachable.get(network.chainId)) continue;
     await anchorInvoiceOnChain(row.id);
   }
+}
+
+/**
+ * One fair, request-bound retry for a serverless scheduler. The cursor moves
+ * before the network call, so a failed oldest anchor cannot starve newer ones.
+ * Invoice-level advisory locking and persisted signed bytes still govern the
+ * actual transaction and make concurrent invocations safe.
+ */
+export async function retryOnePendingAnchor(): Promise<{
+  selected: boolean;
+  attempted: boolean;
+  anchored: boolean;
+}> {
+  const cursorKey = "anchor-recovery:cursor";
+  const columns = { id: invoicesTable.id, chainId: invoicesTable.chainId };
+  // Claim a cursor position in a short DB transaction. A separate advisory
+  // lock serializes concurrent cron invocations without holding the nonce lock
+  // or a DB transaction while waiting on Arc RPC.
+  const row = await db.transaction(async (tx) => {
+    await tx.execute(sql`SELECT pg_advisory_xact_lock(${732_504}, ${1})`);
+    const [state] = await tx.select().from(chainStateTable).where(eq(chainStateTable.key, cursorKey));
+    const cursor = state?.value ?? null;
+    // UUID primary-key ordering is stable at PostgreSQL precision. Each
+    // keyset lookup returns at most one row, even with a large backlog.
+    const after = cursor && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(cursor)
+      ? await tx.select(columns).from(invoicesTable)
+          .where(and(ne(invoicesTable.anchorStatus, "anchored"), gt(invoicesTable.id, cursor)))
+          .orderBy(asc(invoicesTable.id)).limit(1)
+      : [];
+    const next = after[0] ?? (await tx.select(columns).from(invoicesTable)
+      .where(ne(invoicesTable.anchorStatus, "anchored"))
+      .orderBy(asc(invoicesTable.id)).limit(1))[0];
+    if (next) {
+      await tx.insert(chainStateTable)
+        .values({ key: cursorKey, value: next.id, updatedAt: new Date() })
+        .onConflictDoUpdate({
+          target: chainStateTable.key,
+          set: { value: next.id, updatedAt: new Date() },
+        });
+    }
+    return next;
+  });
+  if (!row) return { selected: false, attempted: false, anchored: false };
+  const network = networkForChainId(row.chainId);
+  if (network.mode === "live" && !mainnetAvailability().enabled) {
+    return { selected: true, attempted: false, anchored: false };
+  }
+  if (!await isRpcConnected(network)) return { selected: true, attempted: false, anchored: false };
+  const anchored = await anchorInvoiceOnChain(row.id);
+  return { selected: true, attempted: true, anchored };
 }
 
 // ------------------------------------------------------------ pay preview
