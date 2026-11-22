@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { and, asc, desc, eq, isNull, or } from "drizzle-orm";
+import { and, asc, count, desc, eq, gt, isNull, or } from "drizzle-orm";
 import { parseUnits } from "viem";
 import {
   db,
@@ -42,6 +42,9 @@ import {
   getLegacyContractAddress,
   isArcNetworkKey,
   isRpcConnected,
+  liveInvoiceCapBlocker,
+  mainnetDailyInvoiceCapPerUser,
+  mainnetHourlyInvoiceCapGlobal,
   mainnetSwitchedOn,
   networkByKey,
   networkForChainId,
@@ -196,6 +199,42 @@ router.post("/invoices", async (req, res) => {
   if (anchor.blocker) {
     res.status(409).json({ error: `${anchor.blocker} Nothing was saved.` });
     return;
+  }
+  // Live: Envelo's operator pays every anchor, so creation is rate limited
+  // before anything is sealed or signed (per sender per 24h, all senders per hour).
+  if (network.mode === "live") {
+    const now = Date.now();
+    const [[mine], [all]] = await Promise.all([
+      db
+        .select({ n: count() })
+        .from(invoicesTable)
+        .where(
+          and(
+            eq(invoicesTable.freelancerId, creator.id),
+            eq(invoicesTable.chainId, network.chainId),
+            gt(invoicesTable.createdAt, new Date(now - 24 * 60 * 60 * 1000)),
+          ),
+        ),
+      db
+        .select({ n: count() })
+        .from(invoicesTable)
+        .where(
+          and(
+            eq(invoicesTable.chainId, network.chainId),
+            gt(invoicesTable.createdAt, new Date(now - 60 * 60 * 1000)),
+          ),
+        ),
+    ]);
+    const capBlocker = liveInvoiceCapBlocker({
+      userLast24h: Number(mine?.n ?? 0),
+      allLastHour: Number(all?.n ?? 0),
+      userCap: mainnetDailyInvoiceCapPerUser(),
+      globalCap: mainnetHourlyInvoiceCapGlobal(),
+    });
+    if (capBlocker) {
+      res.status(429).json({ error: `${capBlocker} Nothing was saved.` });
+      return;
+    }
   }
   // Sandbox: the anchor transaction is paid by the SENDER's own wallet - no
   // sponsorship. Block creation only on an affirmative "can't afford": both

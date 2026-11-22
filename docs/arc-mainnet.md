@@ -11,7 +11,7 @@ Envelo runs on two Arc networks from one codebase. Every invoice is created on e
 | Who anchors | the sender, from the app-managed sandbox wallet | Envelo's operator wallet |
 | Who pays | the client, from the app-managed sandbox wallet (or their own browser wallet) | the client, from their own browser wallet only |
 | Where the money lands | the sender's sandbox wallet, or a linked payout address | the sender's linked payout address (required) |
-| Registry | `SealedInvoiceRegistry` v4 at `0xde0565b22c4451e714c81f5a0ce5f83b6d11e51d` | `SealedInvoiceRegistry` v4, address in `artifacts/api-server/src/chain/networks.ts` |
+| Registry | `SealedInvoiceRegistry` v4 at `0xde0565b22c4451e714c81f5a0ce5f83b6d11e51d` | `SealedInvoiceRegistry` v4 at `0xa27cc871eee4a86ed5c5cb3f11315bff4ca2e338` (deployed 2026-11-22, anchorer `0x717d36c8e99cD109CE102CF85a78601B5B282D48`) |
 
 On both networks USDC is the native currency with 18 decimals, so `payInvoice` moves `msg.value` and there is no ERC-20 approval step.
 
@@ -52,6 +52,8 @@ Mainnet is off until all three are true. `GET /chain/status` reports which one i
 | `ARC_MAINNET_OPERATOR_PRIVATE_KEY` | secret; signs every mainnet anchor, never logged, read on each use |
 | `ARC_MAINNET_REGISTRY_ADDRESS` | optional override of the address baked into `networks.ts` |
 | `ARC_MAINNET_OPERATOR_MIN_BALANCE_USDC` | optional floor, default `1`; anchoring refuses below it and the status panel shows a low-balance warning |
+| `ARC_MAINNET_DAILY_INVOICE_CAP` | optional, default `10`; live invoices one sender may create per rolling 24 hours (the operator pays each anchor) |
+| `ARC_MAINNET_HOURLY_INVOICE_CAP` | optional, default `60`; live invoices across all senders per rolling hour |
 | `ARC_MAINNET_RPC_URL` / `ARC_TESTNET_RPC_URL` | optional private RPC endpoints; the browser uses the public ones for wallet network switching |
 
 Production runs on Replit autoscale: after changing any of these in the deployment's environment, republish so the new values take effect.

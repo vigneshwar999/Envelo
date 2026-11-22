@@ -95,7 +95,11 @@ function build(args: {
 // senders anchor from their own sandbox wallets). Same address in dev and prod.
 const TESTNET_REGISTRY_DEFAULT: Address | null =
   "0xde0565b22c4451e714c81f5a0ce5f83b6d11e51d";
-const MAINNET_REGISTRY_DEFAULT: Address | null = null;
+// SealedInvoiceRegistry v4 on Arc Mainnet, deployed 2026-11-22 in block
+// 32605573 (tx 0x5477db53c24d9e4c1dbd59e232e1fbcf684f3de5812711cc8c5b9547b6e51c85).
+// Anchorer locked to the operator wallet 0x717d36c8e99cD109CE102CF85a78601B5B282D48.
+const MAINNET_REGISTRY_DEFAULT: Address | null =
+  "0xa27cc871eee4a86ed5c5cb3f11315bff4ca2e338";
 
 export const ARC_TESTNET: ArcNetwork = build({
   key: "testnet",
@@ -173,6 +177,40 @@ export function mainnetOperatorAccount(): PrivateKeyAccount | null {
 export function mainnetOperatorMinBalanceUsdc(): string {
   const raw = process.env["ARC_MAINNET_OPERATOR_MIN_BALANCE_USDC"]?.trim();
   return raw && /^\d+(\.\d+)?$/.test(raw) ? raw : "1";
+}
+
+function readCountEnv(name: string, fallback: number): number {
+  const raw = process.env[name]?.trim();
+  return raw && /^\d+$/.test(raw) ? Number(raw) : fallback;
+}
+
+/**
+ * Envelo's operator wallet pays the anchor for every live invoice, so live
+ * creation is rate limited: per sender per rolling 24 hours, and across all
+ * senders per rolling hour (one person with many accounts). Env overrides.
+ */
+export function mainnetDailyInvoiceCapPerUser(): number {
+  return readCountEnv("ARC_MAINNET_DAILY_INVOICE_CAP", 10);
+}
+
+export function mainnetHourlyInvoiceCapGlobal(): number {
+  return readCountEnv("ARC_MAINNET_HOURLY_INVOICE_CAP", 60);
+}
+
+/** Pure rule shared by the route and the tests: is one more live invoice allowed? */
+export function liveInvoiceCapBlocker(counts: {
+  userLast24h: number;
+  allLastHour: number;
+  userCap: number;
+  globalCap: number;
+}): string | null {
+  if (counts.userLast24h >= counts.userCap) {
+    return `You can create up to ${counts.userCap} live invoices per 24 hours while Envelo pays the anchor fee for them. Try again later, or use the sandbox.`;
+  }
+  if (counts.allLastHour >= counts.globalCap) {
+    return "Live invoicing is busy right now and is limited per hour while Envelo pays the anchor fees. Try again in a few minutes.";
+  }
+  return null;
 }
 
 export type MainnetAvailability =
