@@ -8,6 +8,7 @@ import dashboardRouter from "./dashboard";
 import demoBootstrapRouter from "./demoBootstrap";
 import ghostCleanupRouter from "./ghostCleanup";
 import anchorRecoveryRouter from "./anchorRecovery";
+import dbKeepAliveRouter from "./dbKeepAlive";
 import { requireAuth } from "../middlewares/requireAuth";
 
 const router: IRouter = Router();
@@ -22,6 +23,7 @@ router.use(demoBootstrapRouter);
 router.use(ghostCleanupRouter);
 // Vercel Cron authenticates with its own secret, before user-session middleware.
 router.use(anchorRecoveryRouter);
+router.use(dbKeepAliveRouter);
 router.use(requireAuth);
 router.use(usersRouter);
 router.use(invoicesRouter);

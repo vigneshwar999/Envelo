@@ -13,6 +13,9 @@
       "headers": [{ "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }]
     }
   ],
+  "crons": [
+    { "path": "/api/internal/db-keepalive", "schedule": "0 6 * * *" }
+  ],
   "functions": {
     "api/index.js": {
       "maxDuration": 60

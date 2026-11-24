@@ -45,6 +45,7 @@ Replit is not needed to host or operate the production app.
    | `VITE_CLERK_PUBLISHABLE_KEY` | same publishable key (baked into the frontend at build) |
    | `CLERK_SECRET_KEY` | Clerk secret key (`sk_…`) |
    | `SESSION_SECRET` | any long random string (only used by the demo-account bootstrap API) |
+   | `CRON_SECRET` | any long random string; Vercel Cron sends it to `/api/internal/db-keepalive` once a day so the Supabase free plan never pauses the database |
 
    Optional: `DEMO_BOOTSTRAP_DISABLED=1` to switch the demo bootstrap route off.
 4. Click **Deploy**.
