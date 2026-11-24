@@ -554,7 +554,7 @@ export default function Explore() {
                     </p>
                     <div className="flex items-center justify-between">
                       <span className="text-xs font-medium text-foreground">
-                        Arc Testnet + Mainnet
+                        Arc Mainnet
                       </span>
                       <span className="inline-flex items-center gap-1.5 text-[10px] text-emerald-400">
                         <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-status-pulse" />

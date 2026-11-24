@@ -614,6 +614,31 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ApiMessage"
+  /invoices/{invoiceId}/anchor:
+    post:
+      operationId: driveInvoiceAnchor
+      tags: [invoices]
+      summary: Finish a pending onchain anchor inside this request. The invoice page calls it in the background while it shows the invoice, so the page never waits for the chain. Safe to call repeatedly; an anchored invoice returns at once.
+      parameters:
+        - name: invoiceId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Where the anchor stands after this attempt.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AnchorDriveResult"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiMessage"
   /invoices/{invoiceId}/payment-submitted:
     post:
       operationId: paymentSubmitted
@@ -1610,6 +1635,13 @@ components:
         txHash:
           type: string
           description: The 0x-prefixed 32-byte hash returned by the client's wallet after it sent the payment transaction.
+    AnchorDriveResult:
+      type: object
+      required: [anchored]
+      properties:
+        anchored:
+          type: boolean
+          description: True once the invoice fingerprint is confirmed in the registry on its network.
     PaymentSubmittedResult:
       type: object
       required: [status, invoice, message]

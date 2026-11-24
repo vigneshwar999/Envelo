@@ -591,6 +591,11 @@ export interface PaymentSubmittedInput {
   txHash: string;
 }
 
+export interface AnchorDriveResult {
+  /** True once the invoice fingerprint is confirmed in the registry on its network. */
+  anchored: boolean;
+}
+
 /**
  * paid = verified onchain and recorded; pending = not mined yet, poll again.
  */

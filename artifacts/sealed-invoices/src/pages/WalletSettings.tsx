@@ -34,6 +34,7 @@ import {
 } from 'lucide-react';
 import { connectWallet, hasBrowserWallet } from '@/lib/wallet';
 import { WalletSafetyNote } from '@/components/wallet/WalletSafetyNote';
+import { formatUsdcWei, useMainnetBalance } from '@/lib/mainnetBalance';
 
 const ADDRESS_SHAPE = /^0x[0-9a-fA-F]{40}$/;
 
@@ -54,6 +55,7 @@ export default function WalletSettings() {
   const [connecting, setConnecting] = useState(false);
 
   const linked = me?.payoutAddress ?? null;
+  const mainnetBalance = useMainnetBalance(linked);
   const draftValid = ADDRESS_SHAPE.test(draft.trim());
   const hasExtension = hasBrowserWallet();
 
@@ -159,6 +161,118 @@ export default function WalletSettings() {
           Choose where the money lands when one of your invoices is paid.
         </p>
       </div>
+
+      <Card className="bg-white/5 border-white/10 backdrop-blur-md shadow-xl animate-in fade-in slide-in-from-bottom-4 duration-700 delay-200 fill-mode-both" data-testid="card-own-wallet">
+        <CardHeader>
+          <CardTitle className="text-lg font-medium">Your payout wallet · Arc Mainnet</CardTitle>
+          <CardDescription className="text-muted-foreground/80">
+              Link a wallet only you control. Testnet payouts can land there
+              directly.
+              {chainStatus?.mainnetEnabled &&
+                ' Mainnet payments on Arc Mainnet also land here, and a payout wallet is required before you create a mainnet invoice.'}
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {linked ? (
+            <>
+              <div className="flex items-center justify-between gap-4 rounded-lg border border-white/5 bg-white/[0.02] px-4 py-3">
+                <div className="flex items-center gap-3 min-w-0">
+                  <Link2 className="h-5 w-5 text-primary shrink-0" />
+                  <span
+                    className="font-mono text-sm truncate text-foreground/90"
+                    data-testid="text-linked-address"
+                    title={linked}
+                  >
+                    {shorten(linked)}
+                  </span>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => save(null)}
+                  disabled={setPayout.isPending}
+                  data-testid="button-unlink-payout"
+                >
+                  <Unlink className="h-4 w-4 mr-1.5" />
+                  Unlink
+                </Button>
+              </div>
+              <div
+                className="rounded-lg border border-emerald-500/20 bg-emerald-500/[0.05] px-4 py-3"
+                data-testid="card-mainnet-balance"
+              >
+                <p className="text-xs uppercase tracking-wide text-muted-foreground">Balance on Arc Mainnet</p>
+                <p className="mt-1 font-mono text-2xl text-emerald-300" data-testid="text-mainnet-balance">
+                  {mainnetBalance.isLoading
+                    ? '…'
+                    : mainnetBalance.data != null
+                      ? `${formatUsdcWei(mainnetBalance.data)} USDC`
+                      : 'Unavailable right now'}
+                </p>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Read directly from Arc Mainnet. Envelo can see this balance but can never move it.
+                </p>
+              </div>
+              <p className="text-sm text-muted-foreground">
+                Mainnet payments land here, straight from your client&apos;s wallet. Testnet payouts go
+                here too. To use a different wallet, unlink first.
+              </p>
+            </>
+          ) : (
+            <>
+              <WalletSafetyNote context="link" />
+              {hasExtension && (
+                <Button
+                  variant="outline"
+                  onClick={connectExtension}
+                  disabled={connecting}
+                  data-testid="button-connect-extension"
+                >
+                  <PlugZap className="h-4 w-4 mr-1.5" />
+                  {connecting
+                    ? 'Waiting for your wallet\u2026'
+                    : 'Connect wallet extension'}
+                </Button>
+              )}
+              <div className="space-y-2">
+                <Input
+                  value={draft}
+                  onChange={(e) => setDraft(e.target.value)}
+                  placeholder="0x… paste your wallet address"
+                  className="font-mono"
+                  data-testid="input-payout-address"
+                />
+                {draft.trim() !== '' && !draftValid && (
+                  <p className="text-sm text-muted-foreground">
+                    A wallet address starts with 0x followed by 40 letters and
+                    numbers.
+                  </p>
+                )}
+                <Button
+                  onClick={() => save(draft.trim())}
+                  disabled={!draftValid || setPayout.isPending}
+                  data-testid="button-save-payout"
+                >
+                  {setPayout.isPending ? 'Linking\u2026' : 'Link this wallet'}
+                </Button>
+              </div>
+            </>
+          )}
+          {saveError && (
+            <p className="text-sm text-destructive" data-testid="text-payout-error">
+              {saveError}
+            </p>
+          )}
+          <p className="text-xs text-muted-foreground border-t pt-3">
+            Your built-in wallet uses test USDC on Arc Testnet. Double-check
+            the address before linking - funds sent to a wrong address cannot
+            be recovered. After an invoice is paid, the explorer link on its
+            timeline shows the payment.
+            {chainStatus?.mainnetEnabled &&
+              ' Mainnet invoices use real USDC on Arc Mainnet. Clients pay from their own wallet straight to this linked payout wallet. Envelo never holds those funds.'}
+          </p>
+        </CardContent>
+      </Card>
 
       <Card className="bg-white/5 border-white/10 backdrop-blur-md shadow-xl animate-in fade-in slide-in-from-bottom-4 duration-700 delay-100 fill-mode-both" data-testid="card-managed-wallet">
         <CardHeader>
@@ -268,104 +382,6 @@ export default function WalletSettings() {
                 ' Link your own wallet below and a button appears here to move this balance there.'}
             </p>
           )}
-        </CardContent>
-      </Card>
-
-      <Card className="bg-white/5 border-white/10 backdrop-blur-md shadow-xl animate-in fade-in slide-in-from-bottom-4 duration-700 delay-200 fill-mode-both" data-testid="card-own-wallet">
-        <CardHeader>
-          <CardTitle className="text-lg font-medium">Your own wallet</CardTitle>
-          <CardDescription className="text-muted-foreground/80">
-              Link a wallet only you control. Testnet payouts can land there
-              directly.
-              {chainStatus?.mainnetEnabled &&
-                ' Mainnet payments on Arc Mainnet also land here, and a payout wallet is required before you create a mainnet invoice.'}
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {linked ? (
-            <>
-              <div className="flex items-center justify-between gap-4 rounded-lg border border-white/5 bg-white/[0.02] px-4 py-3">
-                <div className="flex items-center gap-3 min-w-0">
-                  <Link2 className="h-5 w-5 text-primary shrink-0" />
-                  <span
-                    className="font-mono text-sm truncate text-foreground/90"
-                    data-testid="text-linked-address"
-                    title={linked}
-                  >
-                    {shorten(linked)}
-                  </span>
-                </div>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => save(null)}
-                  disabled={setPayout.isPending}
-                  data-testid="button-unlink-payout"
-                >
-                  <Unlink className="h-4 w-4 mr-1.5" />
-                  Unlink
-                </Button>
-              </div>
-              <p className="text-sm text-muted-foreground">
-                Testnet payouts now go straight to this address.
-                {chainStatus?.mainnetEnabled &&
-                  ' Mainnet payments on Arc Mainnet also land here.'}{' '}
-                To use a different wallet, unlink first.
-              </p>
-            </>
-          ) : (
-            <>
-              <WalletSafetyNote context="link" />
-              {hasExtension && (
-                <Button
-                  variant="outline"
-                  onClick={connectExtension}
-                  disabled={connecting}
-                  data-testid="button-connect-extension"
-                >
-                  <PlugZap className="h-4 w-4 mr-1.5" />
-                  {connecting
-                    ? 'Waiting for your wallet\u2026'
-                    : 'Connect wallet extension'}
-                </Button>
-              )}
-              <div className="space-y-2">
-                <Input
-                  value={draft}
-                  onChange={(e) => setDraft(e.target.value)}
-                  placeholder="0x… paste your wallet address"
-                  className="font-mono"
-                  data-testid="input-payout-address"
-                />
-                {draft.trim() !== '' && !draftValid && (
-                  <p className="text-sm text-muted-foreground">
-                    A wallet address starts with 0x followed by 40 letters and
-                    numbers.
-                  </p>
-                )}
-                <Button
-                  onClick={() => save(draft.trim())}
-                  disabled={!draftValid || setPayout.isPending}
-                  data-testid="button-save-payout"
-                >
-                  {setPayout.isPending ? 'Linking\u2026' : 'Link this wallet'}
-                </Button>
-              </div>
-            </>
-          )}
-          {saveError && (
-            <p className="text-sm text-destructive" data-testid="text-payout-error">
-              {saveError}
-            </p>
-          )}
-          <p className="text-xs text-muted-foreground border-t pt-3">
-            Your built-in wallet uses test USDC on Arc Testnet. Double-check
-            the address before linking - funds sent to a wrong address cannot
-            be recovered. After an invoice is paid, the explorer link on its
-            timeline shows the payment.
-            {chainStatus?.mainnetEnabled &&
-              ' Mainnet invoices use real USDC on Arc Mainnet. Clients pay from their own wallet straight to this linked payout wallet. Envelo never holds those funds.'}
-          </p>
         </CardContent>
       </Card>
 

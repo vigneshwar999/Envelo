@@ -79,7 +79,7 @@ export function NewInvoice() {
   const chainStatus = useGetChainStatus();
   const mainnetEnabled = chainStatus.data?.mainnetEnabled === true;
   const liveChain = chainStatus.data?.chains.find((c) => c.key === 'mainnet');
-  const [network, setNetwork] = useState<InvoiceInputNetwork>('testnet');
+  const [network, setNetwork] = useState<InvoiceInputNetwork>('mainnet');
   const liveSelected = network === 'mainnet' && mainnetEnabled;
   const payoutMissing = liveSelected && !me?.payoutAddress;
 
@@ -261,24 +261,6 @@ export function NewInvoice() {
                   <div className="grid grid-cols-2 gap-3">
                     <button
                       type="button"
-                      onClick={() => setNetwork('testnet')}
-                      aria-pressed={!liveSelected}
-                      className={`rounded-lg border p-3 text-left transition-colors ${
-                        !liveSelected
-                          ? 'border-primary/60 bg-primary/10'
-                          : 'border-white/10 bg-white/[0.02] hover:bg-white/[0.05]'
-                      }`}
-                      data-testid="button-network-testnet"
-                    >
-                      <span className="flex items-center gap-2 text-sm font-medium">
-                        <FlaskConical className="h-4 w-4 text-primary" /> Testnet
-                      </span>
-                      <span className="mt-1 block text-xs leading-relaxed text-muted-foreground">
-                        Arc Testnet, free test USDC. Your built-in wallet pays the anchor fee.
-                      </span>
-                    </button>
-                    <button
-                      type="button"
                       onClick={() => setNetwork('mainnet')}
                       aria-pressed={liveSelected}
                       className={`rounded-lg border p-3 text-left transition-colors ${
@@ -293,6 +275,24 @@ export function NewInvoice() {
                       </span>
                       <span className="mt-1 block text-xs leading-relaxed text-muted-foreground">
                         Arc Mainnet, real USDC. Your client pays from their own wallet straight to your payout wallet.
+                      </span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setNetwork('testnet')}
+                      aria-pressed={!liveSelected}
+                      className={`rounded-lg border p-3 text-left transition-colors ${
+                        !liveSelected
+                          ? 'border-primary/60 bg-primary/10'
+                          : 'border-white/10 bg-white/[0.02] hover:bg-white/[0.05]'
+                      }`}
+                      data-testid="button-network-testnet"
+                    >
+                      <span className="flex items-center gap-2 text-sm font-medium">
+                        <FlaskConical className="h-4 w-4 text-primary" /> Testnet
+                      </span>
+                      <span className="mt-1 block text-xs leading-relaxed text-muted-foreground">
+                        Arc Testnet, free test USDC. Your built-in wallet pays the anchor fee.
                       </span>
                     </button>
                   </div>
@@ -490,7 +490,7 @@ export function NewInvoice() {
                 {(isSealing || createInvoiceMutation.isPending) ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Sealing...
+                    Sealing and anchoring...
                   </>
                 ) : (
                   <>

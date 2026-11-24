@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useRoute, Link } from 'wouter';
 import { useMe } from '@/context/UserContext';
 import { 
@@ -7,7 +7,7 @@ import {
   useListUsers, useRewrapInvoiceKey, InvoiceEvent,
   getGetInvoiceQueryKey, getGetEnvelopeQueryKey, getListInvoiceEventsQueryKey,
   getListGrantsQueryKey, getListInvoicesQueryKey, getGetDashboardSummaryQueryKey,
-  getListUsersQueryKey,
+  getListUsersQueryKey, driveInvoiceAnchor,
 } from '@workspace/api-client-react';
 import { openEnvelope, computeFingerprint, InvoiceDocument, rewrapKeyForUser, buildInvoiceCopyFile } from '@/lib/crypto';
 import { format } from 'date-fns';
@@ -51,6 +51,29 @@ export function InvoiceDetail() {
     },
   });
   const { data: events } = useListInvoiceEvents(id, { query: { enabled: !!id, queryKey: getListInvoiceEventsQueryKey(id) } });
+
+  // The page renders right away; a still-pending anchor is finished by the
+  // server in a separate background request (never blocking this page),
+  // retried every 15 s while it stays pending. One request at a time.
+  const anchorPending = invoice?.anchorStatus === 'pending';
+  const drivingAnchor = useRef(false);
+  useEffect(() => {
+    if (!id || !anchorPending) return;
+    const drive = () => {
+      if (drivingAnchor.current) return;
+      drivingAnchor.current = true;
+      driveInvoiceAnchor(id)
+        .catch(() => undefined)
+        .finally(() => {
+          drivingAnchor.current = false;
+          void queryClient.invalidateQueries({ queryKey: getGetInvoiceQueryKey(id) });
+          void queryClient.invalidateQueries({ queryKey: getListInvoiceEventsQueryKey(id) });
+        });
+    };
+    drive();
+    const timer = setInterval(drive, 15_000);
+    return () => clearInterval(timer);
+  }, [id, anchorPending, queryClient]);
   // myCopyLocked means the server already knows this user's wrapped copy is
   // gone (key reset) - skip the envelope fetch instead of collecting its 409.
   const { data: envelope, error: envelopeError } = useGetEnvelope(id, { 

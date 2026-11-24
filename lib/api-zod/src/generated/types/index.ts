@@ -6,6 +6,7 @@
  * OpenAPI spec version: 0.2.0
  */
 
+export * from './anchorDriveResult';
 export * from './anchorPreview';
 export * from './anchorPreviewAnchorPaidBy';
 export * from './anchorPreviewNetworkKey';

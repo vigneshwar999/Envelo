@@ -20,6 +20,7 @@ import type {
 } from '@tanstack/react-query';
 
 import type {
+  AnchorDriveResult,
   AnchorPreview,
   ApiMessage,
   BalanceTransferResult,
@@ -1558,6 +1559,77 @@ export const usePayInvoice = <TError = ErrorType<UnauthorizedResponse | ApiMessa
         TContext
       > => {
       return useMutation(getPayInvoiceMutationOptions(options));
+    }
+
+export const getDriveInvoiceAnchorUrl = (invoiceId: string,) => {
+
+
+
+
+  return `/api/invoices/${invoiceId}/anchor`
+}
+
+/**
+ * @summary Finish a pending onchain anchor inside this request. The invoice page calls it in the background while it shows the invoice, so the page never waits for the chain. Safe to call repeatedly; an anchored invoice returns at once.
+ */
+export const driveInvoiceAnchor = async (invoiceId: string, options?: Parameters<typeof customFetch>[1]): Promise<AnchorDriveResult> => {
+
+  return customFetch<AnchorDriveResult>(getDriveInvoiceAnchorUrl(invoiceId),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+
+export const getDriveInvoiceAnchorMutationOptions = <TError = ErrorType<UnauthorizedResponse | ApiMessage>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof driveInvoiceAnchor>>, TError,{invoiceId: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof driveInvoiceAnchor>>, TError,{invoiceId: string}, TContext> => {
+
+const mutationKey = ['driveInvoiceAnchor'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof driveInvoiceAnchor>>, {invoiceId: string}> = (props) => {
+          const {invoiceId} = props ?? {};
+
+          return  driveInvoiceAnchor(invoiceId,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DriveInvoiceAnchorMutationResult = NonNullable<Awaited<ReturnType<typeof driveInvoiceAnchor>>>
+
+    export type DriveInvoiceAnchorMutationError = ErrorType<UnauthorizedResponse | ApiMessage>
+
+    /**
+ * @summary Finish a pending onchain anchor inside this request. The invoice page calls it in the background while it shows the invoice, so the page never waits for the chain. Safe to call repeatedly; an anchored invoice returns at once.
+ */
+export const useDriveInvoiceAnchor = <TError = ErrorType<UnauthorizedResponse | ApiMessage>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof driveInvoiceAnchor>>, TError,{invoiceId: string}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof driveInvoiceAnchor>>,
+        TError,
+        {invoiceId: string},
+        TContext
+      > => {
+      return useMutation(getDriveInvoiceAnchorMutationOptions(options));
     }
 
 export const getPaymentSubmittedUrl = (invoiceId: string,) => {

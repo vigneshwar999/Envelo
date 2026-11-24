@@ -23,6 +23,7 @@ import {
   SlidersHorizontal,
 } from 'lucide-react';
 import { DepositWithdrawDialog } from './DepositWithdrawDialog';
+import { formatUsdcWei, useMainnetBalance } from '@/lib/mainnetBalance';
 
 const basePath = import.meta.env.BASE_URL.replace(/\/$/, '');
 
@@ -51,6 +52,9 @@ export function WalletMenu() {
     query: { enabled: open || dialogOpen, queryKey: getGetMyWalletQueryKey() },
   });
   const wallet = walletQuery.data;
+  const payout = me?.payoutAddress ?? null;
+  // Read-only balance from Arc Mainnet's public RPC, only while the menu is open.
+  const mainnetBalance = useMainnetBalance(payout, open);
 
   const copyAddress = async () => {
     if (!address) return;
@@ -84,6 +88,37 @@ export function WalletMenu() {
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-72 bg-card/90 backdrop-blur-xl border-white/10 shadow-2xl">
+          <div className="px-3 pt-2.5 pb-2.5" data-testid="menu-mainnet-wallet">
+            <div className="flex items-baseline justify-between">
+              <span className="text-sm text-muted-foreground">Mainnet payout wallet</span>
+              {payout ? (
+                mainnetBalance.isLoading ? (
+                  <Skeleton className="h-4 w-20" />
+                ) : (
+                  <span className="text-sm font-semibold text-emerald-300" data-testid="text-menu-mainnet-balance">
+                    {mainnetBalance.data != null
+                      ? `${formatUsdcWei(mainnetBalance.data)} USDC`
+                      : 'Balance unavailable'}
+                  </span>
+                )
+              ) : null}
+            </div>
+            {payout ? (
+              <p className="mt-1 font-mono text-xs text-muted-foreground" title={payout}>
+                {shorten(payout)} · Arc Mainnet
+              </p>
+            ) : (
+              <Link
+                href="/wallet"
+                className="mt-1 block text-xs text-amber-300 underline"
+                onClick={() => setOpen(false)}
+                data-testid="link-menu-link-payout"
+              >
+                Link your own wallet to receive mainnet payments
+              </Link>
+            )}
+          </div>
+          <DropdownMenuSeparator />
           <div className="flex items-baseline justify-between px-3 pt-2.5 pb-1.5">
             <span className="text-sm text-muted-foreground">Testnet wallet</span>
             {walletQuery.isLoading ? (

@@ -5,7 +5,6 @@ import { db, usersTable } from "@workspace/db";
 import { GetAnchorPreviewResponse, GetChainStatusResponse } from "@workspace/api-zod";
 import {
   anchorPayerFor,
-  attemptChainSetup,
   decideAffordability,
   ensureOperatorWallet,
   ensureWalletFor,
@@ -52,10 +51,10 @@ router.get("/chain/status", async (req, res) => {
   // Public requests and unrelated invoice reads must not wait for this DB write.
   await ensureOperatorWallet();
 
-  // Best-effort background pass: re-drive any anchor still pending on a
-  // reachable network (a sender who topped up, an operator submission that
-  // timed out).
-  attemptChainSetup().catch(() => {});
+  // No detached anchor work here: on serverless it can be paused after the
+  // response while holding the per-network send lock, stalling later
+  // requests. Pending anchors are finished at creation and by the invoice
+  // page (POST /invoices/:id/anchor), each within its own request.
 
   const [testnetConnected, mainnetConnected] = await Promise.all([
     isRpcConnected(ARC_TESTNET),
