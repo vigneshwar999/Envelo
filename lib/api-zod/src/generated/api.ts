@@ -447,6 +447,18 @@ export const PayInvoiceResponse = zod.object({
 
 
 /**
+ * @summary Finish a pending onchain anchor inside this request. The invoice page calls it in the background while it shows the invoice, so the page never waits for the chain. Safe to call repeatedly; an anchored invoice returns at once.
+ */
+export const DriveInvoiceAnchorParams = zod.object({
+  "invoiceId": zod.coerce.string()
+})
+
+export const DriveInvoiceAnchorResponse = zod.object({
+  "anchored": zod.boolean().describe('True once the invoice fingerprint is confirmed in the registry on its network.')
+})
+
+
+/**
  * @summary Tell the server about a payment the client sent from their OWN wallet. The server verifies the receipt against the registry (InvoicePaid event, committed payee, exact amount) before marking the invoice paid.
  */
 export const PaymentSubmittedParams = zod.object({

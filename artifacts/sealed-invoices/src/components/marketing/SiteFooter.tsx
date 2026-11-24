@@ -208,10 +208,10 @@ export function SiteFooter() {
             </span>
           </div>
           <p className="max-w-2xl">
-            Sandbox uses free test USDC and built-in wallets on Arc Testnet.
-            Live invoices use real USDC on Arc Mainnet, paid from the
+            Testnet invoices use free test USDC and built-in wallets on Arc Testnet.
+            Mainnet invoices use real USDC on Arc Mainnet, paid from the
             client&apos;s own wallet to the sender&apos;s own wallet. Envelo
-            pays the small live anchor fee and never holds real funds. Payment
+            pays the small mainnet anchor fee and never holds real funds. Payment
             records are public onchain.
           </p>
         </div>

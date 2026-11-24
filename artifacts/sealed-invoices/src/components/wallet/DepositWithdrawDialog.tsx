@@ -133,8 +133,8 @@ export function DepositWithdrawDialog({
         <DialogHeader>
           <DialogTitle>Deposit &amp; withdraw</DialogTitle>
           <DialogDescription>
-            Manage test USDC in your built-in sandbox wallet on Arc Testnet.
-            Live invoices use your own wallet.
+            Manage test USDC in your built-in testnet wallet on Arc Testnet.
+            Mainnet invoices use your own wallet.
           </DialogDescription>
         </DialogHeader>
         <Tabs value={tab} onValueChange={(v) => setTab(v as 'deposit' | 'withdraw')}>

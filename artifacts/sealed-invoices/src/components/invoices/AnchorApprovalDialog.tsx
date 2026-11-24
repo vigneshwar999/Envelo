@@ -77,7 +77,7 @@ export function AnchorApprovalDialog({
           <DialogTitle className="pt-2 text-center text-xl">Approve transaction</DialogTitle>
           <DialogDescription className="text-center">
             {live
-              ? 'Review what will be written to Arc Mainnet before your live invoice is sealed.'
+              ? 'Review what will be written to Arc Mainnet before your mainnet invoice is sealed.'
               : 'Review what will be written to Arc before your invoice is sealed.'}
           </DialogDescription>
         </DialogHeader>
@@ -119,7 +119,7 @@ export function AnchorApprovalDialog({
                   <span className="text-xs text-muted-foreground">· chain {p.chainId}</span>
                   {live && (
                     <span className="ml-2 rounded-full border border-emerald-400/40 bg-emerald-500/10 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-emerald-300">
-                      Live
+                      Mainnet
                     </span>
                   )}
                 </>
@@ -206,7 +206,7 @@ export function AnchorApprovalDialog({
             >
               <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-emerald-400" />
               <span>
-                Live invoice. The anchor commits to your payout wallet
+                Mainnet invoice. The anchor commits to your payout wallet
                 {p.payoutAddress ? (
                   <>
                     {' '}

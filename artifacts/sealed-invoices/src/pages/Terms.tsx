@@ -40,11 +40,11 @@ const sections: LegalSection[] = [
     body: (
       <>
         <p>
-          Sandbox invoices use built-in wallets and test USDC on{" "}
-          <strong>Arc Testnet</strong>. Test USDC has no real-world value. Live
+          Testnet invoices use built-in wallets and test USDC on{" "}
+          <strong>Arc Testnet</strong>. Test USDC has no real-world value. Mainnet
           invoices use real USDC on <strong>Arc Mainnet</strong>. The client
           pays from their own browser wallet straight to the sender&apos;s
-          linked payout wallet. Envelo pays the small live anchor fee and never
+          linked payout wallet. Envelo pays the small mainnet anchor fee and never
           holds real funds. Envelo is not a bank, money transmitter, payment
           processor, or custodian, and nothing in the app is financial, legal,
           accounting, or tax advice.
@@ -138,19 +138,19 @@ const sections: LegalSection[] = [
     ),
   },
   {
-    heading: "Sandbox and live wallets",
+    heading: "Testnet and mainnet wallets",
     body: (
       <>
         <p>
-          For sandbox use, Envelo creates a built-in Arc Testnet wallet for each
+          For testnet use, Envelo creates a built-in Arc Testnet wallet for each
           account and holds its private key on our servers. These wallets hold
-          only test USDC. They are not used for live invoices.
+          only test USDC. They are not used for mainnet invoices.
         </p>
         <p>
           Test balances exist to power the demonstration. We may top up,
           adjust, or reset them at any time. Do not treat any balance shown in
-          Envelo as a store of value. Live invoices require a linked,
-          self-owned payout wallet. Live payments go straight from the
+          Envelo as a store of value. Mainnet invoices require a linked,
+          self-owned payout wallet. Mainnet payments go straight from the
           client&apos;s own wallet to that payout wallet. Managing a self-owned
           wallet is entirely your responsibility.
         </p>
@@ -272,7 +272,7 @@ export default function Terms() {
       lastUpdated="August 30, 2026"
       summaryItems={[
         <>
-          Sandbox uses <strong>test USDC on Arc Testnet</strong>. Live invoices
+          Testnet uses <strong>test USDC on Arc Testnet</strong>. Mainnet invoices
           use real USDC on Arc Mainnet, paid wallet to wallet. Envelo never
           holds real funds.
         </>,

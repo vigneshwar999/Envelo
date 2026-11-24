@@ -58,7 +58,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
             </span>
             <span className="ml-0.5 hidden items-center rounded-full border border-white/10 bg-white/5 px-2 py-0.5 text-[8px] font-bold uppercase tracking-wide text-muted-foreground lg:inline-flex">
               {chainStatus?.mainnetEnabled
-                ? "Arc Testnet + Mainnet"
+                ? "Arc Mainnet"
                 : "Arc Testnet"}
             </span>
           </Link>

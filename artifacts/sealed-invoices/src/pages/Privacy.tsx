@@ -15,7 +15,7 @@ const sections: LegalSection[] = [
       <p>
         This policy explains what information Envelo handles when you use the
         web app and its API, who can see what, and what stays sealed. Envelo
-        offers a sandbox on Arc Testnet and live invoicing on Arc Mainnet. The
+        offers free invoicing on Arc Testnet and real invoicing on Arc Mainnet. The
         same honesty we apply to the product applies here. The{" "}
         <Link href="/how-it-works" className={linkClass}>
           How it works
@@ -50,7 +50,7 @@ const sections: LegalSection[] = [
             <strong>Payout address.</strong> If you link a self-owned wallet
             address for payouts, we store it with your account and do not list
             it in the user directory. A linked payout address is required for
-            live invoices. Once used, the address and payment are public
+            mainnet invoices. Once used, the address and payment are public
             onchain.
           </li>
         </ul>
@@ -63,10 +63,10 @@ const sections: LegalSection[] = [
       <>
         <ul>
           <li>
-            <strong>Sandbox wallet records.</strong> Envelo creates a built-in
+            <strong>Testnet wallet records.</strong> Envelo creates a built-in
             Arc Testnet wallet for your account and keeps its address,
             transaction hashes, and test-USDC movements so the app can show
-            balances and receipts. Live payments do not use this wallet.
+            balances and receipts. Mainnet payments do not use this wallet.
           </li>
           <li>
             <strong>Invoice activity.</strong> An audit trail of workflow
@@ -130,7 +130,7 @@ const sections: LegalSection[] = [
           <li>
             <strong>payment transactions</strong>, including sending and
             receiving wallet addresses and USDC amounts, visible on the public
-            block explorer. Sandbox uses test USDC; live uses real USDC.
+            block explorer. Testnet uses test USDC; mainnet uses real USDC.
           </li>
         </ul>
         <p>
@@ -334,8 +334,8 @@ export default function Privacy() {
           them to work.
         </>,
         <>
-          Fingerprints and payments live on public Arc networks. Sandbox uses
-          test USDC on Arc Testnet, and live uses real USDC on Arc Mainnet.
+          Fingerprints and payments live on public Arc networks. Testnet uses
+          test USDC on Arc Testnet, and mainnet uses real USDC on Arc Mainnet.
           Amounts and wallet addresses are visible to anyone.
         </>,
         <>

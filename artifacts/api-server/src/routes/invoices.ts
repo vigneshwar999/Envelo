@@ -13,6 +13,7 @@ import {
 import {
   CreateInvoiceBody,
   CreateInvoiceResponse,
+  DriveInvoiceAnchorResponse,
   GetEnvelopeResponse,
   GetInvoiceResponse,
   GetPayPreviewResponse,
@@ -301,15 +302,22 @@ router.post("/invoices", async (req, res) => {
     });
     return;
   }
-  const invoice = result.invoice;
+  const created = result.invoice;
 
-  // Anchor in the background so creation stays fast; status remains honest.
-  anchorInvoiceOnChain(invoice.id).catch((err) =>
-    req.log.warn({ err, invoiceId: invoice.id, msg: "background anchor failed" }),
-  );
+  // Anchor within this request. Work left running after the response can be
+  // paused by the serverless runtime while it holds the per-network send
+  // lock, which then stalls every later read. Arc confirms in about a
+  // second, so sealing stays quick; if the anchor fails it stays "pending"
+  // and the invoice page finishes it via POST /invoices/:id/anchor.
+  try {
+    await anchorInvoiceOnChain(created.id);
+  } catch (err) {
+    req.log.warn({ err, invoiceId: created.id, msg: "anchor at creation failed" });
+  }
+  const invoice = (await findInvoice(created.id)) ?? created;
 
-  // Tell the client's phone right away - fire-and-forget like the anchor: a
-  // push problem must never fail (or slow down) the invoice itself.
+  // Tell the client's phone right away - fire-and-forget: a push problem
+  // must never fail (or slow down) the invoice itself.
   notifyClientOfNewInvoice(invoice, creator.displayName).catch((err) =>
     req.log.warn({ err, invoiceId: invoice.id, msg: "invoice push notification failed" }),
   );
@@ -350,16 +358,11 @@ router.get("/invoices/:invoiceId", async (req, res) => {
     res.status(404).json({ error: "Invoice not found." });
     return;
   }
-  // Serverless runtimes can stop the detached create-time anchor task as soon
-  // as the response ends. A participant reading a pending invoice must await
-  // the existing signed intent's reconciliation within this request.
-  if (found.anchorStatus !== "anchored") {
-    await anchorInvoiceOnChain(found.id);
-  }
-  const latest = found.anchorStatus === "anchored"
-    ? found
-    : (await findInvoice(found.id)) ?? found;
-  const invoice = await reconcileIfDue(latest);
+  // Reads never wait for the chain: an anchor can take seconds (or longer
+  // behind the per-network send lock), and the page must render at once. A
+  // pending anchor is driven by POST /invoices/:id/anchor, which the invoice
+  // page calls in the background and which runs within its own request.
+  const invoice = await reconcileIfDue(found);
   const userRows = await db.select().from(usersTable);
   const names = new Map(userRows.map((row) => [row.id, row.displayName]));
   const access = {
@@ -368,6 +371,30 @@ router.get("/invoices/:invoiceId", async (req, res) => {
     publicKeyJwkById: new Map(userRows.map((row) => [row.id, row.publicKeyJwk])),
   };
   res.json(GetInvoiceResponse.parse(toInvoice(invoice, names, access)));
+});
+
+// Finish a pending anchor inside this request. Serverless runtimes can pause
+// work left running after a response, so anchoring is always awaited by the
+// request that starts it - here, or at creation. Idempotent: the anchor code
+// reuses an already-signed intent and returns at once when anchored.
+router.post("/invoices/:invoiceId/anchor", async (req, res) => {
+  const userId = userIdOf(req);
+  const found = await findInvoice(req.params.invoiceId);
+  if (!found || !(await canSeeInvoice(found, userId))) {
+    res.status(404).json({ error: "Invoice not found." });
+    return;
+  }
+  if (found.anchorStatus === "anchored") {
+    res.json(DriveInvoiceAnchorResponse.parse({ anchored: true }));
+    return;
+  }
+  let anchored = false;
+  try {
+    anchored = await anchorInvoiceOnChain(found.id);
+  } catch (err) {
+    req.log.warn({ err, invoiceId: found.id, msg: "anchor attempt failed" });
+  }
+  res.json(DriveInvoiceAnchorResponse.parse({ anchored }));
 });
 
 router.post("/invoices/:invoiceId/pay", async (req, res) => {
@@ -394,7 +421,7 @@ router.post("/invoices/:invoiceId/pay", async (req, res) => {
     // Real money never moves through a server-held key. Live invoices are
     // paid from the client's own wallet and verified by payment-submitted.
     res.status(409).json({
-      error: `This is a live invoice on ${network.name}. Pay it from your own wallet using the Pay button - Envelo never holds real funds for you.`,
+      error: `This is a mainnet invoice on ${network.name}. Pay it from your own wallet using the Pay button - Envelo never holds real funds for you.`,
     });
     return;
   }
@@ -659,7 +686,7 @@ router.get("/invoices/:invoiceId/pay-preview", async (req, res) => {
     : !connected
       ? `${network.name} is not reachable right now, so the payment cannot be prepared. Try again in a moment.`
       : liveHalted
-        ? "Live payments are paused for maintenance. The invoice stays valid; try again later."
+        ? "Mainnet payments are paused for maintenance. The invoice stays valid; try again later."
         : !anchorVerified
           ? "This invoice is still being anchored on Arc. Payment unlocks after its transaction confirms."
           : paymentMode === "external" && buildExternalPayment(invoice) === null

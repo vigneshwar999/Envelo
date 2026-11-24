@@ -90,8 +90,8 @@ export default function PrivateUsdc() {
           <h2 className="text-2xl font-light tracking-tight">Shield test USDC</h2>
           <p className="text-sm text-muted-foreground/80 leading-relaxed max-w-2xl">
             The planned flow will let you move public test USDC into a protected
-            balance from your built-in sandbox wallet on Arc Testnet after Arc
-            releases official confidential-transfer support. Live invoices on
+            balance from your built-in testnet wallet on Arc Testnet after Arc
+            releases official confidential-transfer support. Mainnet invoices on
             Arc Mainnet are paid from your own wallet. Privacy guarantees will
             follow Arc's published implementation.
           </p>

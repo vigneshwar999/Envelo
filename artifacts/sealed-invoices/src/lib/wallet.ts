@@ -3,7 +3,10 @@
 // Used to pay an invoice from the client's own funds: the server hands us the
 // exact transaction (to, data, value, chain) and this module only asks the
 // wallet to be on that chain and to send it. No signing keys ever touch the
-// app, and no money math happens here.
+// app, and no money math happens here. Before the wallet opens, the request
+// must pass the browser-side guard in ./paymentGuard.
+
+import { checkPaymentRequest, type WhatTheSheetShows } from './paymentGuard';
 
 export interface ExternalPaymentRequest {
   chainId: number;
@@ -202,7 +205,14 @@ export async function sendPayment(from: string, tx: ExternalPaymentRequest): Pro
 export async function payFromBrowserWallet(
   tx: ExternalPaymentRequest,
   chain: WalletChainInfo,
+  shown: WhatTheSheetShows,
 ): Promise<{ txHash: string; from: string }> {
+  // Checked before the wallet is even opened: only Envelo's official
+  // registry, only payInvoice, only the payee and amount on screen.
+  const problem = checkPaymentRequest(tx, shown);
+  if (problem) {
+    throw new WalletError('failed', `Safety check stopped this payment before your wallet opened. ${problem}`);
+  }
   const from = await connectWallet();
   await ensureChain(chain);
   const txHash = await sendPayment(from, tx);
