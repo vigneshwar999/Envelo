@@ -33,6 +33,7 @@ import {
   ReceiptText,
 } from 'lucide-react';
 import { connectWallet, hasBrowserWallet } from '@/lib/wallet';
+import { WalletSafetyNote } from '@/components/wallet/WalletSafetyNote';
 
 const ADDRESS_SHAPE = /^0x[0-9a-fA-F]{40}$/;
 
@@ -314,6 +315,7 @@ export default function WalletSettings() {
             </>
           ) : (
             <>
+              <WalletSafetyNote context="link" />
               {hasExtension && (
                 <Button
                   variant="outline"

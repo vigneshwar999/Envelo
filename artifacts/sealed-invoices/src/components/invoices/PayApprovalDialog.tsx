@@ -21,6 +21,7 @@ import {
   publicRpcUrlFor,
   WalletError,
 } from '@/lib/wallet';
+import { WalletSafetyNote } from '@/components/wallet/WalletSafetyNote';
 
 function shorten(address: string) {
   return `${address.slice(0, 8)}…${address.slice(-6)}`;
@@ -191,12 +192,16 @@ export function PayApprovalDialog({
     setStep({ kind: 'wallet' });
     let txHash: string;
     try {
-      const sent = await payFromBrowserWallet(tx, {
-        chainIdHex: tx.chainIdHex,
-        name: p.network,
-        rpcUrl,
-        explorerBaseUrl: p.explorerBaseUrl,
-      });
+      const sent = await payFromBrowserWallet(
+        tx,
+        {
+          chainIdHex: tx.chainIdHex,
+          name: p.network,
+          rpcUrl,
+          explorerBaseUrl: p.explorerBaseUrl,
+        },
+        { chainId: p.chainId, amountUsdc: p.amountUsdc, payeeAddress: p.payeeAddress ?? null },
+      );
       txHash = sent.txHash;
     } catch (err) {
       const message =
@@ -445,6 +450,10 @@ export function PayApprovalDialog({
                 wallet only.
               </span>
             </div>
+          )}
+
+          {!preview.isLoading && p && externalOffered && walletAvailable && !sentHash && (
+            <WalletSafetyNote context="pay" />
           )}
 
           {step.kind === 'wallet' && (
