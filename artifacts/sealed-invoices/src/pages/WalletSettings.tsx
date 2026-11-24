@@ -74,8 +74,8 @@ export default function WalletSettings() {
           toast({
             title: address ? 'Wallet linked' : 'Back to the app-managed wallet',
             description: address
-              ? 'Sandbox payouts can now land in your own wallet. Live payments also use it when live invoicing is on.'
-              : 'Sandbox payments will collect in your built-in wallet again. A linked wallet is required for live invoices.',
+              ? 'Testnet payouts can now land in your own wallet. Mainnet payments also use it when mainnet invoicing is on.'
+              : 'Testnet payments will collect in your built-in wallet again. A linked wallet is required for mainnet invoices.',
           });
         },
       },
@@ -161,9 +161,9 @@ export default function WalletSettings() {
 
       <Card className="bg-white/5 border-white/10 backdrop-blur-md shadow-xl animate-in fade-in slide-in-from-bottom-4 duration-700 delay-100 fill-mode-both" data-testid="card-managed-wallet">
         <CardHeader>
-            <CardTitle className="text-lg font-medium">Built-in sandbox wallet</CardTitle>
+            <CardTitle className="text-lg font-medium">Built-in testnet wallet</CardTitle>
           <CardDescription className="text-muted-foreground/80">
-            Your built-in sandbox wallet, created automatically at sign-up.
+            Your built-in testnet wallet, created automatically at sign-up.
             It holds test USDC on Arc Testnet, and the app holds its keys.
           </CardDescription>
         </CardHeader>
@@ -221,7 +221,7 @@ export default function WalletSettings() {
                     className="text-sm text-muted-foreground"
                     data-testid="text-nothing-to-move"
                   >
-                    Nothing to move right now - new sandbox payments already land
+                    Nothing to move right now - new testnet payments already land
                     in your own linked wallet.
                   </p>
                 )
@@ -274,10 +274,10 @@ export default function WalletSettings() {
         <CardHeader>
           <CardTitle className="text-lg font-medium">Your own wallet</CardTitle>
           <CardDescription className="text-muted-foreground/80">
-              Link a wallet only you control. Sandbox payouts can land there
+              Link a wallet only you control. Testnet payouts can land there
               directly.
               {chainStatus?.mainnetEnabled &&
-                ' Live payments on Arc Mainnet also land here, and a payout wallet is required before you create a live invoice.'}
+                ' Mainnet payments on Arc Mainnet also land here, and a payout wallet is required before you create a mainnet invoice.'}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -306,9 +306,9 @@ export default function WalletSettings() {
                 </Button>
               </div>
               <p className="text-sm text-muted-foreground">
-                Sandbox payouts now go straight to this address.
+                Testnet payouts now go straight to this address.
                 {chainStatus?.mainnetEnabled &&
-                  ' Live payments on Arc Mainnet also land here.'}{' '}
+                  ' Mainnet payments on Arc Mainnet also land here.'}{' '}
                 To use a different wallet, unlink first.
               </p>
             </>
@@ -362,7 +362,7 @@ export default function WalletSettings() {
             be recovered. After an invoice is paid, the explorer link on its
             timeline shows the payment.
             {chainStatus?.mainnetEnabled &&
-              ' Live invoices use real USDC on Arc Mainnet. Clients pay from their own wallet straight to this linked payout wallet. Envelo never holds those funds.'}
+              ' Mainnet invoices use real USDC on Arc Mainnet. Clients pay from their own wallet straight to this linked payout wallet. Envelo never holds those funds.'}
           </p>
         </CardContent>
       </Card>

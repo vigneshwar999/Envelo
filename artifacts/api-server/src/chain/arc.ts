@@ -1563,7 +1563,7 @@ export async function payInvoiceOnChain(args: {
   const registry = registryFor(invRow);
   const { network } = registry;
   if (network.mode === "live") {
-    throw new Error("Live invoices are paid from the client's own wallet");
+    throw new Error("Mainnet invoices are paid from the client's own wallet");
   }
   const contractAddress = registry.address ?? (await getLegacyContractAddress());
   if (!contractAddress) throw new Error("Registry contract not deployed yet");

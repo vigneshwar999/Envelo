@@ -271,7 +271,7 @@ export function NewInvoice() {
                       data-testid="button-network-testnet"
                     >
                       <span className="flex items-center gap-2 text-sm font-medium">
-                        <FlaskConical className="h-4 w-4 text-primary" /> Sandbox
+                        <FlaskConical className="h-4 w-4 text-primary" /> Testnet
                       </span>
                       <span className="mt-1 block text-xs leading-relaxed text-muted-foreground">
                         Arc Testnet, free test USDC. Your built-in wallet pays the anchor fee.
@@ -289,7 +289,7 @@ export function NewInvoice() {
                       data-testid="button-network-mainnet"
                     >
                       <span className="flex items-center gap-2 text-sm font-medium">
-                        <Globe className="h-4 w-4 text-emerald-400" /> Live
+                        <Globe className="h-4 w-4 text-emerald-400" /> Mainnet
                       </span>
                       <span className="mt-1 block text-xs leading-relaxed text-muted-foreground">
                         Arc Mainnet, real USDC. Your client pays from their own wallet straight to your payout wallet.
@@ -303,7 +303,7 @@ export function NewInvoice() {
                     >
                       {payoutMissing ? (
                         <>
-                          Live invoices are paid straight to your own wallet, so{' '}
+                          Mainnet invoices are paid straight to your own wallet, so{' '}
                           <Link href="/wallet" className="underline">
                             link a payout wallet
                           </Link>{' '}

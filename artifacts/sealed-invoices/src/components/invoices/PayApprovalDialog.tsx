@@ -304,7 +304,7 @@ export function PayApprovalDialog({
                 <span className="text-xs text-muted-foreground">· chain {p.chainId}</span>
                 {live && (
                   <span className="ml-2 rounded-full border border-emerald-400/40 bg-emerald-500/10 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-emerald-300">
-                    Live
+                    Mainnet
                   </span>
                 )}
               </>
@@ -441,7 +441,7 @@ export function PayApprovalDialog({
               <Wallet className="mt-0.5 h-4 w-4 shrink-0" />
               <span>
                 No browser wallet was found. Install MetaMask or another wallet extension, open
-                this page in that browser, and try again. Live invoices are paid from your own
+                this page in that browser, and try again. Mainnet invoices are paid from your own
                 wallet only.
               </span>
             </div>

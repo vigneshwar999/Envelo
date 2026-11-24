@@ -394,7 +394,7 @@ router.post("/invoices/:invoiceId/pay", async (req, res) => {
     // Real money never moves through a server-held key. Live invoices are
     // paid from the client's own wallet and verified by payment-submitted.
     res.status(409).json({
-      error: `This is a live invoice on ${network.name}. Pay it from your own wallet using the Pay button - Envelo never holds real funds for you.`,
+      error: `This is a mainnet invoice on ${network.name}. Pay it from your own wallet using the Pay button - Envelo never holds real funds for you.`,
     });
     return;
   }
@@ -659,7 +659,7 @@ router.get("/invoices/:invoiceId/pay-preview", async (req, res) => {
     : !connected
       ? `${network.name} is not reachable right now, so the payment cannot be prepared. Try again in a moment.`
       : liveHalted
-        ? "Live payments are paused for maintenance. The invoice stays valid; try again later."
+        ? "Mainnet payments are paused for maintenance. The invoice stays valid; try again later."
         : !anchorVerified
           ? "This invoice is still being anchored on Arc. Payment unlocks after its transaction confirms."
           : paymentMode === "external" && buildExternalPayment(invoice) === null

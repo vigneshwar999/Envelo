@@ -37,7 +37,7 @@ function mainnetDisabledReason(
 ): string {
   switch (reason) {
     case "flag_off":
-      return "Live invoicing on Arc Mainnet is switched off.";
+      return "Mainnet invoicing on Arc Mainnet is switched off.";
     case "no_operator_key":
       return "Envelo's operator wallet for Arc Mainnet is not configured.";
     case "no_registry":
@@ -91,7 +91,7 @@ router.get("/chain/status", async (req, res) => {
   } else {
     statusMessage = `Connected to ${NETWORK_NAME} (chain ${ARC_CHAIN_ID}). Every transaction is real and paid by the wallet that acts: senders cover their own anchor fee, payers cover the invoice amount plus gas. Top up your sandbox wallet with free test USDC at ${FAUCET_URL}.`;
     if (mainnet.enabled) {
-      statusMessage += ` Live invoices on ${ARC_MAINNET.name} are on: Envelo pays the anchor, and clients pay from their own wallet in real USDC.`;
+      statusMessage += ` Mainnet invoices on ${ARC_MAINNET.name} are on: Envelo pays the anchor, and clients pay from their own wallet in real USDC.`;
     }
   }
 
@@ -179,7 +179,7 @@ export async function assessAnchor(userId: string, network: ArcNetwork) {
       walletAddress = availability.operatorAddress;
       if (!payoutAddress) {
         blocker =
-          "Live invoices are paid straight to your own wallet, so link a payout wallet in Settings before creating one on Arc Mainnet.";
+          "Mainnet invoices are paid straight to your own wallet, so link a payout wallet in Settings before creating one on Arc Mainnet.";
       }
     }
   } else {
@@ -206,9 +206,9 @@ export async function assessAnchor(userId: string, network: ArcNetwork) {
     // failing quietly in the background.
     const floorWei = parseUnits(mainnetOperatorMinBalanceUsdc(), 18);
     if (feeWei === null || balanceWei === null) {
-      blocker = `${network.name} did not return a fee estimate or balance just now, so a live invoice cannot be priced. Try again in a moment.`;
+      blocker = `${network.name} did not return a fee estimate or balance just now, so a mainnet invoice cannot be priced. Try again in a moment.`;
     } else if (!verdict?.canAfford || balanceWei < floorWei) {
-      blocker = `Envelo's operator wallet on ${network.name} holds ${formatFeeUsdc(balanceWei)} USDC, which is not enough to anchor safely right now (it keeps a ${mainnetOperatorMinBalanceUsdc()} USDC floor). Live invoicing resumes once it is topped up.`;
+      blocker = `Envelo's operator wallet on ${network.name} holds ${formatFeeUsdc(balanceWei)} USDC, which is not enough to anchor safely right now (it keeps a ${mainnetOperatorMinBalanceUsdc()} USDC floor). Mainnet invoicing resumes once it is topped up.`;
     }
   }
 

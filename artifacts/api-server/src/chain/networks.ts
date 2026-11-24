@@ -205,10 +205,10 @@ export function liveInvoiceCapBlocker(counts: {
   globalCap: number;
 }): string | null {
   if (counts.userLast24h >= counts.userCap) {
-    return `You can create up to ${counts.userCap} live invoices per 24 hours while Envelo pays the anchor fee for them. Try again later, or use the sandbox.`;
+    return `You can create up to ${counts.userCap} mainnet invoices per 24 hours while Envelo pays the anchor fee for them. Try again later, or use Testnet.`;
   }
   if (counts.allLastHour >= counts.globalCap) {
-    return "Live invoicing is busy right now and is limited per hour while Envelo pays the anchor fees. Try again in a few minutes.";
+    return "Mainnet invoicing is busy right now and is limited per hour while Envelo pays the anchor fees. Try again in a few minutes.";
   }
   return null;
 }

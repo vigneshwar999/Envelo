@@ -16,7 +16,7 @@ describe("live invoice cap", () => {
   });
 
   it("blocks a sender at their 24-hour cap", () => {
-    expect(liveInvoiceCapBlocker({ ...base, userLast24h: 10 })).toMatch(/up to 10 live invoices per 24 hours/);
+    expect(liveInvoiceCapBlocker({ ...base, userLast24h: 10 })).toMatch(/up to 10 mainnet invoices per 24 hours/);
   });
 
   it("blocks everyone at the hourly global cap", () => {

@@ -368,7 +368,7 @@ export function InvoiceDetail() {
             >
               {live ? <Globe className="h-3 w-3" /> : <FlaskConical className="h-3 w-3" />}
               {invoice.networkName}
-              {live ? ' · live' : ' · sandbox'}
+              
             </span>
           </div>
         </div>

@@ -76,7 +76,7 @@ export default function Explore() {
               <span className="absolute inline-flex h-full w-full rounded-full bg-primary opacity-60 animate-ping" />
               <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-primary" />
             </span>
-            Sandbox on Arc Testnet. Live invoicing on Arc Mainnet.
+            Running on Arc Testnet and Arc Mainnet.
           </div>
 
           <h1 className="mb-8 text-5xl font-light tracking-tight text-foreground/90 text-balance !leading-[1.04] sm:text-7xl md:text-[5.6rem]">
@@ -87,7 +87,7 @@ export default function Explore() {
 
           <p className="mx-auto mb-12 max-w-2xl text-balance text-base leading-relaxed text-muted-foreground sm:text-lg">
             Envelo seals sensitive invoice details in your browser, anchors
-            proof on Arc, and supports test USDC in sandbox or USDC on mainnet.
+            proof on Arc, and supports test USDC on testnet or real USDC on mainnet.
           </p>
 
           {isSignedIn ? (
@@ -383,17 +383,17 @@ export default function Explore() {
                 Transparent settlement.
               </h3>
               <p className="mb-4 text-sm leading-relaxed text-muted-foreground">
-                Sandbox payments settle in{" "}
+                Testnet payments settle in{" "}
                 <strong className="font-medium text-foreground">
                   test USDC
                 </strong>{" "}
-                on Arc Testnet. Live payments use real USDC on Arc Mainnet,
+                on Arc Testnet. Mainnet payments use real USDC on Arc Mainnet,
                 sent from the client&apos;s own wallet straight to the
                 sender&apos;s linked payout wallet.
               </p>
               <p className="mb-6 text-sm leading-relaxed text-muted-foreground">
-                In sandbox, the sender pays the anchor fee and the client pays
-                from their built-in wallet. For live invoices, Envelo pays the
+                On testnet, the sender pays the anchor fee and the client pays
+                from their built-in wallet. For mainnet invoices, Envelo pays the
                 small anchor fee and never holds the payment funds. The client
                 pays from their own wallet.
               </p>
@@ -850,10 +850,10 @@ export default function Explore() {
                 </div>
                 <p className="text-sm leading-relaxed text-muted-foreground">
                   Records the fingerprint and anchor time, then wallet
-                  addresses, payment status, and amount when settled. Sandbox
-                  uses Arc Testnet, Chain ID 5042002, with built-in wallets and
-                  test USDC. Live uses Arc Mainnet, Chain ID 5042. Envelo pays
-                  the small live anchor fee, and clients pay USDC from their own
+                  addresses, payment status, and amount when settled. Testnet invoices
+                  use Arc Testnet, Chain ID 5042002, with built-in wallets and
+                  test USDC. Mainnet invoices use Arc Mainnet, Chain ID 5042. Envelo pays
+                  the small mainnet anchor fee, and clients pay USDC from their own
                   wallet straight to the sender&apos;s linked payout wallet.
                 </p>
               </div>
@@ -895,7 +895,7 @@ export default function Explore() {
             Ready to seal your first invoice?
           </h2>
           <p className="text-xl text-muted-foreground">
-            Try the sandbox or create a live invoice on Arc Mainnet.
+            Try it free on Arc Testnet or create a real invoice on Arc Mainnet.
           </p>
           {isSignedIn ? (
             <div className="flex justify-center pt-4">

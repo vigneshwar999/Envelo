@@ -67,8 +67,8 @@ const sections: LegalSection[] = [
         </p>
         <p>
           That fingerprint is anchored in our registry contract on the Arc
-          network selected when the invoice is created. Sandbox uses{" "}
-          <strong>Arc Testnet</strong>, and live invoices use{" "}
+          network selected when the invoice is created. Testnet invoices use{" "}
+          <strong>Arc Testnet</strong>, and mainnet invoices use{" "}
           <strong>Arc Mainnet</strong>. An approved viewer
           can unseal the invoice, recompute the fingerprint locally, and
           compare it with the onchain record. If they match, the document is
@@ -82,18 +82,18 @@ const sections: LegalSection[] = [
     body: (
       <>
         <p>
-          Sandbox payments use test USDC on Arc Testnet and built-in wallets.
-          Live payments use real USDC on Arc Mainnet. The client pays from
+          Testnet payments use test USDC on Arc Testnet and built-in wallets.
+          Mainnet payments use real USDC on Arc Mainnet. The client pays from
           their own browser wallet straight to the sender&apos;s linked payout
-          wallet. In sandbox, the sender pays the anchor fee from their
-          built-in wallet. Envelo pays the small live anchor fee and never
+          wallet. On testnet, the sender pays the anchor fee from their
+          built-in wallet. Envelo pays the small mainnet anchor fee and never
           holds real funds. Both sides can check settlement on the
           invoice&apos;s block explorer.
         </p>
         <ul>
           <li>
             <strong>Test USDC has no real-world value.</strong> Only use it for
-            sandbox invoices on Arc Testnet.
+            testnet invoices on Arc Testnet.
           </li>
           <li>
             Payment amounts and wallet addresses are public onchain.
@@ -172,8 +172,8 @@ export default function HowItWorks() {
           document never changed.
         </>,
         <>
-          Payments are public USDC transactions on Arc. Sandbox uses test USDC;
-          live uses real USDC. Amounts and addresses are{" "}
+          Payments are public USDC transactions on Arc. Testnet uses test USDC;
+          mainnet uses real USDC. Amounts and addresses are{" "}
           <strong>visible onchain</strong>.
         </>,
       ]}
